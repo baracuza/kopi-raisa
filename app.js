@@ -3,6 +3,7 @@ const dotenv = require('dotenv');
 const cookieParser = require('cookie-parser');
 
 
+
 dotenv.config();
 
 
@@ -19,7 +20,9 @@ app.get('/', (req, res) => {
     res.send('Halo kopi raisa!');
 });
 
+const newsController = require('./src/content/news.controller');
 const userController = require('./src/auth/user.controller');
+app.use("/api/v1/news", newsController);
 app.use("/api/v1", userController);
 
 app.listen(port, () => {

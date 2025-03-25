@@ -38,10 +38,12 @@ const jwt = require('jsonwebtoken');
 //*​‌‍‌⁡⁣⁢⁣middleware mengambil data user yang sedang login ⁡⁣⁢⁣dengan autoriz​⁡⁡*//
 const authMiddleware = async (req, res, next) => {
     try {
-        // console.log('Headers:', req.headers); ⁡⁣⁢⁣// Cek untuk debugging⁡
+        // ⁣ Cek untuk debugging⁡
+        // console.log('Headers:', req.headers);
 
         const authHeader = req.header('Authorization');
-        // console.log('Authorization Header:', authHeader); ⁡⁣⁢⁣// Cek apakah token terbaca⁡
+        //  Cek apakah token terbaca⁡
+        // console.log('Authorization Header:', authHeader);
         if (!authHeader || !authHeader.startsWith('Bearer ')) {
             return res.status(401).json({ message: 'Access Denied / Tidak ada token' });
         }
@@ -63,7 +65,7 @@ const authMiddleware = async (req, res, next) => {
         req.user = user; // Simpan user ke dalam req agar bisa diakses di controller
         next(); // Lanjutkan ke handler berikutnya
     } catch (error) {
-        return res.status(401).json({ message: 'Token invalid atau sudah kadaluarsa!' });
+        return res.status(401).json({ message: 'Token invalid atau sudah kadaluwarsa!' });
     }
 };
 

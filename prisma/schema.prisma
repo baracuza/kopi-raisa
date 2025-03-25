@@ -25,5 +25,235 @@ model User {
   verified        Boolean @default(false)
   createdAt       DateTime @default(now())
   updated_at      DateTime @updatedAt
+  notifications Notification[]
+  transactions Transaction[]
+  carts       Cart[]
+  orders      Order[]
+  reviews     Review[]
+  formEntries  FormEntry[]
+  news         News[]
 }
 
+model Notification {
+  id          Int      @id @default(autoincrement())
+  name        String
+  viewed      Boolean  @default(false)
+  description String
+  user        User     @relation(fields: [user_id], references: [id])
+  user_id     Int
+  created_at  DateTime @default(now())
+  updated_at  DateTime @updatedAt
+}
+
+model Partner {
+  id          Int      @id @default(autoincrement())
+  name        String
+  owner_name  String
+  phone_number String
+  address     String?
+  created_at  DateTime @default(now())
+  updated_at  DateTime @updatedAt
+  products    Product[]
+  orders      Order[]
+}
+
+model Product {
+  id          Int      @id @default(autoincrement())
+  name        String
+  price       Int
+  stock       Int      @default(0)
+  description String?
+  image       String?
+  partner     Partner  @relation(fields: [partner_id], references: [id])
+  partner_id  Int
+  created_at  DateTime @default(now())
+  updated_at  DateTime @updatedAt
+  inventory   Inventory?
+  cartItems   CartItem[]
+  orderItems  OrderItem[]
+  reviews     Review[]
+}
+
+model Inventory {
+  id         Int      @id @default(autoincrement())
+  product    Product  @relation(fields: [products_id], references: [id])
+  products_id Int     @unique
+  stock      Int
+  created_at DateTime @default(now())
+  updated_at DateTime @updatedAt
+}
+
+model Transaction {
+  id          Int                @id @default(autoincrement())
+  user        User               @relation(fields: [user_id], references: [id])
+  user_id     Int
+  status      TransactionStatus
+  total_amount Int
+  created_at  DateTime @default(now())
+  updated_at  DateTime @updatedAt
+}
+
+model Cart {
+  id         Int      @id @default(autoincrement())
+  user       User     @relation(fields: [user_id], references: [id])
+  user_id    Int
+  created_at DateTime @default(now())
+  updated_at DateTime @updatedAt
+  cartItems  CartItem[]
+}
+
+model CartItem {
+  id          Int      @id @default(autoincrement())
+  cart        Cart     @relation(fields: [cart_id], references: [id])
+  cart_id     Int
+  product     Product  @relation(fields: [products_id], references: [id])
+  products_id Int
+  quantity    Int
+  created_at  DateTime @default(now())
+  updated_at  DateTime @updatedAt
+}
+
+model Order {
+  id         Int      @id @default(autoincrement())
+  user       User     @relation(fields: [user_id], references: [id])
+  user_id    Int
+  partner    Partner  @relation(fields: [partner_id], references: [id])
+  partner_id Int
+  status     OrderStatus
+  created_at DateTime @default(now())
+  updated_at DateTime @updatedAt
+  orderItems OrderItem[]
+  shippingAddress ShippingAddress?
+  payment    Payment?
+  reviews    Review[]
+}
+
+model OrderItem {
+  id          Int      @id @default(autoincrement())
+  order       Order    @relation(fields: [order_id], references: [id])
+  order_id    Int
+  product     Product  @relation(fields: [products_id], references: [id])
+  products_id Int
+  quantity    Int
+  price       Int
+  custom_note String?
+  created_at  DateTime @default(now())
+  updated_at  DateTime @updatedAt
+}
+
+model ShippingAddress {
+  id        Int      @id @default(autoincrement())
+  order     Order    @relation(fields: [order_id], references: [id])
+  order_id  Int      @unique
+  address   String
+  created_at DateTime @default(now())
+  updated_at DateTime @updatedAt
+}
+
+model Payment {
+  id              Int            @id @default(autoincrement())
+  order           Order          @relation(fields: [order_id], references: [id])
+  order_id        Int            @unique
+  amount          Int
+  status          PaymentStatus
+  method          PaymentMethod?
+  snap_token      String?
+  snap_redirect_url String?
+  payment_info    String?
+  created_at      DateTime @default(now())
+  updated_at      DateTime @updatedAt
+}
+
+model FormTemplate {
+  id               Int      @id @default(autoincrement())
+  title           String
+  google_form_link String
+  created_at      DateTime @default(now())
+  updated_at      DateTime @updatedAt
+  formEntries     FormEntry[]
+  formFields      FormField[]
+}
+
+model FormEntry {
+  id              Int      @id @default(autoincrement())
+  formTemplate    FormTemplate @relation(fields: [form_template_id], references: [id])
+  form_template_id Int
+  user           User     @relation(fields: [user_id], references: [id])
+  user_id        Int
+  submitted_at   DateTime?
+}
+
+model FormField {
+  id              Int      @id @default(autoincrement())
+  formTemplate    FormTemplate @relation(fields: [form_template_id], references: [id])
+  form_template_id Int
+  field_name     String
+  field_type     String
+}
+
+model News {
+  id         Int      @id @default(autoincrement())
+  title      String
+  content    String
+  image_url  String?
+  user       User     @relation(fields: [user_id], references: [id])
+  user_id    Int
+  published_at DateTime?
+  created_at DateTime @default(now())
+  updated_at DateTime @updatedAt
+  newsMedia  NewsMedia[]
+}
+
+model NewsMedia {
+  id         Int      @id @default(autoincrement())
+  news       News     @relation(fields: [news_id], references: [id])
+  news_id    Int
+  media_url  String
+  media_type String
+}
+
+model Review {
+  id         Int      @id @default(autoincrement())
+  user       User     @relation(fields: [user_id], references: [id])
+  user_id    Int
+  product    Product  @relation(fields: [product_id], references: [id])
+  product_id Int
+  order      Order    @relation(fields: [order_id], references: [id])
+  order_id   Int
+  rating     Int
+  comment    String?
+  created_at DateTime @default(now())
+  updated_at DateTime @updatedAt
+}
+
+enum PaymentMethod {
+  QRIS
+  CREDIT_CARD
+  BANK_TRANSFER
+}
+
+enum PaymentStatus {
+  PENDING
+  SUCCESS
+  FAILED
+}
+
+enum TransactionStatus {
+  FAILED
+  REJECTED
+  EXPIRED
+  CANCELED
+  AUTHORIZED
+  REFUNDED
+  PENDING
+  COMPLETED
+  SUBMITTED
+}
+
+enum OrderStatus {
+  PENDING
+  PROCESSING
+  SHIPPED
+  DELIVERED
+  CANCELED
+}
