@@ -72,12 +72,27 @@ router.post('/login', validateLogin, async (req, res) => {
 });
 
 
-router.get('/profile', authMiddleware, async (req, res) => {
-    return res.status(200).json({
-        message: "Data profil berhasil diambil!",
-        user: req.user
-    });
+router.get('/getUserProfile', authMiddleware, async (req, res) => {
+    try {
+        const user = req.user; // Data user yang sudah diambil dari middleware
+
+        return res.status(200).json({
+            message: 'Data profil berhasil diambil!',
+            data: {
+                id: user.id,
+                name: user.name,
+                email: user.email,
+                phone_number: user.phone_number,
+                image: user.image,
+                admin: user.admin,
+                verified: user.verified
+            }
+        });
+    } catch (error) {
+        return res.status(500).json({ message: 'Gagal mengambil data profil!', error: error.message });
+    }
 });
+
 
 
 module.exports = router;
