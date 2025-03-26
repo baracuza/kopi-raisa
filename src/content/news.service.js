@@ -14,14 +14,17 @@ const getNews = async () => {
     return news;
 };
 
-const getNewsById = async (id) => {
-    const news = await findNewsById(id);
+const getNewsById = async (newsId) => {
+    const news = await findNewsById(newsId);
+    if (!news) {
+        throw new Error("Berita tidak ditemukan!");
+    }
 
     return news;
 };
 
-const createNews = async (newNewsData) => {
-    const newsData = await insertNews(newNewsData);
+const createNews = async (newNewsData,user_id) => {
+    const newsData = await insertNews(newNewsData,user_id);
 
     return newsData;
 };

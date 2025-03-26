@@ -7,7 +7,7 @@ const { authMiddleware } = require('../middleware/middleware');
 
 const router = express.Router();
 
-router.get('/', async (req, res) => {
+router.get('/',authMiddleware, async (req, res) => {
     // console.log('GET /api/v1/news');
     try {
         const news = await getNews();
@@ -49,8 +49,12 @@ router.get('/:id', async (req, res) => {
 
 router.post('/', authMiddleware, async (req, res) => {
     try {
+        if (!req.user.admin) {
+            return res.status(403).json({ message: 'Akses ditolak! Hanya admin yang bisa menambahkan berita.' });
+        }
         const newsData = req.body;
-        const newNews = await createNews(newsData);
+        const user_id = req.user.id;
+        const newNews = await createNews(newsData, user_id);
 
         res.status(201).json({
             message: 'Berita berhasil ditambahkan!',

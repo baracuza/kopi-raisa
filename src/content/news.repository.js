@@ -6,17 +6,34 @@ const findNews = async () => {
     return news;
 };
 
-const findNewsById = async (id) => {
+const findNewsById = async (newsId) => {
     const news = await prisma.News.findUnique({
         where: {
-            id: parseInt(id)
-        }
+            id: parseInt(newsId)
+        },
+        // include:{
+        //     user:{
+        //         select: { id: true, name: true, email: true }
+        //     }
+        // }
     });
 
     return news;
 };
 
-const insertNews = async (newNewsData) => {};
+const insertNews = async (newNewsData,user_id) => {
+    const news = await prisma.News.create({
+        data: {
+            title       : newNewsData.title,
+            content     : newNewsData.content,
+            image_url   : newNewsData.image_url||null,
+            user_id     : user_id,
+            published_at: newNewsData.published||null,
+        },
+    });
+
+    return news;
+};
 
 const deleteNews = async (id) => {};
 const editNews = async (id, editedNewsData) => {};
