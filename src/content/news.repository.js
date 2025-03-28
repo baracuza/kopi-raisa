@@ -35,7 +35,30 @@ const insertNews = async (newNewsData,user_id) => {
     return news;
 };
 
-const deleteNews = async (id) => {};
-const editNews = async (id, editedNewsData) => {};
+const editNews = async (id, editedNewsData) => {
+    const news = await prisma.News.update({
+        where: {
+            id: parseInt(id),
+        },
+        data: {
+            title       : editedNewsData.title,
+            content     : editedNewsData.content,
+            image_url   : editedNewsData.image_url||null,
+            published_at: editedNewsData.published||null,
+        },
+    });
+
+    return news;
+};
+
+const deleteNews = async (id) => {
+    const news = await prisma.News.delete({
+        where: {
+            id: id,
+        },
+    });
+
+    return news;
+};
 
 module.exports = { findNews, findNewsById, insertNews, deleteNews, editNews };

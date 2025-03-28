@@ -2,8 +2,9 @@ const express = require('express');
 const prisma = require('../db');
 const bcrypt = require('bcryptjs');
 const { validationResult } = require('express-validator');
+const passport = require('passport');
 
-const { createUser, loginUser } = require('./user.service');
+const { createUser, loginUser, updateUser, sendResetPasswordEmail, resetPassword } = require('./user.service');
 const { validateRegister, validateLogin } = require('../validation/user.validation');
 const { authMiddleware } = require('../middleware/middleware');
 
@@ -49,20 +50,18 @@ router.post('/login', validateLogin, async (req, res) => {
             });
         }
 
-        // const { email, password } = req.body;
         const userLogin = req.body;
         const user = await loginUser(userLogin);
 
-
         // Simpan token dalam cookie HTTP-Only
-        // res.cookie("token", user.token, {
-        //     httpOnly: true,      
-        //     secure: true,        
-        //     sameSite: "strict",  
-        //     maxAge: 1 * 24 * 60 * 60 * 1000 
-        // });
+        res.cookie("token", user.token, {
+            httpOnly: true,      
+            secure: true,        
+            sameSite: "strict",  
+            maxAge: 1 * 24 * 60 * 60 * 1000 
+        });
 
-        return res.status(200).json({ message: 'Login berhasil!', data: user});
+        return res.status(200).json({ message: 'Login berhasil!', data: user });
     } catch (error) {
         return res.status(500).json({
             message: 'Gagal login!',
@@ -71,8 +70,7 @@ router.post('/login', validateLogin, async (req, res) => {
     }
 });
 
-
-router.get('/getUserProfile', authMiddleware, async (req, res) => {
+router.get('/User', authMiddleware, async (req, res) => {
     try {
         const user = req.user; // Data user yang sudah diambil dari middleware
 
@@ -93,6 +91,74 @@ router.get('/getUserProfile', authMiddleware, async (req, res) => {
     }
 });
 
+router.put('/User', authMiddleware, async (req, res) => {
+    try {
+        const userId = req.user.id; // Ambil ID user dari middleware
+        const updatedData = req.body; 
+
+        const updatedUser = await updateUser({updatedData, userId});
+
+        return res.status(200).json({
+            message: 'Profil berhasil diperbarui!',
+            data: updatedUser,
+        });
+    } catch (error) {
+        return res.status(500).json({ message: 'Gagal memperbarui profil!', error: error.message });
+    }
+});
+
+router.post('/reset-password-request', async (req, res) => {
+    try{
+        const { email } = req.body;
+        await sendResetPasswordEmail(email);
+        return res.status(200).json({ message: 'link reset password telah dikirim ke email Anda!' });
+    }catch (error) {
+        return res.status(500).json({ message: 'Gagal mengirim link reset password!', error: error.message });
+    }
+});
+
+router.put('/reset-password', async (req, res) => {
+    const { token, newPassword } = req.body;
+    
+    try {
+        await resetPassword({ token, newPassword });
+        return res.status(200).json({ message: 'Password berhasil direset!' });
+    } catch (error) {
+        return res.status(500).json({ message: 'Gagal mereset password!', error: error.message });
+    }
+});
+
+router.get('/google', passport.authenticate('google', { scope: ['profile', 'email'] }));
+
+//* Callback URL yang akan dipanggil setelah pengguna memberikan izin tanpa lewat cookie(untuk develop)*/
+// router.get('/google/callback', passport.authenticate('google', { failureRedirect: '/login' }), (req, res) => {
+
+//     const token = jwt.sign({ id: req.user.id, admin: req.user.admin }, process.env.JWT_SECRET, { expiresIn: process.env.JWT_EXPIRES });
+//     res.redirect(`http://localhost:2000?token=${token}`); // Redirect to your frontend with the token
+// });
+
+router.get('/google/callback', passport.authenticate('google', { session: false }),
+    (req, res) => {
+        if (!req.user) {
+            return res.status(401).json({ message: 'Autentikasi gagal!' });
+        }
+
+        // Simpan token dalam cookie HTTP-Only
+        res.cookie("token", req.user.token, {
+            httpOnly: true,
+            secure: true,
+            sameSite: "strict",
+            maxAge: 1 * 24 * 60 * 60 * 1000 // 1 hari
+        });
+
+        // Kirim data user dan token ke client
+        res.status(200).json({ message: 'Login berhasil!', user: req.user.user, token: req.user.token });
+    });
 
 
+router.get('/logout', (req, res) => {
+    // Hapus cookie token
+    res.clearCookie('token');
+    res.status(200).json({ message: 'Logout berhasil!' });
+});
 module.exports = router;

@@ -69,7 +69,12 @@ router.put('/:id', authMiddleware, async (req, res) => {
     try {
         const { id } = req.params;
         const editedNewsData = req.body;
-        const updatedNews = await updateNews(id, editedNewsData);
+
+        if (!req.user.admin) {
+            return res.status(403).json({ message: 'Akses ditolak! Hanya admin yang bisa mengedit berita.' });
+        }
+
+        const updatedNews = await updateNews(parseInt(id), editedNewsData);
 
         res.status(200).json({
             message: 'Berita berhasil diupdate!',
@@ -86,7 +91,11 @@ router.put('/:id', authMiddleware, async (req, res) => {
 router.delete('/:id', authMiddleware, async (req, res) => {
     try {
         const { id } = req.params;
-        const deletedNews = await removeNews(id);
+
+        if (!req.user.admin) {
+            return res.status(403).json({ message: 'Akses ditolak! Hanya admin yang bisa menghapus berita.' });
+        }
+        const deletedNews = await removeNews(parseInt(id));
 
         res.status(200).json({
             message: 'Berita berhasil dihapus!',

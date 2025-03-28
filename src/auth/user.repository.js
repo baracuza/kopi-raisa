@@ -33,4 +33,40 @@ const findUserByIdentifier = async (identifier) => {
     return user;
 };
 
-module.exports = {insertUser, findUserByIdentifier};
+const updateByID = async ({ updatedData, userId }) => {
+    const user = await prisma.User.update({
+        where: { id: userId },
+        data: updatedData,
+    });
+
+    return user;
+};
+
+const findUserByEmail = async (email) => {
+    const user = await prisma.User.findUnique({
+        where: { email },
+    });
+
+    return user;
+};
+
+const findUserByID = async (userId) => {
+    const user = await prisma.User.findUnique({
+        where: { id: userId },
+    });
+
+    return user;
+};
+
+const updatePasswordByID = async ({ password, userId }) => {
+    const user = await prisma.User.update({
+        where: { id: userId },
+        data: { password },
+    });
+
+    return user;
+};
+
+
+
+module.exports = {insertUser, findUserByIdentifier, updateByID, findUserByEmail, updatePasswordByID, findUserByID};

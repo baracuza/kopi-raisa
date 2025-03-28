@@ -1,0 +1,96 @@
+model schema nya
+model PasswordResetToken {
+  id        String   @id @default(uuid())
+  token     String
+  expiresAt DateTime
+  userId    String
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+}
+
+model User {
+  id                  String               @id @default(uuid())
+  email               String               @unique
+  password            String
+  // properti lainnya...
+
+  passwordResetTokens PasswordResetToken[] // ini optional tapi berguna kalau mau relasi 2 arah
+}
+
+⁡⁣⁣⁢​‌‍‌di user.service​⁡
+⁡⁢⁣⁢text: `Klik link ini untuk mereset password Anda:</p><a href="${resetLink}">${resetLink}</a><br><br><small>Link berlaku 5 menit.</small>`,⁡
+diganti
+html: `Klik link ini untuk mereset password Anda:<br><a href="${resetLink}">${resetLink}</a><br><br><small>Link berlaku 5 menit.</small>`
+⁡⁣⁣⁢​‌‍‌
+🔒 Alur Singkat:​⁡
+-User sudah login via Google → kirim token akses (misalnya JWT).
+-Endpoint: POST /auth/set-password
+-Body: { "newPassword": "passwordBaru123" }
+-Server:
+-Validasi token → ambil user dari DB
+-Cek kalau user.password == null
+-Hash password → simpan ke DB
+
+⁡⁣⁣⁢​‌‍​‌‍‌⁡⁢⁣⁣user.controller⁡​
+exports.setPasswordForOAuthUser = async (req, res) => {
+  const { newPassword } = req.body;
+  const token = req.headers.authorization?.split(" ")[1];
+
+  try {
+    if (!token) throw new Error("Token tidak ditemukan.");
+    if (!newPassword) throw new Error("Password baru harus diisi.");
+
+    const result = await userService.setPasswordForOAuthUser(token, newPassword);
+
+    res.status(200).json({
+      message: "Password berhasil disetel!",
+      data: result,
+    });
+  } catch (error) {
+    res.status(400).json({
+      message: "Gagal menyetel password!",
+      error: error.message,
+    });
+  }
+};
+
+​‌‍‌⁡⁢⁣⁣user.service⁡​
+const jwt = require('jsonwebtoken');
+const bcrypt = require('bcrypt');
+const { findUserByID, updatePassword } = require('./user.repository');
+
+exports.setPasswordForOAuthUser = async (token, newPassword) => {
+  const decoded = jwt.verify(token, process.env.JWT_SECRET);
+  const user = await findUserByID(decoded.id);
+
+  if (!user) {
+    throw new Error("User tidak ditemukan.");
+  }
+
+  if (user.password) {
+    throw new Error("User ini sudah memiliki password.");
+  }
+
+  const hashedPassword = await bcrypt.hash(newPassword, 10);
+
+  await updatePassword(user.id, hashedPassword);
+
+  return { email: user.email };
+};
+
+​‌‍‌⁡⁢⁣⁣user.repository⁡​
+const prisma = require('../../prisma/client');
+
+exports.findUserByID = async (id) => {
+  return prisma.user.findUnique({
+    where: { id },
+  });
+};
+
+exports.updatePassword = async (id, hashedPassword) => {
+  return prisma.user.update({
+    where: { id },
+    data: { password: hashedPassword },
+  });
+};

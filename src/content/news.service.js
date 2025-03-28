@@ -30,12 +30,22 @@ const createNews = async (newNewsData,user_id) => {
 };
 
 const updateNews = async (id, editedNewsData) => {
+    const existingNews = await findNewsById(id);
+    if (!existingNews) {
+        throw new Error("Berita tidak ditemukan!");
+    }
+
     const newsData = await editNews(id, editedNewsData);
 
     return newsData;
 };
 
 const removeNews = async (id) => {
+    const existingNews = await findNewsById(id);
+    
+    if (!existingNews) {
+        throw new Error("Berita tidak ditemukan!");
+    }
     const newsData = await deleteNews(id);
 
     return newsData;

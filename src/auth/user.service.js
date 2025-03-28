@@ -1,9 +1,9 @@
 const prisma = require('../db');
-const { get } = require('./user.controller');
-const { insertUser, findUserByIdentifier } = require('./user.repository');
+const { insertUser, findUserByIdentifier, updateByID, findUserByEmail, updatePasswordByID, findUserByID } = require('./user.repository');
 const bcrypt = require('bcryptjs');
 const jsonwebtoken = require('jsonwebtoken');
 const dotenv = require('dotenv');
+const nodemailer = require('nodemailer');
 
 
 dotenv.config();
@@ -49,8 +49,80 @@ const loginUser = async ({ identifier, password }) => {
 
 };
 
+const updateUser = async ({ updatedData, userId }) => {
+    const update = await updateByID({ updatedData, userId });
+
+    return update;
+}
+
+const sendResetPasswordEmail = async (email) => {
+    const user = await findUserByEmail(email);
+
+    console.log('user', user);
+
+    if (!user) {
+        throw new Error('User tidak ditemukan!');
+    }
+
+    if (user.verified) {
+        throw new Error('Akun ini menggunakan Google OAuth. Silakan login menggunakan Google.');
+    }
+
+    const resetToken = await jsonwebtoken.sign({ id: user.id }, process.env.JWT_SECRET, { expiresIn: '5m' });
+    // console.log('resetToken', resetToken);
+
+    const resetLink = `${process.env.FRONTEND_URL}/reset-password?token=${resetToken}`;
+    const transporter = nodemailer.createTransport({
+        service: 'gmail',
+        auth: {
+            user: process.env.EMAIL_USER,
+            pass: process.env.EMAIL_PASS,
+        },
+    });
+    const mailOptions = {
+        from: `"Kopi Raisa"<${process.env.EMAIL_USER}>`,
+        to: email,
+        subject: 'Reset Password',
+        html: `Klik link ini untuk mereset password Anda:</p><a href="${resetLink}">${resetLink}</a><br><br><small>Link berlaku 5 menit.</small>`,
+    };
+
+    await transporter.sendMail(mailOptions);
+    console.log('Email reset password terkirim ke:', email);
+
+};
+
+const resetPassword = async ({ token, newPassword }) => {
+    const decoded = await jsonwebtoken.verify(token, process.env.JWT_SECRET);
+
+    if (!decoded) {
+        throw new Error('Token tidak valid!');
+    }
+
+    const currentUser = await findUserByID(decoded.id);
+    if (!currentUser) {
+        throw new Error('Pengguna tidak ditemukan.');
+    }
+    console.log('newPassword:', typeof newPassword, newPassword);
+    console.log('currentUser.password:', typeof currentUser.password, currentUser.password);
+
+    if (!currentUser.password) {
+        throw new Error('Akun ini didaftarkan melalui Google dan tidak memiliki password. Silakan login menggunakan Google.');
+    }
+
+
+    const isSamePassword = await bcrypt.compare(newPassword, currentUser.password);
+    if (isSamePassword) {
+        throw new Error('Password baru tidak boleh sama dengan yang lama.');
+    }
+
+
+    const hashedPassword = await bcrypt.hash(newPassword, 10);
+
+    const updatedUser = await updatePasswordByID({ password: hashedPassword, userId: decoded.id });
+
+    return updatedUser;
+}
 
 
 
-
-module.exports = { createUser, loginUser };
+module.exports = { createUser, loginUser, updateUser, sendResetPasswordEmail, resetPassword };
