@@ -36,62 +36,62 @@ const jwt = require('jsonwebtoken');
     // };
 
 //*​‌‍‌⁡⁣⁢⁣middleware mengambil data user yang sedang login ⁡⁣⁢⁣dengan autoriz​⁡⁡*//
-const authMiddleware = async (req, res, next) => {
-try {
+// const authMiddleware = async (req, res, next) => {
+// try {
 
-    console.log('Headers:', req.headers);
+//     console.log('Headers:', req.headers);
 
-    const authHeader = req.header('Authorization');
+//     const authHeader = req.header('Authorization');
 
-    // console.log('Authorization Header:', authHeader);
-    if (!authHeader || !authHeader.startsWith('Bearer ')) {
-        return res.status(401).json({ message: 'Access Denied / Tidak ada token' });
-    }
+//     // console.log('Authorization Header:', authHeader);
+//     if (!authHeader || !authHeader.startsWith('Bearer ')) {
+//         return res.status(401).json({ message: 'Access Denied / Tidak ada token' });
+//     }
 
-    const token = authHeader.split(' ')[1]; 
+//     const token = authHeader.split(' ')[1]; 
     
-    const verify = jwt.verify(token, process.env.JWT_SECRET);
+//     const verify = jwt.verify(token, process.env.JWT_SECRET);
 
-    const user = await prisma.user.findUnique({
-        where: { id: verify.id }
-    });
+//     const user = await prisma.user.findUnique({
+//         where: { id: verify.id }
+//     });
 
-    if (!user) {
-        return res.status(404).json({ message: 'User tidak ditemukan!' });
-    }
+//     if (!user) {
+//         return res.status(404).json({ message: 'User tidak ditemukan!' });
+//     }
 
-    req.user = user; 
-    next(); 
-} catch (error) {
-    return res.status(401).json({ message: 'Token invalid atau sudah kadaluwarsa!' });
-}
-};
+//     req.user = user; 
+//     next(); 
+// } catch (error) {
+//     return res.status(401).json({ message: 'Token invalid atau sudah kadaluwarsa!' });
+// }
+// };
 
 //*⁡⁣⁢⁡⁣⁢⁣​‌‍‌‍middleware mengambil data user yang sedang login dengan cookie​⁡⁡*//
-// const authMiddleware = async (req, res, next) => {
-//     console.log('Headers:', req.headers);
-//     try {
-//         const authHeader    = req.cookies.token ;
+const authMiddleware = async (req, res, next) => {
+    console.log('Headers:', req.headers);
+    try {
+        const authHeader    = req.cookies.token ;
 
-//         if (!authHeader) {
-//             return res.status(401).json({ message: 'Access Denied / Tidak ada token' });
-//         }
+        if (!authHeader) {
+            return res.status(401).json({ message: 'Access Denied / Tidak ada token' });
+        }
 
-//         const verify = jwt.verify(authHeader, process.env.JWT_SECRET);
+        const verify = jwt.verify(authHeader, process.env.JWT_SECRET);
 
-//         const user = await prisma.user.findUnique({
-//             where: { id: verify.id }
-//         });
+        const user = await prisma.user.findUnique({
+            where: { id: verify.id }
+        });
 
-//         if (!user) {
-//             return res.status(404).json({ message: 'User tidak ditemukan!' });
-//         }
+        if (!user) {
+            return res.status(404).json({ message: 'User tidak ditemukan!' });
+        }
 
-//         req.user = user; 
-//         next(); 
-//     } catch (error) {
-//         return res.status(401).json({ message: 'Token invalid atau sudah kadaluwarsa!' });
-//     }
-// };
+        req.user = user; 
+        next(); 
+    } catch (error) {
+        return res.status(401).json({ message: 'Token invalid atau sudah kadaluwarsa!' });
+    }
+};
 
 module.exports = { authMiddleware };
