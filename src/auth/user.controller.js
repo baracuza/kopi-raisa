@@ -57,7 +57,7 @@ router.post('/login', validateLogin, async (req, res) => {
         res.cookie("token", user.token, {
             httpOnly: true,      
             secure: true,        
-            sameSite: "strict",  
+            sameSite: "None",  
             maxAge: 1 * 24 * 60 * 60 * 1000 
         });
 
@@ -148,7 +148,7 @@ router.get('/google/callback', passport.authenticate('google', { session: false 
         res.cookie("token", req.user.token, {
             httpOnly: true,
             secure: true,
-            sameSite: "strict",
+            sameSite: "None",
             maxAge: 1 * 24 * 60 * 60 * 1000 // 1 hari
         });
 
