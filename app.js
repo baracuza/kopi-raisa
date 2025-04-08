@@ -8,18 +8,18 @@ require('./src/auth/passport-config');
 
 dotenv.config();
 
+const app = express();
+const port = process.env.PORT;
 const corsOption = {
     origin: process.env.CORS_ORIGIN,
     credentials: true, 
 };
-app.use(cors(corsOption));
-const app = express();
-const port = process.env.PORT;
 
 
 app.use(passport.initialize());
 app.use(cookieParser());
 app.use(express.json());
+app.use(cors(corsOption));
 
 //endpoint try
 app.get('/', (req, res) => {
