@@ -69,9 +69,11 @@ const jwt = require('jsonwebtoken');
 
 //*⁡⁣⁢⁡⁣⁢⁣​‌‍‌‍middleware mengambil data user yang sedang login dengan cookie​⁡⁡*//
 const authMiddleware = async (req, res, next) => {
-    console.log('Headers:', req.headers);
+    // console.log('Headers:', req.headers);
     try {
         const authHeader    = req.cookies.token ;
+
+        console.log('Cookies:', req.cookies); // <--- ini penting
 
         if (!authHeader) {
             return res.status(401).json({ message: 'Access Denied / Tidak ada token' });
