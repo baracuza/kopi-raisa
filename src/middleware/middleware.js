@@ -70,8 +70,8 @@ const jwt = require('jsonwebtoken');
 //*⁡⁣⁢⁡⁣⁢⁣​‌‍‌‍middleware mengambil data user yang sedang login dengan cookie​⁡⁡*//
 const authMiddleware = async (req, res, next) => {
     // console.log('Headers:', req.headers);
+    const authHeader    = req.cookies.token ;
     try {
-        const authHeader    = req.cookies.token ;
 
         console.log('Cookies:', req.cookies); // <--- ini penting
 
