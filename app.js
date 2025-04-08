@@ -2,12 +2,17 @@ const express = require('express');
 const dotenv = require('dotenv');
 const cookieParser = require('cookie-parser');
 const passport = require('passport');
+const cors = require('cors');
 require('./src/auth/passport-config');
 
 
 dotenv.config();
 
-
+const corsOption = {
+    origin: process.env.CORS_ORIGIN,
+    credentials: true, 
+};
+app.use(cors(corsOption));
 const app = express();
 const port = process.env.PORT;
 
