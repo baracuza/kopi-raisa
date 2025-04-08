@@ -72,7 +72,7 @@ router.post('/login', validateLogin, async (req, res) => {
 
 router.get('/User', authMiddleware, async (req, res) => {
     try {
-        const user = req.user; // Data user yang sudah diambil dari middleware
+        const user = req.user;
 
         return res.status(200).json({
             message: 'Data profil berhasil diambil!',
@@ -151,8 +151,9 @@ router.get('/google/callback', passport.authenticate('google', { session: false 
             maxAge: 1 * 24 * 60 * 60 * 1000 // 1 hari
         });
 
+        res.redirect(`https://sekolahkopiraisa.vercel.app`); // Redirect to your frontend with the token
         // Kirim data user dan token ke client
-        res.status(200).json({ message: 'Login berhasil!', user: req.user.user, token: req.user.token });
+        // res.status(200).json({ message: 'Login berhasil!', user: req.user.user, token: req.user.token });
     });
 
 
