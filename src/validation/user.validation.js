@@ -17,7 +17,7 @@ const validateRegister = [
 
     body('phone_number')
         .isNumeric().withMessage('Nomor telepon harus berupa angka')
-        // .isLength({ min: 10, max: 15 }).withMessage('Nomor telepon harus 10-15 digit'),
+        .isLength({ min: 10, max: 15 }).withMessage('Nomor telepon harus lebih 10 digit'),
 ];
 
 const validateLogin = [
