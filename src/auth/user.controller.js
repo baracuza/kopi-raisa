@@ -157,7 +157,7 @@ router.get('/google', passport.authenticate('google', { scope: ['profile', 'emai
 //         res.status(200).json({ message: 'Login berhasil!', user: req.user.user, token: req.user.token });
 //     });
 
-router.get('/google/callback', passport.authenticate('google', { session: false }),
+router.get('/google/callback', passport.authenticate('google', { session: false, failureRedirect: 'https://sekolahkopiraisa.vercel.app/login' }),
     (req, res) => {
         if (!req.user) {
             return res.status(401).json({ message: 'Autentikasi gagal!' });
@@ -180,7 +180,7 @@ router.post('/save-token', (req, res) => {
         httpOnly: true,
         secure: process.env.NODE_ENV === 'production', 
         sameSite: "None",
-        maxAge: 1 * 24 * 60 * 60 * 1000 // 1 hari
+        maxAge: 1 * 24 * 60 * 60 * 1000
     });
 
     return res.status(200).json({ message: 'Token berhasil disimpan di cookie!' });
@@ -189,7 +189,7 @@ router.post('/save-token', (req, res) => {
 
 
 router.get('/logout', (req, res) => {
-    // Hapus cookie token
+    
     res.clearCookie('token');
     res.status(200).json({ message: 'Logout berhasil!' });
 });
