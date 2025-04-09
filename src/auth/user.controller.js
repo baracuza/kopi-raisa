@@ -14,7 +14,12 @@ const router = express.Router();
 
 router.post('/daftar', validateRegister, async (req, res) => {
     try {
+        console.log('Content-Type:', req.headers['content-type']);
+        console.log('Body:', req.body);
+
+
         const errors = validationResult(req);
+        console.log('errors:', errors.array());
         if (!errors.isEmpty()) {
             return res.status(400).json({
                 message: 'Validasi gagal!',
