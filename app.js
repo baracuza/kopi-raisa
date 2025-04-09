@@ -19,7 +19,7 @@ const corsOption = {
 app.use(passport.initialize());
 app.use(cookieParser());
 app.use(express.json());
-app.use(cors(corsOption))
+app.use(cors(corsOption));
 
 //endpoint try
 app.get('/', (req, res) => {
