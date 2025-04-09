@@ -71,7 +71,7 @@ router.post('/login', validateLogin, async (req, res) => {
     }
 });
 
-router.get('/User', authMiddleware, async (req, res) => {
+router.get('/user', authMiddleware, async (req, res) => {
     try {
         const user = req.user;
 
@@ -92,7 +92,7 @@ router.get('/User', authMiddleware, async (req, res) => {
     }
 });
 
-router.put('/User', authMiddleware, async (req, res) => {
+router.put('/user', authMiddleware, async (req, res) => {
     try {
         const userId = req.user.id; // Ambil ID user dari middleware
         const updatedData = req.body;
