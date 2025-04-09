@@ -11,8 +11,8 @@ const validateRegister = [
     body('password')
         .isLength({ min: 6 }).withMessage('Password minimal 6 karakter'),
 
-    body('image')
-        .optional(),
+    // body('image')
+    //     .optional(),
         // .isURL().withMessage('Gambar harus berupa URL valid'),
 
     body('phone_number')
