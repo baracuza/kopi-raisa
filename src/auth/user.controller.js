@@ -18,7 +18,10 @@ router.post('/daftar', validateRegister, async (req, res) => {
         if (!errors.isEmpty()) {
             return res.status(400).json({
                 message: 'Validasi gagal!',
-                errors: errors.array().map(error => error.msg),
+                errors: errors.array().reduce((acc, curr) => {
+                    acc[curr.param] = curr.msg;
+                    return acc;
+                }, {}),
             });
         }
 
@@ -205,7 +208,7 @@ router.post('/save-token', (req, res) => {
 
     res.cookie("token", token, {
         httpOnly: true,
-        secure: process.env.NODE_ENV === 'production', 
+        secure: process.env.NODE_ENV === 'production',
         sameSite: "None",
         maxAge: 1 * 24 * 60 * 60 * 1000
     });
@@ -216,7 +219,7 @@ router.post('/save-token', (req, res) => {
 
 
 router.get('/logout', (req, res) => {
-    
+
     res.clearCookie('token');
     res.status(200).json({ message: 'Logout berhasil!' });
 });
