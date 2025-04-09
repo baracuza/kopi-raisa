@@ -129,7 +129,17 @@ router.put('/reset-password', async (req, res) => {
     }
 });
 
-router.get('/google', passport.authenticate('google', { scope: ['profile', 'email'] }));
+// router.get('/google', passport.authenticate('google', { scope: ['profile', 'email'] }));
+
+router.get('/google', (req, res, next) => {
+    const redirectTo = req.query.redirect || '/login'; // default ke login
+    const state = Buffer.from(JSON.stringify({ redirectTo })).toString('base64'); // encode ke base64
+    passport.authenticate('google', {
+        scope: ['profile', 'email'],
+        state
+    })(req, res, next);
+});
+
 
 //* Callback URL yang akan dipanggil setelah pengguna memberikan izin tanpa lewat cookie(untuk develop)*/
 // router.get('/google/callback', passport.authenticate('google', { failureRedirect: '/login' }), (req, res) => {
@@ -157,16 +167,33 @@ router.get('/google', passport.authenticate('google', { scope: ['profile', 'emai
 //         res.status(200).json({ message: 'Login berhasil!', user: req.user.user, token: req.user.token });
 //     });
 
-router.get('/google/callback', passport.authenticate('google', { session: false, failureRedirect: 'https://sekolahkopiraisa.vercel.app/login' }),
-    (req, res) => {
-        if (!req.user) {
-            return res.status(401).json({ message: 'Autentikasi gagal!' });
+router.get('/google/callback', (req, res, next) => {
+    passport.authenticate('google', { session: false }, (err, user, info) => {
+        const state = req.query.state;
+        let redirectTo = '/login'; // fallback default
+
+        // Decode state (jika ada)
+        if (state) {
+            try {
+                const parsed = JSON.parse(Buffer.from(state, 'base64').toString('utf8'));
+                if (parsed.redirectTo) {
+                    redirectTo = parsed.redirectTo;
+                }
+            } catch (e) {
+                console.error('Failed to parse redirect state:', e);
+            }
         }
 
-        // Kirim token ke frontend via query param
-        res.redirect(`https://sekolahkopiraisa.vercel.app/oauth-success?token=${req.user.token}`);
-    }
-);
+        // Jika gagal login atau user tekan "Cancel"
+        if (err || !user) {
+            return res.redirect(`https://sekolahkopiraisa.vercel.app${redirectTo}`);
+        }
+
+        // Sukses login
+        return res.redirect(`https://sekolahkopiraisa.vercel.app/oauth-success?token=${user.token}`);
+    })(req, res, next);
+});
+
 
 router.post('/save-token', (req, res) => {
     const authHeader = req.headers.authorization;
