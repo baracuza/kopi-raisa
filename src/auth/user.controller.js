@@ -24,9 +24,12 @@ router.post('/daftar', validateRegister, async (req, res) => {
             return res.status(400).json({
                 message: 'Validasi gagal!',
                 errors: errors.array().reduce((acc, curr) => {
-                    acc[curr.path] = curr.msg;
+                    if (!acc[curr.path]) {
+                        acc[curr.path] = curr.msg;
+                    }
                     return acc;
-                }, {}),
+                }, {})
+
             });
         }
 
@@ -55,9 +58,12 @@ router.post('/login', validateLogin, async (req, res) => {
             return res.status(400).json({
                 message: 'Validasi gagal!',
                 errors: errors.array().reduce((acc, curr) => {
-                    acc[curr.path] = curr.msg;
+                    if (!acc[curr.path]) {
+                        acc[curr.path] = curr.msg;
+                    }
                     return acc;
-                }, {}),
+                }, {})
+
             });
         }
 
