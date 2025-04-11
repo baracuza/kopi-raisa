@@ -77,12 +77,12 @@ router.post('/login', validateLogin, async (req, res) => {
             maxAge: 1 * 24 * 60 * 60 * 1000
         });
 
-        res.redirect(`https://sekolahkopiraisa.vercel.app`);
-        // return res.status(200).json({ message: 'Login berhasil!', data: user });
+        // res.redirect(`https://sekolahkopiraisa.vercel.app`);
+        return res.status(200).json({ message: 'Login berhasil!', data: user });
     } catch (error) {
         return res.status(400).json({
-            message: 'Email atau password salah!',
-            error: error.message
+            message: error.message
+            
         });
     }
 });
