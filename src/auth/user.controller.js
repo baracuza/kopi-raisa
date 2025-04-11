@@ -44,8 +44,7 @@ router.post('/daftar', validateRegister, async (req, res) => {
         });
     } catch (error) {
         return res.status(500).json({
-            message: 'Gagal mendaftarkan user!',
-            error: error.message,
+            message: error.message
         });
     }
 });
@@ -81,9 +80,8 @@ router.post('/login', validateLogin, async (req, res) => {
         res.redirect(`https://sekolahkopiraisa.vercel.app`);
         // return res.status(200).json({ message: 'Login berhasil!', data: user });
     } catch (error) {
-        return res.status(500).json({
-            message: 'Gagal login!',
-            error: error.message,
+        return res.status(400).json({
+            message: error.message
         });
     }
 });
@@ -111,7 +109,7 @@ router.get('/user', authMiddleware, async (req, res) => {
 
 router.put('/user', authMiddleware, async (req, res) => {
     try {
-        const userId = req.user.id; // Ambil ID user dari middleware
+        const userId = req.user.id; 
         const updatedData = req.body;
 
         const updatedUser = await updateUser({ updatedData, userId });
@@ -147,7 +145,6 @@ router.put('/reset-password', async (req, res) => {
 });
 
 // router.get('/google', passport.authenticate('google', { scope: ['profile', 'email'] }));
-
 router.get('/google', (req, res, next) => {
     const redirectTo = req.query.redirect || '/login'; // default ke login
     const state = Buffer.from(JSON.stringify({ redirectTo })).toString('base64'); // encode ke base64
@@ -211,7 +208,6 @@ router.get('/google/callback', (req, res, next) => {
     })(req, res, next);
 });
 
-
 router.post('/save-token', (req, res) => {
     const authHeader = req.headers.authorization;
     const token = authHeader && authHeader.split(' ')[1];
@@ -230,7 +226,20 @@ router.post('/save-token', (req, res) => {
     return res.status(200).json({ message: 'Token berhasil disimpan di cookie!' });
 });
 
+// Facebook Login
+router.get('/facebook', passport.authenticate('facebook', { scope: ['email', 'public_profile'] }));
 
+router.get(
+    '/facebook/callback',
+    passport.authenticate('facebook', { session: false, failureRedirect: '/login' }),
+    (req, res) => {
+        res.cookie('token', req.user.token, {
+            httpOnly: true,
+            secure: process.env.NODE_ENV === 'production',
+        });
+        res.redirect(`${process.env.CLIENT_URL}/dashboard`);
+    }
+);
 
 router.post('/logout', (req, res) => {
 

@@ -22,8 +22,11 @@ model User {
   password        String?
   phone_number    String?  @unique
   google_id       String? @unique
-  admin           Boolean @default(false)
   verified        Boolean @default(false)
+  facebook_id    String?  @unique
+  accessToken    String?
+  refreshToken   String?
+  admin           Boolean @default(false)
   createdAt       DateTime @default(now())
   updated_at      DateTime @updatedAt
   notifications Notification[]
