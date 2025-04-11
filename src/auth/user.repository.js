@@ -16,15 +16,15 @@ const insertUser = async (newUserData) => {
     return userData;
 };
 
-const findUserByIdentifier = async (identifier) => {
+const findUserByIdentifier = async (emailOrPhone) => {
     const user = await prisma.User.findFirst({
         where: {
             OR: [
                 {
-                    email: identifier,
+                    email: emailOrPhone,
                 },
                 {
-                    phone_number: identifier,
+                    phone_number: emailOrPhone,
                 }
             ]
         }

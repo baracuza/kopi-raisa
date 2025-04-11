@@ -16,8 +16,8 @@ const createUser = async (newUserData) => {
 };
 
 
-const loginUser = async ({ identifier, password }) => {
-    const user = await findUserByIdentifier(identifier);
+const loginUser = async ({ emailOrPhone, password }) => {
+    const user = await findUserByIdentifier(emailOrPhone);
 
     if (!user) {
         throw new Error('User tidak ditemukan!');

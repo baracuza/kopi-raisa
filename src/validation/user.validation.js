@@ -2,29 +2,58 @@ const { body } = require('express-validator');
 
 const validateRegister = [
     body('name')
-        // .isString().withMessage('Nama harus berupa teks')
-        .isLength({ min: 3, max: 50 }).withMessage('*Nama harus antara 3-50 karakter'),
+        .trim()
+        .notEmpty().withMessage('*Nama wajib diisi')
+        .isLength({ min: 3, max: 50 }).withMessage('*Nama harus lebih dari 3 karakter'),
 
     body('email')
-        .isEmail().withMessage('*Format email tidak valid'),
+        .trim()
+        .notEmpty().withMessage('*Email wajib diisi')
+        .custom((value) => {
+            if (!validator.isEmail(value)) {
+                throw new Error('*Format email tidak valid');
+            }
+            return true;
+        }),
 
     body('password')
+        .trim()
+        .notEmpty().withMessage('*Password wajib diisi')
         .isLength({ min: 6 }).withMessage('*Password minimal 6 karakter'),
 
-    // body('image')
-    //     .optional(),
-        // .isURL().withMessage('Gambar harus berupa URL valid'),
-
     body('phone_number')
-        .isNumeric().withMessage('*Nomor telepon harus berupa angka')
-        .isLength({ min: 10, max: 15 }).withMessage('*Nomor telepon harus lebih 10 digit'),
+        .trim()
+        .notEmpty().withMessage('*Nomor telepon wajib diisi')
+        .custom((value) => {
+            if (!validator.isMobilePhone(value, 'id-ID')) {
+                throw new Error('*Format nomor telepon tidak valid');
+            }
+            if (!validator.isNumeric(value)) {
+                throw new Error('*Nomor telepon harus berupa angka');
+            }
+            if (value.length < 10 || value.length > 15) {
+                throw new Error('*Nomor telepon kurang dari 11 digit');
+            }
+            return true;
+        }),
 ];
 
 const validateLogin = [
-    body('identifier')
-        .notEmpty().withMessage('*Masukkan email atau nomor telepon '),
+    body('emailOrPhone')
+        .trim()
+        .notEmpty().withMessage('*Masukkan email atau nomor telepon ')
+        .custom((value) => {
+            const isValidEmail = validator.isEmail(value);
+            const isValidPhone = validator.isMobilePhone(value, 'id-ID');
+            if (!isValidEmail && !isValidPhone) {
+                throw new Error('*Masukkan email atau nomor telepon yang valid');
+            }
+            return true;
+        }),
 
     body('password')
+        .trim()
+        .notEmpty().withMessage('*Password wajib diisi')
         .isLength({ min: 6 }).withMessage('*Password minimal 6 karakter')
 ];
 
