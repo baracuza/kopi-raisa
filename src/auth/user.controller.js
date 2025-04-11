@@ -81,7 +81,8 @@ router.post('/login', validateLogin, async (req, res) => {
         // return res.status(200).json({ message: 'Login berhasil!', data: user });
     } catch (error) {
         return res.status(400).json({
-            message: error.message
+            message: 'Email atau password salah!',
+            error: error.message
         });
     }
 });
