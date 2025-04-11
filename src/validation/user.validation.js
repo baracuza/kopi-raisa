@@ -1,4 +1,5 @@
 const { body } = require('express-validator');
+const validator = require('validator');
 
 const validateRegister = [
     body('name')
