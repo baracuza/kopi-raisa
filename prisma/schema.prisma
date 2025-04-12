@@ -39,13 +39,13 @@ model User {
 model FacebookAccount {
   id             String   @id @default(uuid())
   facebook_id    String   @unique
-  access_token   String
-  token_expires  DateTime
-  page_id        String
-  page_name      String
   name           String   // nama dari Facebook
   image          String?  // foto profil Facebook
+  access_token   String
+  page_id        String
+  page_name      String
   email          String   // email dari Facebook
+  token_expires  DateTime
   user           User     @relation(fields: [userId], references: [id])
   userId         Int      @unique
    createdAt      DateTime @default(now())

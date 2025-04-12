@@ -1,4 +1,5 @@
 const express = require('express');
+const axios = require('axios');
 const prisma = require('../db');
 const bcrypt = require('bcryptjs');
 const { validationResult } = require('express-validator');
@@ -76,8 +77,10 @@ router.post('/login', validateLogin, async (req, res) => {
         // Simpan token dalam cookie HTTP-Only
         res.cookie("token", user.token, {
             httpOnly: true,
-            secure: true,
-            sameSite: "None",
+            // secure: true,
+            secure: false,
+            // sameSite: "None",
+            sameSite: "lax",
             maxAge: 1 * 24 * 60 * 60 * 1000
         });
 
@@ -209,46 +212,58 @@ router.post('/save-token', (req, res) => {
 // 1.b Facebook Login
 router.post('/facebook/link',
     authMiddleware,
-    passport.authenticate('facebook-token', { session: false }),
-    async (req, res) => {
+    async (req, res, next) => {
         try {
-            const facebookProfile = req.user; // dari FacebookTokenStrategy
-            const currentUserToken = req.cookies.token || req.headers.authorization?.split(' ')[1];
-            const decoded = jwt.verify(currentUserToken, process.env.JWT_SECRET);
+            const { accessToken } = req.body; // Ambil accessToken dari body
 
-            const currentUser = await prisma.user.findUnique({ where: { id: decoded.id } });
-
-            if (!currentUser) {
-                return res.status(401).json({ message: "User tidak ditemukan" });
+            if (!accessToken) {
+                return res.status(400).json({ message: 'Access token diperlukan.' });
             }
 
-            const upserted = await prisma.facebookAccount.upsert({
-                where: { userId: currentUser.id },
-                update: {
-                    facebook_id: facebookProfile.id,
-                    name: facebookProfile.displayName,
-                    email: facebookProfile.emails?.[0]?.value || `${facebookProfile.id}@facebook.com`,
-                    image: facebookProfile.photos?.[0]?.value || null,
-
-                    access_token: facebookProfile.accessToken,
-                    token_expires: new Date(Date.now() + 60 * 60 * 24 * 60 * 1000), // perkiraan 60 hari
-                    page_id: '',  // default kosong
-                    page_name: '' // default kosong
-                },
-                create: {
-                    facebook_id: facebookProfile.id,
-                    name: facebookProfile.displayName,
-                    email: facebookProfile.emails?.[0]?.value || `${facebookProfile.id}@facebook.com`,
-                    image: facebookProfile.photos?.[0]?.value || null,
-                    access_token: facebookProfile.accessToken,
-                    token_expires: new Date(Date.now() + 60 * 60 * 24 * 60 * 1000),
-                    page_id: '',
-                    page_name: '',
-                    user: { connect: { id: currentUser.id } }
+            // Gunakan passport untuk autentikasi Facebook dengan token
+            passport.authenticate('facebook-token', { session: false }, async (err, profile, info) => {
+                if (err) return next(err);
+                if (!profile) {
+                    return res.status(401).json({ message: 'Gagal autentikasi Facebook.' });
                 }
-            });
 
-            return res.json({ message: 'Akun Facebook berhasil ditautkan', data: upserted });
+                // Setelah autentikasi berhasil, proses lebih lanjut
+                const facebookProfile = profile;  // Mendapatkan profile dari Facebook
+                const currentUserToken = req.cookies.token || req.headers.authorization?.split(' ')[1];
+                const decoded = jwt.verify(currentUserToken, process.env.JWT_SECRET);
+                const currentUser = await prisma.user.findUnique({ where: { id: decoded.id } });
+
+                if (!currentUser) {
+                    return res.status(401).json({ message: "User tidak ditemukan" });
+                }
+
+                const upserted = await prisma.facebookAccount.upsert({
+                    where: { facebook_id: facebookProfile.id },
+                    update: {
+                        name: facebookProfile.displayName,
+                        email: facebookProfile.emails?.[0]?.value || `${facebookProfile.id}@facebook.com`,
+                        image: facebookProfile.photos?.[0]?.value || null,
+                        access_token: facebookProfile.accessToken,
+                        token_expires: new Date(Date.now() + 60 * 60 * 24 * 60 * 1000),  // perkiraan 60 hari
+                        page_id: '',  // default kosong
+                        page_name: '',  // default kosong
+                    },
+                    create: {
+                        facebook_id: facebookProfile.id,
+                        name: facebookProfile.displayName,
+                        email: facebookProfile.emails?.[0]?.value || `${facebookProfile.id}@facebook.com`,
+                        image: facebookProfile.photos?.[0]?.value || null,
+                        access_token: facebookProfile.accessToken,
+                        token_expires: new Date(Date.now() + 60 * 60 * 24 * 60 * 1000),
+                        page_id: '',
+                        page_name: '',
+                        user: { connect: { id: currentUser.id } },
+                    }
+                });
+
+                return res.json({ message: 'Akun Facebook berhasil ditautkan', data: upserted });
+            })(req, res, next);
+
         } catch (error) {
             console.error("❌ Gagal menautkan akun Facebook:", error);
             return res.status(500).json({ message: 'Terjadi kesalahan internal.' });
@@ -256,58 +271,8 @@ router.post('/facebook/link',
     }
 );
 
-
-
-// Callback setelah taut akun
-router.get('/facebook/link/callback',
-    authMiddleware,
-    passport.authenticate('facebook-link', { session: false }),
-    async (req, res) => {
-        try {
-            const facebookProfile = req.user;
-            const currentUserToken = req.cookies.token || req.headers.authorization?.split(' ')[1];
-            const decoded = jwt.verify(currentUserToken, process.env.JWT_SECRET);
-            const currentUser = await prisma.user.findUnique({ where: { id: decoded.id } });
-
-            if (!currentUser) {
-                return res.status(401).json({ message: "User tidak ditemukan" });
-            }
-
-            const email = facebookProfile.emails?.[0]?.value || `${facebookProfile.id}@facebook.com`;
-
-            const upserted = await prisma.facebookAccount.upsert({
-                where: { userId: currentUser.id },
-                update: {
-                    facebook_id: facebookProfile.id,
-                    name: facebookProfile.displayName,
-                    email,
-                    image: facebookProfile.photos?.[0]?.value || null,
-                    access_token: facebookProfile.accessToken,
-                    token_expires: new Date(Date.now() + 60 * 60 * 1000), // 1 jam default
-                },
-                create: {
-                    facebook_id: facebookProfile.id,
-                    name: facebookProfile.displayName,
-                    email,
-                    image: facebookProfile.photos?.[0]?.value || null,
-                    access_token: facebookProfile.accessToken,
-                    token_expires: new Date(Date.now() + 60 * 60 * 1000),
-                    user: { connect: { id: currentUser.id } }
-                }
-            });
-
-            res.json({ message: '✅ Akun Facebook berhasil ditautkan ke user.' });
-
-        } catch (error) {
-            console.error('❌ Error linking Facebook account:', error);
-            res.status(500).json({ message: '❌ Terjadi kesalahan saat menautkan akun Facebook.' });
-        }
-    }
-);
-
-
 // 3. Endpoint untuk mengambil daftar Page yang dimiliki user
-router.get('/facebook/pages', async (req, res) => {
+router.get('/facebook/pages', authMiddleware, async (req, res) => {
     const accessToken = req.query.accessToken;
 
     if (!accessToken) {
@@ -315,19 +280,48 @@ router.get('/facebook/pages', async (req, res) => {
     }
 
     try {
-        const response = await axios.get(`https://graph.facebook.com/v12.0/me/accounts?access_token=${accessToken}`);
-
-        return res.status(200).json({
-            message: 'Berhasil mengambil halaman!',
-            data: response.data.data // berisi daftar halaman user
+        // Ambil halaman milik user
+        const { data } = await axios.get('https://graph.facebook.com/v19.0/me/accounts', {
+            headers: { Authorization: `Bearer ${accessToken}` },
         });
+
+        const pages = data.data;
+        if (!pages || pages.length === 0) {
+            return res.status(404).json({ message: 'Tidak ada halaman Facebook yang ditemukan.' });
+        }
+
+        const page = pages[0]; // Ambil satu page (atau bisa frontend pilih)
+
+        // Dapatkan user yang sedang login
+        const userId = req.user.id;
+
+        // Update akun Facebook yang sudah tertaut
+        const updated = await prisma.facebookAccount.update({
+            where: { userId },
+            data: {
+                page_id: page.id,
+                page_name: page.name,
+                access_token: page.access_token,
+                token_expires: new Date(Date.now() + 60 * 60 * 24 * 60 * 1000), // anggap token page valid 60 hari
+            }
+        });
+
+        return res.json({
+            message: '✅ Halaman Facebook berhasil disimpan.',
+            data: updated,
+        });
+
     } catch (error) {
+        console.error('❌ Gagal ambil/simpan halaman FB:', error.response?.data || error.message);
         return res.status(500).json({
-            message: 'Gagal mengambil halaman!',
+            message: '❌ Terjadi kesalahan saat menyimpan halaman Facebook.',
             error: error.response?.data || error.message,
         });
     }
 });
+
+
+
 
 router.post('/logout', (req, res) => {
 

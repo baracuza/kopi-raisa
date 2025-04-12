@@ -1,1 +1,146 @@
 define nodemailer nya
+
+scope: 'email,public_profile,pages_show_list,pages_read_engagement,pages_manage_posts'
+
+✅ Alur Lengkap Autentikasi Facebook:
+-Frontend: User klik tombol "Login dengan Facebook"/radio bar jika on maka menjalankan login facebook.
+-Facebook Login SDK di frontend ambil accessToken.
+-Frontend kirim accessToken ke backend.
+-Backend verifikasi dan ambil data user dari Facebook.
+-Simpan token + data user ke database.
+
+1. 🔧 Frontend (Contoh pakai JavaScript)
+Gunakan SDK dari Facebook:
+<script async defer crossorigin="anonymous"
+  src="https://connect.facebook.net/en_US/sdk.js"></script>
+
+<script>
+  window.fbAsyncInit = function () {
+    FB.init({
+      appId: 'YOUR_FB_APP_ID',
+      cookie: true,
+      xfbml: true,
+      version: 'v19.0'
+    });
+  };
+
+  function loginWithFacebook() {
+    FB.login(function (response) {
+      if (response.authResponse) {
+        const accessToken = response.authResponse.accessToken;
+        // Kirim token ke backend
+        fetch('/auth/facebook/link', {
+          method: 'POST',
+          credentials: 'include',
+          headers: {
+            'Content-Type': 'application/json'
+          },
+          body: JSON.stringify({ accessToken })
+        })
+        .then(res => res.json())
+        .then(data => console.log(data))
+        .catch(err => console.error(err));
+      } else {
+        console.log('User batal login FB.');
+      }
+    }, { scope: 'public_profile,email,pages_show_list,pages_read_engagement,pages_manage_posts' });
+  }
+</script>
+
+<button onclick="loginWithFacebook()">Login dengan Facebook</button>
+
+
+2. 🛠️ Backend Route untuk Terima Access Token
+router.post('/facebook/link', authMiddleware, async (req, res) => {
+    const { accessToken } = req.body;
+
+    if (!accessToken) {
+        return res.status(400).json({ message: 'Access token tidak ditemukan' });
+    }
+
+    try {
+        const fbProfileRes = await axios.get('https://graph.facebook.com/me', {
+            params: {
+                fields: 'id,name,email,picture',
+                access_token: accessToken
+            }
+        });
+
+        const fbData = fbProfileRes.data;
+        const currentUser = await prisma.user.findUnique({
+            where: { id: req.user.id }
+        });
+
+        if (!currentUser) {
+            return res.status(401).json({ message: "User tidak ditemukan" });
+        }
+
+        const upserted = await prisma.facebookAccount.upsert({
+            where: { userId: currentUser.id },
+            update: {
+                facebook_id: fbData.id,
+                name: fbData.name,
+                email: fbData.email || `${fbData.id}@facebook.com`,
+                image: fbData.picture?.data?.url || null,
+                access_token: accessToken,
+                token_expires: new Date(Date.now() + 60 * 60 * 24 * 60 * 1000), // perkiraan 60 hari
+                page_id: '',
+                page_name: ''
+            },
+            create: {
+                facebook_id: fbData.id,
+                name: fbData.name,
+                email: fbData.email || `${fbData.id}@facebook.com`,
+                image: fbData.picture?.data?.url || null,
+                access_token: accessToken,
+                token_expires: new Date(Date.now() + 60 * 60 * 24 * 60 * 1000),
+                page_id: '',
+                page_name: '',
+                user: { connect: { id: currentUser.id } }
+            }
+        });
+
+        res.json({ message: 'Berhasil ditautkan dengan Facebook', data: upserted });
+
+    } catch (error) {
+        console.error('Gagal login Facebook:', error.response?.data || error.message);
+        res.status(500).json({ message: 'Terjadi kesalahan saat login FB', error: error.response?.data || error.message });
+    }
+});
+
+🧠 Catatan Penting (BE)
+Pastikan Facebook App kamu sudah live dan punya permission:
+1.public_profile
+2.email
+3.pages_show_list
+4.pages_manage_posts
+Jangan lupa tambahkan domain asal frontend ke setting di dashboard Facebook developer.
+
+Kalau pakai Next.js dan hosting di Vercel, domain frontend = https://your-app.vercel.app
+
+-----------------------------------------------------------------------------------------------
+================================================================================================
+
+Cara Mengirim accessToken di body:
+Frontend mengirimkan token melalui fetch atau metode HTTP lainnya, seperti berikut:
+fetch('/auth/facebook/link', {
+    method: 'POST',  // Gunakan POST karena data yang dikirimkan lebih banyak
+    headers: {
+        'Content-Type': 'application/json',  // Pastikan header JSON
+    },
+    body: JSON.stringify({ accessToken })  // Kirim token dalam body sebagai JSON
+})
+.then(res => res.json())
+.then(data => console.log(data))
+.catch(err => console.error(err));
+
+✅ Alur Menautkan Akun Facebook + Mengambil Page ID (satu aksi saat user login akun facebook atau menautkan akun facebook)
+{[Inspiration: instagram postingan]}
+
+1.Frontend login ke Facebook (menggunakan Facebook SDK), dan dapatkan access token pengguna.
+2.Kirim POST /facebook/link ke backend dengan accessToken → backend validasi dan tautkan user ke akun Facebook.
+3.Setelah link berhasil, frontend langsung panggil GET /facebook/pages?accessToken=... untuk:
+  -Ambil daftar page milik user.
+  -Ambil profile user.
+  -Simpan informasi page + token page ke database (bukan token user).
+
