@@ -16,26 +16,73 @@ const createUser = async (newUserData) => {
 };
 
 
+// const loginUser = async ({ emailOrPhone, password }) => {
+//     const user = await findUserByIdentifier(emailOrPhone);
+
+//     if (!user) {
+//         throw new Error('User tidak ditemukan!');
+//     }
+
+//     //cek password
+//     const validPassword = await bcrypt.compare(password, user.password);
+//     if (!validPassword) {
+//         throw new Error('Password salah!');
+//     }
+
+//     //buat token
+//     const token = await jsonwebtoken.sign({ id: user.id, admin: user.admin }, process.env.JWT_SECRET,
+//         { expiresIn: JWT_EXPIRES }
+//     );
+
+//     return {
+//         message: 'Login berhasil!', user: {
+//             id: user.id,
+//             name: user.name,
+//             email: user.email,
+//             phone_number: user.phone_number,
+//             image: user.image,
+//             admin: user.admin,
+//             verified: user.verified
+//         }, token
+//     };
+
+
+// };
+
 const loginUser = async ({ emailOrPhone, password }) => {
+    console.log("Mencari user:", emailOrPhone);
+
     const user = await findUserByIdentifier(emailOrPhone);
+    console.log("Hasil pencarian user:", user);
 
     if (!user) {
+        console.log("❌ User tidak ditemukan");
         throw new Error('User tidak ditemukan!');
     }
 
-    //cek password
     const validPassword = await bcrypt.compare(password, user.password);
+    console.log("Password valid:", validPassword);
+
     if (!validPassword) {
+        console.log("❌ Password salah");
         throw new Error('Password salah!');
     }
 
-    //buat token
-    const token = await jsonwebtoken.sign({ id: user.id, admin: user.admin }, process.env.JWT_SECRET,
+    if (!process.env.JWT_SECRET) {
+        console.error("❌ JWT_SECRET belum diset di environment!");
+        throw new Error('Server error: JWT secret tidak ditemukan!');
+    }
+
+    const token = await jsonwebtoken.sign(
+        { id: user.id, admin: user.admin },
+        process.env.JWT_SECRET,
         { expiresIn: JWT_EXPIRES }
     );
+    console.log("✅ Token berhasil dibuat:", token);
 
     return {
-        message: 'Login berhasil!', user: {
+        message: 'Login berhasil!',
+        user: {
             id: user.id,
             name: user.name,
             email: user.email,
@@ -43,11 +90,11 @@ const loginUser = async ({ emailOrPhone, password }) => {
             image: user.image,
             admin: user.admin,
             verified: user.verified
-        }, token
+        },
+        token
     };
-
-
 };
+
 
 const updateUser = async ({ updatedData, userId }) => {
     const update = await updateByID({ updatedData, userId });

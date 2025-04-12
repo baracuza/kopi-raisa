@@ -4,6 +4,8 @@ const cookieParser = require('cookie-parser');
 const passport = require('passport');
 const cors = require('cors');
 require('./src/auth/passport-config');
+require('./src/auth/facebook-config');
+const passportLink = require('./src/auth/facebook-config');
 
 
 dotenv.config();
@@ -30,6 +32,7 @@ app.get('/', (req, res) => {
 const newsController = require('./src/content/news.controller');
 const authRoutes = require('./src/auth/user.controller');
 const partnerRoutes = require('./src/partners/partner.controller');
+
 app.use("/api/v1/news", newsController);
 app.use("/api/v1/auth", authRoutes);
 app.use("/api/v1/partner", partnerRoutes);

@@ -3,6 +3,8 @@ const prisma = require('../db');
 const bcrypt = require('bcryptjs');
 const { validationResult } = require('express-validator');
 const passport = require('passport');
+const jwt = require('jsonwebtoken');
+
 
 const { createUser, loginUser, updateUser, sendResetPasswordEmail, resetPassword } = require('./user.service');
 const { validateRegister, validateLogin } = require('../validation/user.validation');
@@ -51,8 +53,10 @@ router.post('/daftar', validateRegister, async (req, res) => {
 
 router.post('/login', validateLogin, async (req, res) => {
     try {
+        console.log("BODY DARI CLIENT:", req.body);
         // Cek validasi input
         const errors = validationResult(req);
+
         if (!errors.isEmpty()) {
             return res.status(400).json({
                 message: 'Validasi gagal!',
@@ -78,11 +82,12 @@ router.post('/login', validateLogin, async (req, res) => {
         });
 
         // res.redirect(`https://sekolahkopiraisa.vercel.app`);
+        console.log("HASIL VALIDASI:", errors.array());
         return res.status(200).json({ message: 'Login berhasil!', data: user });
     } catch (error) {
         return res.status(400).json({
             message: error.message
-            
+
         });
     }
 });
@@ -110,7 +115,7 @@ router.get('/user', authMiddleware, async (req, res) => {
 
 router.put('/user', authMiddleware, async (req, res) => {
     try {
-        const userId = req.user.id; 
+        const userId = req.user.id;
         const updatedData = req.body;
 
         const updatedUser = await updateUser({ updatedData, userId });
@@ -145,7 +150,7 @@ router.put('/reset-password', async (req, res) => {
     }
 });
 
-// router.get('/google', passport.authenticate('google', { scope: ['profile', 'email'] }));
+
 router.get('/google', (req, res, next) => {
     const redirectTo = req.query.redirect || '/login'; // default ke login
     const state = Buffer.from(JSON.stringify({ redirectTo })).toString('base64'); // encode ke base64
@@ -154,33 +159,6 @@ router.get('/google', (req, res, next) => {
         state
     })(req, res, next);
 });
-
-
-//* Callback URL yang akan dipanggil setelah pengguna memberikan izin tanpa lewat cookie(untuk develop)*/
-// router.get('/google/callback', passport.authenticate('google', { failureRedirect: '/login' }), (req, res) => {
-
-//     const token = jwt.sign({ id: req.user.id, admin: req.user.admin }, process.env.JWT_SECRET, { expiresIn: process.env.JWT_EXPIRES });
-//     res.redirect(`http://localhost:2000?token=${token}`); // Redirect to your frontend with the token
-// });
-
-// router.get('/google/callback', passport.authenticate('google', { session: false }),
-//     (req, res) => {
-//         if (!req.user) {
-//             return res.status(401).json({ message: 'Autentikasi gagal!' });
-//         }
-
-//         // Simpan token dalam cookie HTTP-Only
-//         res.cookie("token", req.user.token, {
-//             httpOnly: true,
-//             secure: true,
-//             sameSite: "None",
-//             maxAge: 1 * 24 * 60 * 60 * 1000 // 1 hari
-//         });
-
-//         // res.redirect(`https://sekolahkopiraisa.vercel.app`);
-//         // Kirim data user dan token ke client
-//         res.status(200).json({ message: 'Login berhasil!', user: req.user.user, token: req.user.token });
-//     });
 
 router.get('/google/callback', (req, res, next) => {
     passport.authenticate('google', { session: false }, (err, user, info) => {
@@ -227,20 +205,129 @@ router.post('/save-token', (req, res) => {
     return res.status(200).json({ message: 'Token berhasil disimpan di cookie!' });
 });
 
-// Facebook Login
-router.get('/facebook', passport.authenticate('facebook', { scope: ['email', 'public_profile'] }));
 
-router.get(
-    '/facebook/callback',
-    passport.authenticate('facebook', { session: false, failureRedirect: '/login' }),
-    (req, res) => {
-        res.cookie('token', req.user.token, {
-            httpOnly: true,
-            secure: process.env.NODE_ENV === 'production',
-        });
-        res.redirect(`${process.env.CLIENT_URL}/dashboard`);
+// 1.b Facebook Login
+router.post('/facebook/link',
+    authMiddleware,
+    passport.authenticate('facebook-token', { session: false }),
+    async (req, res) => {
+        try {
+            const facebookProfile = req.user; // dari FacebookTokenStrategy
+            const currentUserToken = req.cookies.token || req.headers.authorization?.split(' ')[1];
+            const decoded = jwt.verify(currentUserToken, process.env.JWT_SECRET);
+
+            const currentUser = await prisma.user.findUnique({ where: { id: decoded.id } });
+
+            if (!currentUser) {
+                return res.status(401).json({ message: "User tidak ditemukan" });
+            }
+
+            const upserted = await prisma.facebookAccount.upsert({
+                where: { userId: currentUser.id },
+                update: {
+                    facebook_id: facebookProfile.id,
+                    name: facebookProfile.displayName,
+                    email: facebookProfile.emails?.[0]?.value || `${facebookProfile.id}@facebook.com`,
+                    image: facebookProfile.photos?.[0]?.value || null,
+
+                    access_token: facebookProfile.accessToken,
+                    token_expires: new Date(Date.now() + 60 * 60 * 24 * 60 * 1000), // perkiraan 60 hari
+                    page_id: '',  // default kosong
+                    page_name: '' // default kosong
+                },
+                create: {
+                    facebook_id: facebookProfile.id,
+                    name: facebookProfile.displayName,
+                    email: facebookProfile.emails?.[0]?.value || `${facebookProfile.id}@facebook.com`,
+                    image: facebookProfile.photos?.[0]?.value || null,
+                    access_token: facebookProfile.accessToken,
+                    token_expires: new Date(Date.now() + 60 * 60 * 24 * 60 * 1000),
+                    page_id: '',
+                    page_name: '',
+                    user: { connect: { id: currentUser.id } }
+                }
+            });
+
+            return res.json({ message: 'Akun Facebook berhasil ditautkan', data: upserted });
+        } catch (error) {
+            console.error("❌ Gagal menautkan akun Facebook:", error);
+            return res.status(500).json({ message: 'Terjadi kesalahan internal.' });
+        }
     }
 );
+
+
+
+// Callback setelah taut akun
+router.get('/facebook/link/callback',
+    authMiddleware,
+    passport.authenticate('facebook-link', { session: false }),
+    async (req, res) => {
+        try {
+            const facebookProfile = req.user;
+            const currentUserToken = req.cookies.token || req.headers.authorization?.split(' ')[1];
+            const decoded = jwt.verify(currentUserToken, process.env.JWT_SECRET);
+            const currentUser = await prisma.user.findUnique({ where: { id: decoded.id } });
+
+            if (!currentUser) {
+                return res.status(401).json({ message: "User tidak ditemukan" });
+            }
+
+            const email = facebookProfile.emails?.[0]?.value || `${facebookProfile.id}@facebook.com`;
+
+            const upserted = await prisma.facebookAccount.upsert({
+                where: { userId: currentUser.id },
+                update: {
+                    facebook_id: facebookProfile.id,
+                    name: facebookProfile.displayName,
+                    email,
+                    image: facebookProfile.photos?.[0]?.value || null,
+                    access_token: facebookProfile.accessToken,
+                    token_expires: new Date(Date.now() + 60 * 60 * 1000), // 1 jam default
+                },
+                create: {
+                    facebook_id: facebookProfile.id,
+                    name: facebookProfile.displayName,
+                    email,
+                    image: facebookProfile.photos?.[0]?.value || null,
+                    access_token: facebookProfile.accessToken,
+                    token_expires: new Date(Date.now() + 60 * 60 * 1000),
+                    user: { connect: { id: currentUser.id } }
+                }
+            });
+
+            res.json({ message: '✅ Akun Facebook berhasil ditautkan ke user.' });
+
+        } catch (error) {
+            console.error('❌ Error linking Facebook account:', error);
+            res.status(500).json({ message: '❌ Terjadi kesalahan saat menautkan akun Facebook.' });
+        }
+    }
+);
+
+
+// 3. Endpoint untuk mengambil daftar Page yang dimiliki user
+router.get('/facebook/pages', async (req, res) => {
+    const accessToken = req.query.accessToken;
+
+    if (!accessToken) {
+        return res.status(400).json({ message: 'Access token Facebook dibutuhkan!' });
+    }
+
+    try {
+        const response = await axios.get(`https://graph.facebook.com/v12.0/me/accounts?access_token=${accessToken}`);
+
+        return res.status(200).json({
+            message: 'Berhasil mengambil halaman!',
+            data: response.data.data // berisi daftar halaman user
+        });
+    } catch (error) {
+        return res.status(500).json({
+            message: 'Gagal mengambil halaman!',
+            error: error.response?.data || error.message,
+        });
+    }
+});
 
 router.post('/logout', (req, res) => {
 
