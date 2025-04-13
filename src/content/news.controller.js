@@ -3,7 +3,7 @@ const prisma = require('../db');
 const upload = require('../middleware/multer');
 const { uploadToCloudinary } = require('../services/cloudinaryUpload.service');
 
-const { getNews, getNewsById, createNewsWithMedia, postToFacebookPage, updateNews, removeNews } = require('./news.service');
+const { getNews, getNewsById, createNewsWithMedia, postVideoToFacebook,postImagesToFacebook, updateNews, removeNews } = require('./news.service');
 const { authMiddleware } = require('../middleware/middleware');
 
 const router = express.Router();
@@ -81,12 +81,26 @@ router.post('/post', authMiddleware, upload.array('media', 5), async (req, res) 
                 return res.status(400).json({ message: 'Akun Facebook belum terhubung!' });
             }
         }
-        // Loop dan post semua media ke Facebook Page
-        for (const media of mediaInfos) {
-            await postToFacebookPage({
-                pageId: fb.page_id,
-                pageAccessToken: fb.access_token,
-                imageUrl: media.url,
+        // Pisahkan media berdasarkan tipe
+        const images = mediaInfos.filter(media => media.mimetype.startsWith('image/'));
+        const videos = mediaInfos.filter(media => media.mimetype.startsWith('video/'));
+
+        // Posting gambar sebagai carousel jika lebih dari satu, atau sebagai gambar tunggal
+        if (images.length > 0) {
+            await postImagesToFacebook({
+                pageId: fbAccount.page_id,
+                pageAccessToken: fbAccount.access_token,
+                images,
+                caption: `${title}\n\n${content}`
+            });
+        }
+
+        // Posting video secara terpisah
+        for (const video of videos) {
+            await postVideoToFacebook({
+                pageId: fbAccount.page_id,
+                pageAccessToken: fbAccount.access_token,
+                videoUrl: video.url,
                 caption: `${title}\n\n${content}`
             });
         }
