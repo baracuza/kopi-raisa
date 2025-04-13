@@ -217,7 +217,7 @@ model News {
   image_url  String?
   user       User     @relation(fields: [user_id], references: [id])
   user_id    Int
-  published_at DateTime?
+  published   Boolean  @default(false)
   created_at DateTime @default(now())
   updated_at DateTime @updatedAt
   newsMedia  NewsMedia[]

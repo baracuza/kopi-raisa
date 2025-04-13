@@ -1,64 +1,63 @@
 const prisma = require('../db');
 
-const findNews = async () => {
-    const news = await prisma.News.findMany();
-
-    return news;
-};
-
-const findNewsById = async (newsId) => {
-    const news = await prisma.News.findUnique({
-        where: {
-            id: parseInt(newsId)
-        },
-        // include:{
-        //     user:{
-        //         select: { id: true, name: true, email: true }
-        //     }
-        // }
+const getAllNews = async () => {
+    return await prisma.news.findMany({
+        include: { newsMedia: true, user: true },
+        orderBy: { created_at: 'desc' }// field di schema
     });
-
-    return news;
 };
 
-const insertNews = async (newNewsData,user_id) => {
-    const news = await prisma.News.create({
+const getNewsByIdData = async (id) => {
+    return await prisma.news.findUnique({
+        where: { id: parseInt(id) },
+        include: { newsMedia: true, user: true }
+    });
+};
+
+const insertNews = async ({ title, content, published, user_id }) => {
+    const news = await prisma.news.create({
         data: {
-            title       : newNewsData.title,
-            content     : newNewsData.content,
-            image_url   : newNewsData.image_url||null,
-            user_id     : user_id,
-            published_at: newNewsData.published||null,
+            title,
+            content,
+            published,
+            user: { connect: { id: user_id } },
         },
     });
-
     return news;
 };
 
-const editNews = async (id, editedNewsData) => {
-    const news = await prisma.News.update({
-        where: {
-            id: parseInt(id),
-        },
+const addNewsMedia = async (newsId, url, mimetype) => {
+    return await prisma.newsMedia.create({
         data: {
-            title       : editedNewsData.title,
-            content     : editedNewsData.content,
-            image_url   : editedNewsData.image_url||null,
-            published_at: editedNewsData.published||null,
+            news_id: newsId,
+            media_url: url,
+            media_type: mimetype,
         },
     });
+};
 
-    return news;
+//belum dipakai
+const addMultipleNewsMedia = async (newsId, mediaUrls) => {
+    const mediaData = mediaUrls.map((url,mimetype) => ({
+        news_id: newsId,
+        media_url: url,
+        media_type: mimetype
+    }));
+    return await prisma.newsMedia.createMany({
+        data: mediaData,
+    });
+}
+
+const updateNewsData = async (id, data) => {
+    return await prisma.news.update({
+        where: { id: parseInt(id) },
+        data
+    });
 };
 
 const deleteNews = async (id) => {
-    const news = await prisma.News.delete({
-        where: {
-            id: id,
-        },
-    });
-
-    return news;
+    await prisma.newsMedia.deleteMany({ where: { news_id: parseInt(id) } });
+    return await prisma.news.delete({ where: { id: parseInt(id) } });
 };
 
-module.exports = { findNews, findNewsById, insertNews, deleteNews, editNews };
+module.exports = { getNewsByIdData, insertNews, addNewsMedia, addMultipleNewsMedia, deleteNews, updateNewsData, getAllNews };
