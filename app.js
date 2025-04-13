@@ -38,5 +38,5 @@ app.use("/api/v1/auth", authRoutes);
 app.use("/api/v1/partner", partnerRoutes);
 
 app.listen(port, () => {
-    console.log(`Server is running on http://localhost:${port}`);
+    console.log(`Server is running on... http://localhost:${port}`);
 });
