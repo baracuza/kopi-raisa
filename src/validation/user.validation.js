@@ -58,6 +58,17 @@ const validateLogin = [
         .isLength({ min: 6 }).withMessage('*Password minimal 6 karakter')
 ];
 
+const newsValidator = [
+    body('title')
+        .trim()
+        .notEmpty().withMessage('*Judul wajib diisi'),
+        // .isLength({ min: 5, max: 100 }).withMessage('*Judul berita harus lebih dari 5 karakter'),
+
+    body('content')
+        .trim()
+        .notEmpty().withMessage('*deskripsi/caption wajib diisi'),
+        // .isLength({ min: 20 }).withMessage('*Konten berita minimal 20 karakter'),
+];
 
 
-module.exports = { validateRegister, validateLogin };
+module.exports = { validateRegister, validateLogin, newsValidator };
