@@ -25,5 +25,6 @@ const uploadImage = async (filePath) => {
 };
 
 module.exports = {
-    uploadImage,
+    cloudinary,
+    uploadImage
 };

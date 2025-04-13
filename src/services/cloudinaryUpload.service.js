@@ -1,4 +1,4 @@
-const cloudinary = require('../utils/cloudinary');
+const {cloudinary} = require('../utils/cloudinary');
 
 const uploadToCloudinary = (filebuffer, filename) => {
     return new Promise((resolve, reject) => {

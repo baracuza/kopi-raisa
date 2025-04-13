@@ -1,6 +1,7 @@
 const prisma = require('../db');
 const axios = require('axios');
 
+
 const {
     updateNewsData,
     getAllNews,

@@ -80,29 +80,29 @@ router.post('/post', authMiddleware, upload.array('media', 5), async (req, res) 
             if (!fbAccount) {
                 return res.status(400).json({ message: 'Akun Facebook belum terhubung!' });
             }
-        }
-        // Pisahkan media berdasarkan tipe
-        const images = mediaInfos.filter(media => media.mimetype.startsWith('image/'));
-        const videos = mediaInfos.filter(media => media.mimetype.startsWith('video/'));
-
-        // Posting gambar sebagai carousel jika lebih dari satu, atau sebagai gambar tunggal
-        if (images.length > 0) {
-            await postImagesToFacebook({
-                pageId: fbAccount.page_id,
-                pageAccessToken: fbAccount.access_token,
-                images,
-                caption: `${title}\n\n${content}`
-            });
-        }
-
-        // Posting video secara terpisah
-        for (const video of videos) {
-            await postVideoToFacebook({
-                pageId: fbAccount.page_id,
-                pageAccessToken: fbAccount.access_token,
-                videoUrl: video.url,
-                caption: `${title}\n\n${content}`
-            });
+            // Pisahkan media berdasarkan tipe
+            const images = mediaInfos.filter(media => media.mimetype.startsWith('image/'));
+            const videos = mediaInfos.filter(media => media.mimetype.startsWith('video/'));
+            
+            // Posting gambar sebagai carousel jika lebih dari satu, atau sebagai gambar tunggal
+            if (images.length > 0) {
+                await postImagesToFacebook({
+                    pageId: fbAccount.page_id,
+                    pageAccessToken: fbAccount.access_token,
+                    images,
+                    caption: `${title}\n\n${content}`
+                });
+            }
+            
+            // Posting video secara terpisah
+            for (const video of videos) {
+                await postVideoToFacebook({
+                    pageId: fbAccount.page_id,
+                    pageAccessToken: fbAccount.access_token,
+                    videoUrl: video.url,
+                    caption: `${title}\n\n${content}`
+                });
+            }
         }
         return res.status(201).json({ message: 'Berita berhasil ditambahkan dan diposting!', data: news });
 
