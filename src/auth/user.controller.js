@@ -77,10 +77,10 @@ router.post('/login', validateLogin, async (req, res) => {
         // Simpan token dalam cookie HTTP-Only
         res.cookie("token", user.token, {
             httpOnly: true,
-            // secure: true,
-            secure: false,
-            // sameSite: "None",
-            sameSite: "lax",
+            secure: true,
+            // secure: false,
+            sameSite: "None",
+            // sameSite: "lax",
             maxAge: 1 * 24 * 60 * 60 * 1000
         });
 
@@ -152,7 +152,6 @@ router.put('/reset-password', async (req, res) => {
         return res.status(500).json({ message: 'Gagal mereset password!', error: error.message });
     }
 });
-
 
 router.get('/google', (req, res, next) => {
     const redirectTo = req.query.redirect || '/login'; // default ke login
