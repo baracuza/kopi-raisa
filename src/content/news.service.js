@@ -143,9 +143,9 @@ const removeNews = async (id) => {
         throw new Error("Berita tidak ditemukan!");
     }
     // Hapus semua media dari Cloudinary berdasarkan URL
-    if (news.newsMedia && news.newsMedia.length > 0) {
+    if (existingNews.newsMedia && existingNews.newsMedia.length > 0) {
         await Promise.all(
-            news.newsMedia.map(media => {
+            existingNews.newsMedia.map(media => {
                 const publicId = extractPublicId(media.media_url); // pastikan fungsi ini ada
                 return deleteFromCloudinaryByUrl(media.media_url, publicId);
             })
