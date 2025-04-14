@@ -323,8 +323,12 @@ router.get('/facebook/pages', authMiddleware, async (req, res) => {
 
 
 router.post('/logout', (req, res) => {
-
-    res.clearCookie('token');
+    res.clearCookie('token', {
+        httpOnly: true,
+        secure: true,
+        sameSite: 'None',
+        path: '/'
+    });
     res.status(200).json({ message: 'Logout berhasil!' });
 });
 module.exports = router;
