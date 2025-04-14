@@ -1,6 +1,9 @@
 const prisma = require('../db');
 const axios = require('axios');
 
+const { deleteFromCloudinaryByUrl, extractPublicId } = require('../utils/cloudinary');
+const { uploadToCloudinary } = require('../services/cloudinaryUpload.service');
+
 
 const {
     updateNewsData,
@@ -9,6 +12,7 @@ const {
     insertNews,
     addNewsMedia,
     deleteNews,
+    deleteNewsMediaByNewsId
 } = require("./news.repository");
 
 const getNews = async () => {
@@ -99,8 +103,38 @@ const updateNews = async (id, editedNewsData) => {
     if (!existingNews) {
         throw new Error("Berita tidak ditemukan!");
     }
-    const newsData = await updateNewsData(id, editedNewsData);
-    return newsData;
+
+    const { title, content, mediaBuffer, mediaOriginalName, mediaType } = editedNewsData;
+
+    // Update data berita
+    const updatedNews = await updateNewsData(id, {
+        title,
+        content
+    });
+
+    /// Kalau ada media baru
+    if (mediaBuffer && mediaOriginalName && mediaType) {
+        // Hapus media lama dari Cloudinary dan DB
+        for (const media of existingNews.newsMedia) {
+            await deleteFromCloudinaryByUrl(media.media_url);
+        }
+        await deleteNewsMediaByNewsId(id);
+
+        // Upload media baru ke Cloudinary
+        const uploadedUrl = await uploadToCloudinary(mediaBuffer, mediaOriginalName);
+
+        // Simpan media baru ke database
+        await addNewsMedia(id, uploadedUrl, mediaType);
+    }
+
+
+    return {
+        ...updatedNews,
+        newsMedia: mediaBuffer ? [{
+            media_url: uploadedUrl,
+            media_type: mediaType
+        }] : existingNews.newsMedia // Jika tidak update media, kembalikan media lama
+    };
 };
 
 const removeNews = async (id) => {
@@ -108,9 +142,19 @@ const removeNews = async (id) => {
     if (!existingNews) {
         throw new Error("Berita tidak ditemukan!");
     }
+    // Hapus semua media dari Cloudinary berdasarkan URL
+    if (news.newsMedia && news.newsMedia.length > 0) {
+        await Promise.all(
+            news.newsMedia.map(media => {
+                const publicId = extractPublicId(media.media_url); // pastikan fungsi ini ada
+                return deleteFromCloudinaryByUrl(media.media_url, publicId);
+            })
+        );
+    }
+    // Hapus berita dari database
     const newsData = await deleteNews(id);
 
     return newsData;
 };
 
-module.exports = { getNews, getNewsById, createNewsWithMedia, postVideoToFacebook,postImagesToFacebook, updateNews, removeNews };
+module.exports = { getNews, getNewsById, createNewsWithMedia, postVideoToFacebook, postImagesToFacebook, updateNews, removeNews };

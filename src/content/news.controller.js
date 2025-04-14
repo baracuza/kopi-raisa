@@ -8,12 +8,12 @@ const { authMiddleware, validateNewsMedia } = require('../middleware/middleware'
 const { newsValidator } = require('../validation/user.validation');
 
 const { getNews,
-        getNewsById,
-        updateNews,
-        removeNews, 
-        createNewsWithMedia,
-        postVideoToFacebook,
-        postImagesToFacebook,} = require('./news.service');
+    getNewsById,
+    updateNews,
+    removeNews,
+    createNewsWithMedia,
+    postVideoToFacebook,
+    postImagesToFacebook, } = require('./news.service');
 
 const router = express.Router();
 
@@ -93,7 +93,7 @@ router.post('/post', authMiddleware, newsValidator, upload.array('media', 5), va
             );
 
         } catch (uploadError) {
-            console.error('Gagal mengupload ke Cloudinary:', error.message);
+            console.error('Gagal mengupload ke Cloudinary:', uploadError.message);
             return res.status(500).json({
                 message: 'Gagal mengupload media ke Cloudinary',
                 error: uploadError.message
@@ -180,16 +180,41 @@ router.post('/post', authMiddleware, newsValidator, upload.array('media', 5), va
     }
 })
 
-router.put('/:id', authMiddleware, async (req, res) => {
+router.put('/:id', authMiddleware, upload.single('media'), newsValidator, async (req, res) => {
     try {
-        const { id } = req.params;
-        const editedNewsData = req.body;
+        // Cek validasi input dari express-validator
+        const errors = validationResult(req);
+        if (!errors.isEmpty()) {
+            return res.status(400).json({
+                message: 'Validasi gagal!',
+                errors: errors.array().reduce((acc, curr) => {
+                    if (!acc[curr.path]) {
+                        acc[curr.path] = curr.msg;
+                    }
+                    return acc;
+                }, {})
 
+            });
+        }
         if (!req.user.admin) {
             return res.status(403).json({ message: 'Akses ditolak! Hanya admin yang bisa mengedit berita.' });
         }
+        const { id } = req.params;
+        const { title, content } = req.body;
 
-        const updatedNews = await updateNews(parseInt(id), editedNewsData);
+
+        const editedData = {
+            title,
+            content,
+        };
+
+        if (req.file) {
+            editedData.mediaBuffer = req.file.buffer;
+            editedData.mediaOriginalName = req.file.originalname;
+            editedData.mediaType = req.file.mimetype.startsWith('video') ? 'video' : 'image';
+        }
+
+        const updatedNews = await updateNews(parseInt(id), editedData);
 
         res.status(200).json({
             message: 'Berita berhasil diupdate!',

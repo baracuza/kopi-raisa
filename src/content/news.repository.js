@@ -14,6 +14,12 @@ const getNewsByIdData = async (id) => {
     });
 };
 
+const getNewsMediaByNewsId = async (newsId) => {
+    return await prisma.newsMedia.findMany({
+        where: { news_id: parseInt(newsId) }
+    });
+};
+
 const insertNews = async ({ title, content, published, user_id }) => {
     const news = await prisma.news.create({
         data: {
@@ -38,7 +44,7 @@ const addNewsMedia = async (newsId, url, mimetype) => {
 
 //belum dipakai
 const addMultipleNewsMedia = async (newsId, mediaUrls) => {
-    const mediaData = mediaUrls.map((url,mimetype) => ({
+    const mediaData = mediaUrls.map((url, mimetype) => ({
         news_id: newsId,
         media_url: url,
         media_type: mimetype
@@ -55,9 +61,15 @@ const updateNewsData = async (id, data) => {
     });
 };
 
+const deleteNewsMediaByNewsId = async (newsId) => {
+    return await prisma.newsMedia.deleteMany({
+        where: { news_id: parseInt(newsId) }
+    });
+};
+
 const deleteNews = async (id) => {
     await prisma.newsMedia.deleteMany({ where: { news_id: parseInt(id) } });
     return await prisma.news.delete({ where: { id: parseInt(id) } });
 };
 
-module.exports = { getNewsByIdData, insertNews, addNewsMedia, addMultipleNewsMedia, deleteNews, updateNewsData, getAllNews };
+module.exports = { getNewsByIdData, insertNews, addNewsMedia, addMultipleNewsMedia, deleteNews, deleteNewsMediaByNewsId, updateNewsData, getAllNews };
