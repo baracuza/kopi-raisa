@@ -57,7 +57,7 @@ router.get('/:id', async (req, res) => {
     }
 });
 
-router.post('/post', authMiddleware, newsValidator, upload.array('media', 5), validateNewsMedia, async (req, res) => {
+router.post('/post', authMiddleware, upload.array('media', 5), newsValidator, validateNewsMedia, async (req, res) => {
     try {
         console.log("BODY DARI CLIENT:", req.body);
 
