@@ -209,12 +209,6 @@ router.put('/:id', authMiddleware, upload.array('media',5), newsValidator, async
             mediaFiles: req.files
         };
 
-        // if (req.file) {
-        //     editedData.mediaBuffer = req.file.buffer;
-        //     editedData.mediaOriginalName = req.file.originalname;
-        //     editedData.mediaType = req.file.mimetype.startsWith('video') ? 'video' : 'image';
-        // }
-
         const updatedNews = await updateNews(parseInt(id), editedData);
 
         res.status(200).json({

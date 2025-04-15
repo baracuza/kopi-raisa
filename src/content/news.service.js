@@ -112,7 +112,7 @@ const updateNews = async (id, editedNewsData) => {
         content
     });
 
-    let uploadedUrl = null;
+    let uploadedUrl = [];
 
     /// Kalau ada media baru
     if (mediaFiles && mediaFiles.length > 0) {
