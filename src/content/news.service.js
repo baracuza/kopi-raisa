@@ -104,7 +104,7 @@ const updateNews = async (id, editedNewsData) => {
         throw new Error("Berita tidak ditemukan!");
     }
 
-    const { title, content, mediaBuffer, mediaOriginalName, mediaType } = editedNewsData;
+    const { title, content, mediaFiles } = editedNewsData;
 
     // Update data berita
     const updatedNews = await updateNewsData(id, {
@@ -115,7 +115,7 @@ const updateNews = async (id, editedNewsData) => {
     let uploadedUrl = null;
 
     /// Kalau ada media baru
-    if (mediaBuffer && mediaOriginalName && mediaType) {
+    if (mediaFiles && mediaFiles.length > 0) {
         // Hapus media lama dari Cloudinary dan DB
         for (const media of existingNews.newsMedia) {
             await deleteFromCloudinaryByUrl(media.media_url);
@@ -123,20 +123,23 @@ const updateNews = async (id, editedNewsData) => {
         await deleteNewsMediaByNewsId(id);
 
         // Upload media baru ke Cloudinary
-        const uploadedUrl = await uploadToCloudinary(mediaBuffer, mediaOriginalName);
+        for (const file of mediaFiles) {
+            const url = await uploadToCloudinary(file.buffer, file.originalname);
+            const type = file.mimetype.startsWith('video') ? 'video' : 'image';
+            // Simpan media baru ke database
+            await addNewsMedia(id, url, type);
+            uploadedUrl.push({
+                media_url: url,
+                media_type: type
+            });
+        }
 
-        // Simpan media baru ke database
-        await addNewsMedia(id, uploadedUrl, mediaType);
+
+        return {
+            ...updatedNews,
+            newsMedia: uploadedMedia.length > 0 ? uploadedMedia : existingNews.newsMedia
+        };
     }
-
-
-    return {
-        ...updatedNews,
-        newsMedia: mediaBuffer ? [{
-            media_url: uploadedUrl,
-            media_type: mediaType
-        }] : existingNews.newsMedia // Jika tidak update media, kembalikan media lama
-    };
 };
 
 const removeNews = async (id) => {

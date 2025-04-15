@@ -180,7 +180,7 @@ router.post('/post', authMiddleware, upload.array('media', 5), newsValidator, va
     }
 })
 
-router.put('/:id', authMiddleware, upload.single('media'), newsValidator, async (req, res) => {
+router.put('/:id', authMiddleware, upload.array('media',5), newsValidator, async (req, res) => {
     try {
         // Cek validasi input dari express-validator
         const errors = validationResult(req);
@@ -206,13 +206,14 @@ router.put('/:id', authMiddleware, upload.single('media'), newsValidator, async 
         const editedData = {
             title,
             content,
+            mediaFiles: req.files
         };
 
-        if (req.file) {
-            editedData.mediaBuffer = req.file.buffer;
-            editedData.mediaOriginalName = req.file.originalname;
-            editedData.mediaType = req.file.mimetype.startsWith('video') ? 'video' : 'image';
-        }
+        // if (req.file) {
+        //     editedData.mediaBuffer = req.file.buffer;
+        //     editedData.mediaOriginalName = req.file.originalname;
+        //     editedData.mediaType = req.file.mimetype.startsWith('video') ? 'video' : 'image';
+        // }
 
         const updatedNews = await updateNews(parseInt(id), editedData);
 
