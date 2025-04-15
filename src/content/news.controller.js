@@ -209,7 +209,9 @@ router.put('/:id', authMiddleware, upload.array('media',5), newsValidator, async
             mediaFiles: req.files
         };
 
+        console.log("Mulai update berita");
         const updatedNews = await updateNews(parseInt(id), editedData);
+        console.log("Selesai update berita, mengirim response...");
 
         res.status(200).json({
             message: 'Berita berhasil diupdate!',

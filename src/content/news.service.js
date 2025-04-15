@@ -122,6 +122,7 @@ const updateNews = async (id, editedNewsData) => {
         }
         await deleteNewsMediaByNewsId(id);
 
+        console.log("Upload file ke Cloudinary dimulai");
         // Upload media baru ke Cloudinary
         for (const file of mediaFiles) {
             const url = await uploadToCloudinary(file.buffer, file.originalname);
@@ -133,6 +134,7 @@ const updateNews = async (id, editedNewsData) => {
                 media_type: type
             });
         }
+        console.log("File berhasil diupload:", url);
 
 
         return {
