@@ -133,8 +133,8 @@ const updateNews = async (id, editedNewsData) => {
                 media_url: url,
                 media_type: type
             });
+            console.log("File berhasil diupload:", url);
         }
-        console.log("File berhasil diupload:", url);
 
 
         return {
