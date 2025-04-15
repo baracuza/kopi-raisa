@@ -137,7 +137,7 @@ const updateNews = async (id, editedNewsData) => {
 
         return {
             ...updatedNews,
-            newsMedia: uploadedMedia.length > 0 ? uploadedMedia : existingNews.newsMedia
+            newsMedia: mediaFiles.length > 0 ? mediaFiles : existingNews.newsMedia
         };
     }
 };
