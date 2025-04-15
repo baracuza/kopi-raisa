@@ -39,18 +39,26 @@ const getPublicIdFromUrl = (url) => {
 
 const extractPublicId = getPublicIdFromUrl; // alias agar bisa digunakan dengan nama berbeda juga
 
+const guessResourceType = (url) => {
+    if (url.match(/\.(jpg|jpeg|png|gif|webp)$/i)) return 'image';
+    if (url.match(/\.(mp4|mov|avi|mkv)$/i)) return 'video';
+    return 'raw'; // fallback
+};
 
 /**
  * Menghapus file dari Cloudinary berdasarkan URL
  */
 const deleteFromCloudinaryByUrl = async (fileUrl) => {
     const publicId = getPublicIdFromUrl(fileUrl);
+    const resourceType = guessResourceType(fileUrl);
     if (publicId) {
         try {
-            await cloudinary.uploader.destroy(publicId, { resource_type: 'auto' });
+            await cloudinary.uploader.destroy(publicId, { resource_type:  resourceType });
         } catch (error) {
-            console.error('Gagal rollback Cloudinary:', error.message);
+            console.error('Gagal hapus dari Cloudinary:', error.message);
         }
+    } else{
+        console.warn('Public ID tidak ditemukan dari URL:', fileUrl);
     }
 };
 
