@@ -139,7 +139,7 @@ const updateNews = async (id, editedNewsData) => {
 
         return {
             ...updatedNews,
-            newsMedia: uploadedUrl.length > 0 ? mediaFiles : existingNews.newsMedia
+            newsMedia: uploadedUrl.length > 0 ? uploadedUrl : existingNews.newsMedia
         };
     }
 };
