@@ -17,7 +17,7 @@ const { getNews,
 
 const router = express.Router();
 
-router.get('/', authMiddleware, async (req, res) => {
+router.get('/', async (req, res) => {
     // console.log('GET /api/v1/news');
     try {
         const news = await getNews();
