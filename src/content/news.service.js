@@ -112,6 +112,8 @@ const updateNews = async (id, editedNewsData) => {
         content
     });
 
+    let uploadedUrl = null;
+
     /// Kalau ada media baru
     if (mediaBuffer && mediaOriginalName && mediaType) {
         // Hapus media lama dari Cloudinary dan DB
