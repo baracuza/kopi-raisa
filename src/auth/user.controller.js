@@ -90,13 +90,7 @@ router.post('/login', validateLogin, async (req, res) => {
     } catch (error) {
         return res.status(400).json({
             message: 'Validasi gagal!',
-            errors: error.array().reduce((acc, curr) => {
-                if (!acc[curr.path]) {
-                    acc[curr.path] = curr.msg;
-                }
-                return acc;
-            }, {})
-
+            errors: error.message
         });
     }
 });
