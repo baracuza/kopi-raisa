@@ -141,7 +141,7 @@ router.post('/post', authMiddleware, upload.array('media', 5),multerErrorHandler
             }
             // Pisahkan media berdasarkan tipe
             const images = mediaInfos.filter(media => media.mimetype.startsWith('image/'));
-            const videos = mediaInfos.filter(media => media.mimetype.startsWith('video/'));
+            // const videos = mediaInfos.filter(media => media.mimetype.startsWith('video/'));
             try {
                 // Posting gambar sebagai carousel jika lebih dari satu, atau sebagai gambar tunggal
                 if (images.length > 0) {
@@ -154,14 +154,14 @@ router.post('/post', authMiddleware, upload.array('media', 5),multerErrorHandler
                 }
 
                 // Posting video secara terpisah
-                for (const video of videos) {
-                    await postVideoToFacebook({
-                        pageId: fbAccount.page_id,
-                        pageAccessToken: fbAccount.access_token,
-                        videoUrl: video.url,
-                        caption: `${title}\n\n${content}`
-                    });
-                }
+                // for (const video of videos) {
+                //     await postVideoToFacebook({
+                //         pageId: fbAccount.page_id,
+                //         pageAccessToken: fbAccount.access_token,
+                //         videoUrl: video.url,
+                //         caption: `${title}\n\n${content}`
+                //     });
+                // }
 
             } catch (fbError) {
                 console.error('Gagal posting ke Facebook:', fbError.message);
