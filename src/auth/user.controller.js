@@ -218,6 +218,7 @@ router.post('/facebook/link',
             if (!accessToken) {
                 return res.status(400).json({ message: 'Access token diperlukan.' });
             }
+            req.body.access_token = accessToken; // 🔥 Inject token agar dibaca passport
 
             // Gunakan passport untuk autentikasi Facebook dengan token
             passport.authenticate('facebook-token', { session: false }, async (err, profile, info) => {

@@ -14,7 +14,8 @@ passport.use('facebook-token',new FacebookTokenStrategy({
     profileFields: ['id', 'displayName', 'photos'],
     enableProof: false
 }, async (accessToken, refreshToken, profile, done) => {
-    console.log('FB Profile:', profile);
+    console.log('[passport-facebook-token] Token:', accessToken);
+    console.log('[passport-facebook-token] Profile:', profile);
     profile.accessToken = accessToken;
     return done(null, profile);
 }));
@@ -28,7 +29,7 @@ passport.use('facebook-link', new FacebookStrategy({
     enableProof: false
 }, async (accessToken, refreshToken, profile, done) => {
     try {
-        // console.log('FB Profile:', profile);
+        console.log('FB Profile:', profile);
         profile.accessToken = accessToken;
 
         // Di sini hanya kirim ke route, data disimpan di sana

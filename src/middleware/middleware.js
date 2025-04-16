@@ -63,7 +63,7 @@ const validateNewsMedia = (req, res, next) => {
         return res.status(400).json({
             message: 'Validasi gagal!',
             errors: {
-                media: '*Hanya file gambar (jpg, png, webp) atau video (mp4, mov) yang diperbolehkan'
+                media: '*Hanya file gambar (jpg,jpeg, png, webp) atau video (mp4, mov) yang diperbolehkan'
             }
         });
     }

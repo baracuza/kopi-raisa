@@ -47,7 +47,7 @@ Gunakan SDK dari Facebook:
   }
 </script>
 
-<button onclick="loginWithFacebook()">Login dengan Facebook</button>
+<button onclick="loginWithFacebook()">tautkan ke Facebook</button>
 
 
 2. 🛠️ Backend Route untuk Terima Access Token
