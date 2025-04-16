@@ -13,8 +13,11 @@ dotenv.config();
 const app = express();
 const port = process.env.PORT;
 const corsOption = {
-    origin: process.env.CORS_ORIGIN,
-    credentials: true, 
+    origin: [
+        process.env.CORS_ORIGIN, // https://sekolahkopiraisa.vercel.app
+        'http://localhost:3000'  // support development lokal
+    ],
+    credentials: true
 };
 
 app.use(express.json());
