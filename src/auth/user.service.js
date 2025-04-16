@@ -11,8 +11,7 @@ const JWT_EXPIRES = process.env.JWT_EXPIRES;
 
 const createUser = async (newUserData) => {
 
-    const existingUser = await findUserByIdentifier(newUserData.email) 
-        || (newUserData.phone_number && await findUserByIdentifier(newUserData.phone_number));
+    const existingUser = await findUserByIdentifier(newUserData.email) || (newUserData.phone_number && await findUserByIdentifier(newUserData.phone_number));
 
     if (existingUser) {
         throw new Error('Email atau nomor HP sudah terdaftar');
