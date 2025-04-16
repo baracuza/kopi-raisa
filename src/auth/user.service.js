@@ -57,7 +57,7 @@ const loginUser = async ({ emailOrPhone, password }) => {
 
     if (!user) {
         console.log("❌ User tidak ditemukan");
-        throw new Error('User tidak ditemukan!');
+        throw new Error('Email/Password salah!');
     }
 
     const validPassword = await bcrypt.compare(password, user.password);
@@ -65,7 +65,7 @@ const loginUser = async ({ emailOrPhone, password }) => {
 
     if (!validPassword) {
         console.log("❌ Password salah");
-        throw new Error('Password salah!');
+        throw new Error('Email/Password salah!');
     }
 
     if (!process.env.JWT_SECRET) {

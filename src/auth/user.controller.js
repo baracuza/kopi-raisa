@@ -89,7 +89,13 @@ router.post('/login', validateLogin, async (req, res) => {
         return res.status(200).json({ message: 'Login berhasil!', data: user });
     } catch (error) {
         return res.status(400).json({
-            message: error.message
+            message: 'Validasi gagal!',
+            errors: errors.array().reduce((acc, curr) => {
+                if (!acc[curr.path]) {
+                    acc[curr.path] = curr.msg;
+                }
+                return acc;
+            }, {})
 
         });
     }
