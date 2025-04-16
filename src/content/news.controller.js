@@ -180,7 +180,7 @@ router.post('/post', authMiddleware, upload.array('media', 5),multerErrorHandler
     }
 })
 
-router.put('/:id', authMiddleware, upload.array('media',5), newsValidator, async (req, res) => {
+router.put('/:id', authMiddleware, upload.array('media',5), newsValidator, validateNewsMedia, async (req, res) => {
     try {
         // Cek validasi input dari express-validator
         const errors = validationResult(req);
