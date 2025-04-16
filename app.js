@@ -12,16 +12,11 @@ dotenv.config();
 
 const app = express();
 const port = process.env.PORT;
-const allowedOrigins = process.env.CORS_ORIGINS?.split(',') || [];
-
 const corsOption = {
-    origin: function (origin, callback) {
-        if (!origin || allowedOrigins.includes(origin)) {
-            callback(null, true);
-        } else {
-            callback(new Error('Not allowed by CORS'));
-        }
-    },
+    origin: [
+        process.env.CORS_ORIGIN, // https://sekolahkopiraisa.vercel.app
+        'http://localhost:3000'  // support development lokal
+    ],
     credentials: true
 };
 
