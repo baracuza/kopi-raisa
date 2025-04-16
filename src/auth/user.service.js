@@ -10,8 +10,17 @@ dotenv.config();
 const JWT_EXPIRES = process.env.JWT_EXPIRES;
 
 const createUser = async (newUserData) => {
-    const userData = await insertUser(newUserData);
 
+    const [emailExists, phoneExists] = await Promise.all([
+        isEmailTaken(newUserData.email),
+        newUserData.phone_number ? isPhoneNumberTaken(newUserData.phone_number) : false
+    ]);
+
+    if (emailExists || phoneExists) {
+        const error = new Error('Email atau nomor HP sudah terdaftar');
+        throw error;
+    }
+    const userData = await insertUser(newUserData);
     return userData;
 };
 
