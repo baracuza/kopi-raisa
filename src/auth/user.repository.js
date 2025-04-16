@@ -16,6 +16,22 @@ const insertUser = async (newUserData) => {
     return userData;
 };
 
+const isEmailTaken = async (email) => {
+    const user = await prisma.user.findUnique({
+        where: { email },
+    });
+    return !!user;
+};
+
+const isPhoneNumberTaken = async (phone_number) => {
+    if (!phone_number) return false;
+    const user = await prisma.user.findUnique({
+        where: { phone_number },
+    });
+    return !!user;
+};
+
+
 const findUserByIdentifier = async (emailOrPhone) => {
     const user = await prisma.User.findFirst({
         where: {
@@ -69,4 +85,4 @@ const updatePasswordByID = async ({ password, userId }) => {
 
 
 
-module.exports = {insertUser, findUserByIdentifier, updateByID, findUserByEmail, updatePasswordByID, findUserByID};
+module.exports = { insertUser, isPhoneNumberTaken, isEmailTaken, findUserByIdentifier, updateByID, findUserByEmail, updatePasswordByID, findUserByID };

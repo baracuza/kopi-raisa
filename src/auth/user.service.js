@@ -1,5 +1,5 @@
 const prisma = require('../db');
-const { insertUser, findUserByIdentifier, updateByID, findUserByEmail, updatePasswordByID, findUserByID } = require('./user.repository');
+const { insertUser, isEmailTaken, isPhoneNumberTaken, findUserByIdentifier, updateByID, findUserByEmail, updatePasswordByID, findUserByID } = require('./user.repository');
 const bcrypt = require('bcryptjs');
 const jsonwebtoken = require('jsonwebtoken');
 const dotenv = require('dotenv');
@@ -11,14 +11,11 @@ const JWT_EXPIRES = process.env.JWT_EXPIRES;
 
 const createUser = async (newUserData) => {
 
-    const [emailExists, phoneExists] = await Promise.all([
-        isEmailTaken(newUserData.email),
-        newUserData.phone_number ? isPhoneNumberTaken(newUserData.phone_number) : false
-    ]);
+    const existingUser = await findUserByIdentifier(newUserData.email) 
+        || (newUserData.phone_number && await findUserByIdentifier(newUserData.phone_number));
 
-    if (emailExists || phoneExists) {
-        const error = new Error('Email atau nomor HP sudah terdaftar');
-        throw error;
+    if (existingUser) {
+        throw new Error('Email atau nomor HP sudah terdaftar');
     }
     const userData = await insertUser(newUserData);
     return userData;
