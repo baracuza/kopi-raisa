@@ -1,5 +1,6 @@
 const prisma = require('../db');
 const jwt = require('jsonwebtoken');
+const multer = require('multer');
 
 
 //*⁡⁣⁢⁡⁣⁢⁣​‌‍‌‍middleware mengambil data user yang sedang login dengan cookie​⁡⁡*//
