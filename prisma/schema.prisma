@@ -44,11 +44,12 @@ model FacebookAccount {
   access_token   String
   page_id        String
   page_name      String
+  page_access_token String?   //access token untuk Page
   email          String   // email dari Facebook
   token_expires  DateTime
   user           User     @relation(fields: [userId], references: [id])
   userId         Int      @unique
-   createdAt      DateTime @default(now())
+  createdAt      DateTime @default(now())
   updatedAt      DateTime @updatedAt
 }
 

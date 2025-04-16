@@ -213,22 +213,19 @@ router.post('/facebook/link',
     authMiddleware,
     async (req, res, next) => {
         try {
-            const { accessToken } = req.body; // Ambil accessToken dari body
+            const { accessToken } = req.body;
 
             if (!accessToken) {
                 return res.status(400).json({ message: 'Access token diperlukan.' });
             }
-            req.body.access_token = accessToken; // 🔥 Inject token agar dibaca passport
 
-            // Gunakan passport untuk autentikasi Facebook dengan token
+            // Autentikasi via passport-facebook-token
             passport.authenticate('facebook-token', { session: false }, async (err, profile, info) => {
                 if (err) return next(err);
                 if (!profile) {
                     return res.status(401).json({ message: 'Gagal autentikasi Facebook.' });
                 }
 
-                // Setelah autentikasi berhasil, proses lebih lanjut
-                const facebookProfile = profile;  // Mendapatkan profile dari Facebook
                 const currentUserToken = req.cookies.token || req.headers.authorization?.split(' ')[1];
                 const decoded = jwt.verify(currentUserToken, process.env.JWT_SECRET);
                 const currentUser = await prisma.user.findUnique({ where: { id: decoded.id } });
@@ -237,36 +234,61 @@ router.post('/facebook/link',
                     return res.status(401).json({ message: "User tidak ditemukan" });
                 }
 
+                const facebookProfile = profile;
+                facebookProfile.accessToken = accessToken;
+
+                // Ambil Facebook Page pakai axios
+                let selectedPage = null;
+                try {
+                    const { data: pageData } = await axios.get(`https://graph.facebook.com/v19.0/me/accounts`, {
+                        params: {
+                            access_token: accessToken
+                        }
+                    });
+
+                    if (pageData.data && pageData.data.length > 0) {
+                        selectedPage = pageData.data[0]; // Ambil page pertama
+                    } else {
+                        return res.status(400).json({ message: 'Tidak ada Facebook Page yang ditemukan.' });
+                    }
+                } catch (pageError) {
+                    console.error('Gagal mengambil page:', pageError?.response?.data || pageError.message);
+                    return res.status(500).json({ message: 'Gagal mengambil Facebook Page.' });
+                }
+
+                // Simpan ke DB
                 const upserted = await prisma.facebookAccount.upsert({
                     where: { facebook_id: facebookProfile.id },
                     update: {
                         name: facebookProfile.displayName,
                         email: facebookProfile.emails?.[0]?.value || `${facebookProfile.id}@facebook.com`,
                         image: facebookProfile.photos?.[0]?.value || null,
-                        access_token: facebookProfile.accessToken,
-                        token_expires: new Date(Date.now() + 60 * 60 * 24 * 60 * 1000),  // perkiraan 60 hari
-                        page_id: '',  // default kosong
-                        page_name: '',  // default kosong
+                        access_token: accessToken,
+                        token_expires: new Date(Date.now() + 60 * 60 * 24 * 60 * 1000),
+                        page_id: selectedPage.id,
+                        page_name: selectedPage.name,
+                        page_access_token: selectedPage.access_token,
                     },
                     create: {
                         facebook_id: facebookProfile.id,
                         name: facebookProfile.displayName,
                         email: facebookProfile.emails?.[0]?.value || `${facebookProfile.id}@facebook.com`,
                         image: facebookProfile.photos?.[0]?.value || null,
-                        access_token: facebookProfile.accessToken,
+                        access_token: accessToken,
                         token_expires: new Date(Date.now() + 60 * 60 * 24 * 60 * 1000),
-                        page_id: '',
-                        page_name: '',
+                        page_id: selectedPage.id,
+                        page_name: selectedPage.name,
+                        page_access_token: selectedPage.access_token,
                         user: { connect: { id: currentUser.id } },
                     }
                 });
 
-                return res.json({ message: 'Akun Facebook berhasil ditautkan', data: upserted });
+                return res.json({ message: 'Akun Facebook & Page berhasil ditautkan.', data: upserted });
             })(req, res, next);
 
         } catch (error) {
             console.error("❌ Gagal menautkan akun Facebook:", error);
-            return res.status(500).json({ message: 'Terjadi kesalahan internal.' });
+            return res.status(500).json({ message: 'Terjadi kesalahan internal.', error: error.response?.data || error.message, });
         }
     }
 );
