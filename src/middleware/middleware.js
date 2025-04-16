@@ -79,10 +79,43 @@ const validateNewsMedia = (req, res, next) => {
         });
     }
 
+    //validasi jumlah total ukuran file diupload
+    const totalSize = req.files.reduce((acc, file) => acc + file.size, 0);
+    const maxTotalSize = 20 * 1024 * 1024; // 20MB
+    if (totalSize > maxTotalSize) {
+        return res.status(400).json({
+            message: 'Validasi gagal!',
+            errors: {
+                media: '*Total ukuran file tidak boleh lebih dari 20MB'
+            }
+        });
+    }
+
     next(); // lanjut ke controller
+};
+
+const multerErrorHandler = (err, req, res, next) => {
+    if (err instanceof multer.MulterError) {
+        if (err.code === 'LIMIT_FILE_SIZE') {
+            return res.status(400).json({
+                message: 'Validasi gagal!',
+                errors: {
+                    media: '*Ukuran setiap file maksimal 5MB'
+                }
+            });
+        }
+
+        // Tambahan: bisa juga tangani LIMIT_FILE_COUNT dll
+        return res.status(400).json({ message: 'Upload gagal', error: err.message });
+    }
+
+    next(err); // lempar ke global error handler kalau bukan multer error
 };
 
 
 
 
-module.exports = { authMiddleware, validateNewsMedia };
+
+
+
+module.exports = { authMiddleware, validateNewsMedia, multerErrorHandler };

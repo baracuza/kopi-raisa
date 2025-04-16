@@ -4,7 +4,7 @@ const upload = require('../middleware/multer');
 const { uploadToCloudinary } = require('../services/cloudinaryUpload.service');
 const { validationResult } = require('express-validator');
 const { deleteFromCloudinaryByUrl, extractPublicId } = require('../utils/cloudinary');
-const { authMiddleware, validateNewsMedia } = require('../middleware/middleware');
+const { authMiddleware, validateNewsMedia,multerErrorHandler } = require('../middleware/middleware');
 const { newsValidator } = require('../validation/user.validation');
 
 const { getNews,
@@ -57,7 +57,7 @@ router.get('/:id', async (req, res) => {
     }
 });
 
-router.post('/post', authMiddleware, upload.array('media', 5), newsValidator, validateNewsMedia, async (req, res) => {
+router.post('/post', authMiddleware, upload.array('media', 5),multerErrorHandler, newsValidator, validateNewsMedia, async (req, res) => {
     try {
         console.log("BODY DARI CLIENT:", req.body);
 
