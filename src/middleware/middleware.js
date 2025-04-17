@@ -33,42 +33,24 @@ const authMiddleware = async (req, res, next) => {
 };
 
 const validateProfilMedia = (req, res, next) => {
-    const maxFiles = 1;
     const maxSizeMB = 5;
-    const allowedTypes = ['image/jpeg', 'image/png', 'image/webp', 'image/jpg',];
+    const maxSizeBytes = maxSizeMB * 1024 * 1024;
+    const allowedTypes = ['image/jpeg', 'image/png', 'image/webp', 'image/jpg'];
 
-    // Cek jika tidak ada file yang diunggah
-    // if (!req.file) {
-    //     return res.status(400).json({
-    //         message: 'Validasi gagal!',
-    //         errors: {
-    //             media: '*Minimal satu file gambar wajib diunggah'
-    //         }
-    //     });
-    // }
+    if (!req.file) {
+        return next();
+    }
 
-    // Cek jumlah maksimal file
-    if (req.file.length > maxFiles) {
+    if (req.file.size > maxSizeBytes) {
         return res.status(400).json({
             message: 'Validasi gagal!',
             errors: {
-                media: `*Maksimal hanya ${maxFiles} file yang diperbolehkan`
+                media: `*Ukuran file maksimal ${maxSizeMB}MB`
             }
         });
     }
 
-    // Validasi ukuran file
-    // if (req.file.size > maxSizeMB) {
-    //     return res.status(400).json({
-    //         message: 'Validasi gagal!',
-    //         errors: {
-    //             media: `*Ukuran setiap file maksimal ${maxSizeMB}MB`
-    //         }
-    //     });
-    // }
-
-    // Validasi tipe file
-    if (!allowedTypes.includes(file.mimetype)) {
+    if (!allowedTypes.includes(req.file.mimetype)) {
         return res.status(400).json({
             message: 'Validasi gagal!',
             errors: {
@@ -77,9 +59,9 @@ const validateProfilMedia = (req, res, next) => {
         });
     }
 
-    next(); // lanjut ke controller
+    next();
+};
 
-}
 
 const validateNewsMedia = (req, res, next) => {
     const maxFiles = 5;
