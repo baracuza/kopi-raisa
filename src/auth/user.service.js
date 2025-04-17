@@ -65,6 +65,11 @@ const loginUser = async ({ emailOrPhone, password }) => {
         throw new Error('Email/Password salah!');
     }
 
+    if (user.verified === true) {
+        console.log("❌ Akun ini menggunakan Google OAuth. Silakan login menggunakan Google.");
+        throw new Error('Akun ini menggunakan Google OAuth. Silakan login menggunakan Google.');
+    }
+
     const validPassword = await bcrypt.compare(password, user.password);
     console.log("Password valid:", validPassword);
 
