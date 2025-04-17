@@ -1,5 +1,7 @@
 define nodemailer nya
 
+oatuh withCredentials: true // penting!
+
 scope: 'email,public_profile,pages_show_list,pages_read_engagement,pages_manage_posts'
 
 ✅ Alur Lengkap Autentikasi Facebook:

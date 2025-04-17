@@ -67,7 +67,7 @@ const loginUser = async ({ emailOrPhone, password }) => {
 
     if (user.verified === true) {
         console.log("❌ Akun telah terdaftar dengan metode lain. Silahkan coba dengan metode yang anda gunakan sebelumnya!");
-        throw new Error(`Akun ${user.email} telah terdaftar dengan metode lain. Silahkan coba dengan metode yang anda gunakan sebelumnya!`);
+        throw new Error(`Akun ${user.emailOrPhone} telah terdaftar dengan metode lain. Silahkan coba dengan metode yang anda gunakan sebelumnya!`);
     }
 
     const validPassword = await bcrypt.compare(password, user.password);
