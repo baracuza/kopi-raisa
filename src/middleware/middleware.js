@@ -58,8 +58,7 @@ const validateProfilMedia = (req, res, next) => {
     }
 
     // Validasi ukuran file
-    const oversizedFiles = req.file.filter(file => file.size > maxSizeBytes);
-    if (oversizedFiles.length > 0) {
+    if (req.file.size > maxSizeMB) {
         return res.status(400).json({
             message: 'Validasi gagal!',
             errors: {
@@ -69,8 +68,7 @@ const validateProfilMedia = (req, res, next) => {
     }
 
     // Validasi tipe file
-    const invalidFiles = req.file.filter(file => !allowedTypes.includes(file.mimetype));
-    if (invalidFiles.length > 0) {
+    if (!allowedTypes.includes(file.mimetype)) {
         return res.status(400).json({
             message: 'Validasi gagal!',
             errors: {
