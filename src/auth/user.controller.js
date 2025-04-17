@@ -139,7 +139,7 @@ router.put('/user', authMiddleware, upload.single('profil'),multerErrorHandler, 
             phone_number: req.body.phone_number,
             file: req.file,
         }
-        const updatedUser = await updateUser({ userId, updateData: updateData });
+        const updatedUser = await updateUser({ userId, updateData });
         console.log("Update user:", updatedUser);
 
         return res.status(200).json({

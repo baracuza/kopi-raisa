@@ -49,10 +49,10 @@ const findUserByIdentifier = async (emailOrPhone) => {
     return user;
 };
 
-const updateByID = async ({ updatedData, userId }) => {
+const updateByID = async ({ updateData, userId }) => {
     const user = await prisma.User.update({
         where: { id: userId },
-        data: updatedData,
+        data: updateData,
     });
 
     return user;

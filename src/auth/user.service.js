@@ -74,12 +74,12 @@ const loginUser = async ({ emailOrPhone, password }) => {
     };
 };
 
-const updateUser = async ({ updatedData, userId }) => {
+const updateUser = async ({ updateData, userId }) => {
     const existingUser = await findUserByID(userId);
     if (!existingUser) {
         throw new Error('User tidak ditemukan!');
     }
-    const { name, phone_number, file } = updatedData;
+    const { name, phone_number, file } = updateData;
     const updatePayload = { name, phone_number };
 
 
@@ -90,7 +90,7 @@ const updateUser = async ({ updatedData, userId }) => {
         const imageUrl = await uploadToCloudinary(file.buffer, file.originalname);
         updatePayload.image = imageUrl;
     }
-    const update = await updateByID({userId, updatedData: updatePayload});
+    const update = await updateByID({userId, updateData: updatePayload});
     console.log("Update user:", update);
 
     return update;
