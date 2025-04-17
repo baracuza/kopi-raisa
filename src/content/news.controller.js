@@ -12,7 +12,6 @@ const { getNews,
     updateNews,
     removeNews,
     createNewsWithMedia,
-    postVideoToFacebook,
     postImagesToFacebook, } = require('./news.service');
 
 const router = express.Router();

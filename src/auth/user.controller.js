@@ -5,6 +5,7 @@ const bcrypt = require('bcryptjs');
 const { validationResult } = require('express-validator');
 const passport = require('passport');
 const jwt = require('jsonwebtoken');
+const upload = require('../middleware/multer');
 
 
 const { createUser, loginUser, updateUser, sendResetPasswordEmail, resetPassword } = require('./user.service');
