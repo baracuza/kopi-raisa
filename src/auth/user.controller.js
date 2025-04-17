@@ -10,7 +10,7 @@ const upload = require('../middleware/multer');
 
 const { createUser, loginUser, updateUser, sendResetPasswordEmail, resetPassword } = require('./user.service');
 const { validateRegister, validateLogin, validateUpdateProfile } = require('../validation/user.validation');
-const { authMiddleware } = require('../middleware/middleware');
+const { authMiddleware, multerErrorHandler, validateProfilMedia } = require('../middleware/middleware');
 
 
 const router = express.Router();
@@ -117,7 +117,7 @@ router.get('/user', authMiddleware, async (req, res) => {
     }
 });
 
-router.put('/user', authMiddleware, upload.single('profil'), validateUpdateProfile, async (req, res) => {
+router.put('/user', authMiddleware, upload.single('profil'),multerErrorHandler, validateUpdateProfile, validateProfilMedia, async (req, res) => {
     try {
         const errors = validationResult(req);
         console.log('errors:', errors.array());

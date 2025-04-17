@@ -32,6 +32,57 @@ const authMiddleware = async (req, res, next) => {
     }
 };
 
+const validateProfilMedia = (req, res, next) => {
+    const maxFiles = 1;
+    const maxSizeMB = 5;
+    const allowedTypes = ['image/jpeg', 'image/png', 'image/webp', 'image/jpg',];
+
+    // Cek jika tidak ada file yang diunggah
+    if (!req.files || req.files.length === 0) {
+        return res.status(400).json({
+            message: 'Validasi gagal!',
+            errors: {
+                media: '*Minimal satu file gambar/video wajib diunggah'
+            }
+        });
+    }
+
+    // Cek jumlah maksimal file
+    if (req.files.length > maxFiles) {
+        return res.status(400).json({
+            message: 'Validasi gagal!',
+            errors: {
+                media: `*Maksimal hanya ${maxFiles} file yang diperbolehkan`
+            }
+        });
+    }
+
+    // Validasi ukuran file
+    const oversizedFiles = req.files.filter(file => file.size > maxSizeBytes);
+    if (oversizedFiles.length > 0) {
+        return res.status(400).json({
+            message: 'Validasi gagal!',
+            errors: {
+                media: `*Ukuran setiap file maksimal ${maxSizeMB}MB`
+            }
+        });
+    }
+
+    // Validasi tipe file
+    const invalidFiles = req.files.filter(file => !allowedTypes.includes(file.mimetype));
+    if (invalidFiles.length > 0) {
+        return res.status(400).json({
+            message: 'Validasi gagal!',
+            errors: {
+                media: '*Hanya file gambar (jpg, jpeg, png, webp)'
+            }
+        });
+    }
+
+    next(); // lanjut ke controller
+
+}
+
 const validateNewsMedia = (req, res, next) => {
     const maxFiles = 5;
     const maxSizeMB = 5;
@@ -64,7 +115,7 @@ const validateNewsMedia = (req, res, next) => {
         return res.status(400).json({
             message: 'Validasi gagal!',
             errors: {
-                media: '*Hanya file gambar (jpg,jpeg, png, webp) atau video (mp4, mov) yang diperbolehkan'
+                media: '*Hanya file gambar (jpg,jpeg, png, webp)'
             }
         });
     }
@@ -119,4 +170,4 @@ const multerErrorHandler = (err, req, res, next) => {
 
 
 
-module.exports = { authMiddleware, validateNewsMedia, multerErrorHandler };
+module.exports = { authMiddleware, validateNewsMedia, multerErrorHandler, validateProfilMedia };
