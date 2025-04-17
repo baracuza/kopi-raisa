@@ -38,17 +38,17 @@ const validateProfilMedia = (req, res, next) => {
     const allowedTypes = ['image/jpeg', 'image/png', 'image/webp', 'image/jpg',];
 
     // Cek jika tidak ada file yang diunggah
-    if (!req.files || req.files.length === 0) {
-        return res.status(400).json({
-            message: 'Validasi gagal!',
-            errors: {
-                media: '*Minimal satu file gambar/video wajib diunggah'
-            }
-        });
-    }
+    // if (!req.file) {
+    //     return res.status(400).json({
+    //         message: 'Validasi gagal!',
+    //         errors: {
+    //             media: '*Minimal satu file gambar wajib diunggah'
+    //         }
+    //     });
+    // }
 
     // Cek jumlah maksimal file
-    if (req.files.length > maxFiles) {
+    if (req.file.length > maxFiles) {
         return res.status(400).json({
             message: 'Validasi gagal!',
             errors: {
@@ -58,7 +58,7 @@ const validateProfilMedia = (req, res, next) => {
     }
 
     // Validasi ukuran file
-    const oversizedFiles = req.files.filter(file => file.size > maxSizeBytes);
+    const oversizedFiles = req.file.filter(file => file.size > maxSizeBytes);
     if (oversizedFiles.length > 0) {
         return res.status(400).json({
             message: 'Validasi gagal!',
@@ -69,7 +69,7 @@ const validateProfilMedia = (req, res, next) => {
     }
 
     // Validasi tipe file
-    const invalidFiles = req.files.filter(file => !allowedTypes.includes(file.mimetype));
+    const invalidFiles = req.file.filter(file => !allowedTypes.includes(file.mimetype));
     if (invalidFiles.length > 0) {
         return res.status(400).json({
             message: 'Validasi gagal!',
@@ -152,7 +152,7 @@ const multerErrorHandler = (err, req, res, next) => {
             return res.status(400).json({
                 message: 'Validasi gagal!',
                 errors: {
-                    media: '*Ukuran setiap file maksimal 5MB'
+                    media: '*Ukuran file maksimal 5MB'
                 }
             });
         }
