@@ -58,14 +58,14 @@ const validateProfilMedia = (req, res, next) => {
     }
 
     // Validasi ukuran file
-    if (req.file.size > maxSizeMB) {
-        return res.status(400).json({
-            message: 'Validasi gagal!',
-            errors: {
-                media: `*Ukuran setiap file maksimal ${maxSizeMB}MB`
-            }
-        });
-    }
+    // if (req.file.size > maxSizeMB) {
+    //     return res.status(400).json({
+    //         message: 'Validasi gagal!',
+    //         errors: {
+    //             media: `*Ukuran setiap file maksimal ${maxSizeMB}MB`
+    //         }
+    //     });
+    // }
 
     // Validasi tipe file
     if (!allowedTypes.includes(file.mimetype)) {
