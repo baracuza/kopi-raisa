@@ -5,6 +5,9 @@ const jsonwebtoken = require('jsonwebtoken');
 const dotenv = require('dotenv');
 const nodemailer = require('nodemailer');
 
+const { deleteFromCloudinaryByUrl } = require('../utils/cloudinary');
+const { uploadToCloudinary } = require('../services/cloudinaryUpload.service');
+
 
 dotenv.config();
 const JWT_EXPIRES = process.env.JWT_EXPIRES;
@@ -19,40 +22,6 @@ const createUser = async (newUserData) => {
     const userData = await insertUser(newUserData);
     return userData;
 };
-
-
-// const loginUser = async ({ emailOrPhone, password }) => {
-//     const user = await findUserByIdentifier(emailOrPhone);
-
-//     if (!user) {
-//         throw new Error('User tidak ditemukan!');
-//     }
-
-//     //cek password
-//     const validPassword = await bcrypt.compare(password, user.password);
-//     if (!validPassword) {
-//         throw new Error('Password salah!');
-//     }
-
-//     //buat token
-//     const token = await jsonwebtoken.sign({ id: user.id, admin: user.admin }, process.env.JWT_SECRET,
-//         { expiresIn: JWT_EXPIRES }
-//     );
-
-//     return {
-//         message: 'Login berhasil!', user: {
-//             id: user.id,
-//             name: user.name,
-//             email: user.email,
-//             phone_number: user.phone_number,
-//             image: user.image,
-//             admin: user.admin,
-//             verified: user.verified
-//         }, token
-//     };
-
-
-// };
 
 const loginUser = async ({ emailOrPhone, password }) => {
     console.log("Mencari user:", emailOrPhone);
@@ -105,9 +74,24 @@ const loginUser = async ({ emailOrPhone, password }) => {
     };
 };
 
-
 const updateUser = async ({ updatedData, userId }) => {
-    const update = await updateByID({ updatedData, userId });
+    const existingUser = await findUserByID(userId);
+    if (!existingUser) {
+        throw new Error('User tidak ditemukan!');
+    }
+    const { name, phone_number, file } = updatedData;
+    const updatePayload = { name, phone_number };
+
+
+    if (file){
+        if (existingUser.image) {
+            await deleteFromCloudinaryByUrl(existingUser.image);
+        }
+        const imageUrl = await uploadToCloudinary(file.buffer, file.originalname);
+        updatePayload.image = imageUrl;
+    }
+    const update = await updateByID({userId, updatedData: updatePayload});
+    console.log("Update user:", update);
 
     return update;
 }

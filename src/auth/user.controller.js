@@ -8,7 +8,7 @@ const jwt = require('jsonwebtoken');
 
 
 const { createUser, loginUser, updateUser, sendResetPasswordEmail, resetPassword } = require('./user.service');
-const { validateRegister, validateLogin } = require('../validation/user.validation');
+const { validateRegister, validateLogin, validateUpdateProfile } = require('../validation/user.validation');
 const { authMiddleware } = require('../middleware/middleware');
 
 
@@ -116,12 +116,30 @@ router.get('/user', authMiddleware, async (req, res) => {
     }
 });
 
-router.put('/user', authMiddleware, async (req, res) => {
+router.put('/user', authMiddleware, upload.single('profil'), validateUpdateProfile, async (req, res) => {
     try {
-        const userId = req.user.id;
-        const updatedData = req.body;
+        const errors = validationResult(req);
+        console.log('errors:', errors.array());
+        if (!errors.isEmpty()) {
+            return res.status(400).json({
+                message: 'Validasi gagal!',
+                errors: errors.array().reduce((acc, curr) => {
+                    if (!acc[curr.path]) {
+                        acc[curr.path] = curr.msg;
+                    }
+                    return acc;
+                }, {})
+            });
+        }
 
-        const updatedUser = await updateUser({ updatedData, userId });
+        const userId = req.user.id;
+        const updateData = {
+            name: req.body.name,
+            phone_number: req.body.phone_number,
+            file: req.file,
+        }
+        const updatedUser = await updateUser({ userId, updateData: updateData });
+        console.log("Update user:", updatedUser);
 
         return res.status(200).json({
             message: 'Profil berhasil diperbarui!',

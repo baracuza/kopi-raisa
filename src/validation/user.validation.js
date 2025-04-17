@@ -39,6 +39,29 @@ const validateRegister = [
         }),
 ];
 
+const validateUpdateProfile = [
+    body('name')
+        .trim()
+        .notEmpty().withMessage('*Nama wajib diisi')
+        .isLength({ min: 3, max: 50 }).withMessage('*Nama harus lebih dari 3 karakter'),
+
+    body('phone_number')
+        .trim()
+        .notEmpty().withMessage('*Nomor telepon wajib diisi')
+        .custom((value) => {
+            if (!validator.isMobilePhone(value, 'id-ID')) {
+                throw new Error('*Format nomor telepon tidak valid');
+            }
+            if (!validator.isNumeric(value)) {
+                throw new Error('*Nomor telepon harus berupa angka');
+            }
+            if (value.length < 10 || value.length > 15) {
+                throw new Error('*Nomor telepon kurang dari 11 digit');
+            }
+            return true;
+        }),
+];
+
 const validateLogin = [
     body('emailOrPhone')
         .trim()
@@ -71,4 +94,4 @@ const newsValidator = [
 ];
 
 
-module.exports = { validateRegister, validateLogin, newsValidator };
+module.exports = { validateRegister, validateLogin, newsValidator, validateUpdateProfile };
