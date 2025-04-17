@@ -66,8 +66,8 @@ const loginUser = async ({ emailOrPhone, password }) => {
     }
 
     if (user.verified === true) {
-        console.log("❌ Akun ini menggunakan Google OAuth. Silakan login menggunakan Google.");
-        throw new Error('Akun ini menggunakan Google OAuth. Silakan login menggunakan Google.');
+        console.log("❌ Akun telah terdaftar dengan metode lain. Silahkan coba lagi!");
+        throw new Error('Akun telah terdaftar dengan metode lain. Silahkan coba lagi!');
     }
 
     const validPassword = await bcrypt.compare(password, user.password);
