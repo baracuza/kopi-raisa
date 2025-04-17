@@ -128,21 +128,50 @@ const validateNewsMedia = (req, res, next) => {
 
 const multerErrorHandler = (err, req, res, next) => {
     if (err instanceof multer.MulterError) {
-        if (err.code === 'LIMIT_FILE_SIZE') {
-            return res.status(400).json({
-                message: 'Validasi gagal!',
-                errors: {
-                    media: '*Ukuran file maksimal 5MB'
-                }
-            });
+        switch (err.code) {
+            case 'LIMIT_FILE_SIZE':
+                return res.status(400).json({
+                    message: 'Validasi gagal!',
+                    errors: {
+                        media: '*Ukuran file maksimal 5MB'
+                    }
+                });
+            case 'LIMIT_FILE_COUNT':
+                return res.status(400).json({
+                    message: 'Validasi gagal!',
+                    errors: {
+                        media: '*Jumlah file yang diunggah melebihi batas(maks.5)'
+                    }
+                });
+            case 'LIMIT_UNEXPECTED_FILE':
+                return res.status(400).json({
+                    message: 'Validasi gagal!',
+                    errors: {
+                        media: '*terlalu banyak file yang diunggah'
+                    }
+                });
+            default:
+                return res.status(400).json({
+                    message: 'Upload gagal',
+                    error: err.message
+                });
         }
-
-        // Tambahan: bisa juga tangani LIMIT_FILE_COUNT dll
-        return res.status(400).json({ message: 'Upload gagal', error: err.message });
     }
 
-    next(err); // lempar ke global error handler kalau bukan multer error
+    // Tangani juga error umum lain dari multer
+    if (err.message === 'Unexpected field') {
+        return res.status(400).json({
+            message: 'Upload gagal',
+            errors: {
+                media: '*Hanya boleh mengunggah file pada field yang sesuai (misal: "profil")'
+            }
+        });
+    }
+
+    // Kalau bukan error dari multer, lanjut ke global error handler
+    next(err);
 };
+
 
 
 
