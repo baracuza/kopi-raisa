@@ -66,8 +66,8 @@ const loginUser = async ({ emailOrPhone, password }) => {
     }
 
     if (user.verified === true) {
-        console.log("❌ Akun telah terdaftar dengan metode lain. Silahkan coba lagi!");
-        throw new Error('Akun telah terdaftar dengan metode lain. Silahkan coba lagi!');
+        console.log("❌ Akun telah terdaftar dengan metode lain. Silahkan coba dengan metode yang anda gunakan sebelumnya!");
+        throw new Error(`Akun ${user.email} telah terdaftar dengan metode lain. Silahkan coba dengan metode yang anda gunakan sebelumnya!`);
     }
 
     const validPassword = await bcrypt.compare(password, user.password);
@@ -122,7 +122,7 @@ const sendResetPasswordEmail = async (email) => {
     }
 
     if (user.verified) {
-        throw new Error('Akun ini menggunakan Google OAuth. Silakan login menggunakan Google.');
+        throw new Error(`Gagal mengirim Email reset password. Akun ${user. email} telah terdaftar dengan metode lain. Silahkan coba dengan metode yang anda gunakan sebelumnya!`);
     }
 
     const resetToken = await jsonwebtoken.sign({ id: user.id }, process.env.JWT_SECRET, { expiresIn: '5m' });
@@ -163,7 +163,7 @@ const resetPassword = async ({ token, newPassword }) => {
     console.log('currentUser.password:', typeof currentUser.password, currentUser.password);
 
     if (!currentUser.password) {
-        throw new Error('Akun ini didaftarkan melalui Google dan tidak memiliki password. Silakan login menggunakan Google.');
+        throw new Error('Akun ini didaftarkan melalui metode lain. Silahkan coba dengan metode yang anda gunakan sebelumnya!');
     }
 
 
