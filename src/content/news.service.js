@@ -100,6 +100,64 @@ const postVideoToFacebook = async ({ pageId, pageAccessToken, videoUrl, caption 
     }
 };
 
+const postImagesToInstagram = async ({ igUserId, images, caption, accessToken }) => {
+    try {
+        const mediaIds = [];
+
+        // Step 1: Buat container untuk tiap image
+        for (const image of images) {
+            const res = await axios.post(`https://graph.facebook.com/v18.0/${igUserId}/media`, null, {
+                params: {
+                    image_url: image.url,
+                    is_carousel_item: images.length > 1 ? true : undefined,
+                    caption: images.length === 1 ? caption : undefined, // hanya caption jika 1 gambar
+                    access_token: accessToken
+                }
+            });
+
+            mediaIds.push(res.data.id);
+        }
+
+        // Step 2: Publish sebagai carousel jika lebih dari satu
+        if (mediaIds.length > 1) {
+            const carousel = await axios.post(`https://graph.facebook.com/v18.0/${igUserId}/media`, null, {
+                params: {
+                    children: mediaIds,
+                    media_type: 'CAROUSEL',
+                    caption,
+                    access_token: accessToken
+                }
+            });
+
+            const creationId = carousel.data.id;
+
+            // Step 3: Publish carousel
+            const publish = await axios.post(`https://graph.facebook.com/v18.0/${igUserId}/media_publish`, null, {
+                params: {
+                    creation_id: creationId,
+                    access_token: accessToken
+                }
+            });
+
+            return publish.data;
+        } else {
+            // Publish langsung untuk 1 gambar
+            const publish = await axios.post(`https://graph.facebook.com/v18.0/${igUserId}/media_publish`, null, {
+                params: {
+                    creation_id: mediaIds[0],
+                    access_token: accessToken
+                }
+            });
+
+            return publish.data;
+        }
+
+    } catch (error) {
+        console.error('Gagal post ke Instagram:', error.response?.data || error.message);
+        throw new Error('Posting ke Instagram gagal: ' + (error.response?.data?.error?.message || error.message));
+    }
+};
+
 
 
 const updateNews = async (id, editedNewsData) => {
@@ -168,4 +226,4 @@ const removeNews = async (id) => {
     return newsData;
 };
 
-module.exports = { getNews, getNewsById, createNewsWithMedia, postVideoToFacebook, postImagesToFacebook, updateNews, removeNews };
+module.exports = { getNews, getNewsById, createNewsWithMedia, postVideoToFacebook, postImagesToFacebook, postImagesToInstagram, updateNews, removeNews };

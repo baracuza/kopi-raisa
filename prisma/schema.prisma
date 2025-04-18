@@ -37,20 +37,23 @@ model User {
 }
 
 model FacebookAccount {
-  id             String   @id @default(uuid())
-  facebook_id    String   @unique
-  name           String   // nama dari Facebook
-  image          String?  // foto profil Facebook
-  access_token   String
-  page_id        String
-  page_name      String
-  page_access_token String?   //access token untuk Page
-  email          String   // email dari Facebook
-  token_expires  DateTime
-  user           User     @relation(fields: [userId], references: [id])
-  userId         Int      @unique
-  createdAt      DateTime @default(now())
-  updatedAt      DateTime @updatedAt
+  id                   String   @id @default(uuid())
+  facebook_id          String   @unique
+  name                 String   // nama dari Facebook
+  image                String?  // foto profil Facebook
+  access_token         String
+  page_id              String
+  page_name            String
+  page_access_token    String?   //access token untuk Page
+  instagramAccount_id  String?  // ID dari akun Instagram Business
+  instagram_username   String?  // Username dari akun Instagram
+  ig_user_id           String?  // ID dari Instagram user (kadang sama dgn instagram_business_account_id)
+  email                String   // email dari Facebook
+  token_expires        DateTime
+  user                 User     @relation(fields: [userId], references: [id])
+  userId               Int      @unique
+  createdAt            DateTime @default(now())
+  updatedAt            DateTime @updatedAt
 }
 
 

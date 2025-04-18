@@ -4,7 +4,7 @@ const upload = require('../middleware/multer');
 const { uploadToCloudinary } = require('../services/cloudinaryUpload.service');
 const { validationResult } = require('express-validator');
 const { deleteFromCloudinaryByUrl, extractPublicId } = require('../utils/cloudinary');
-const { authMiddleware, validateNewsMedia,multerErrorHandler } = require('../middleware/middleware');
+const { authMiddleware, validateNewsMedia, multerErrorHandler } = require('../middleware/middleware');
 const { newsValidator } = require('../validation/user.validation');
 
 const { getNews,
@@ -12,7 +12,8 @@ const { getNews,
     updateNews,
     removeNews,
     createNewsWithMedia,
-    postImagesToFacebook, } = require('./news.service');
+    postImagesToFacebook,
+    postImagesToInstagram } = require('./news.service');
 
 const router = express.Router();
 
@@ -56,7 +57,7 @@ router.get('/:id', async (req, res) => {
     }
 });
 
-router.post('/post', authMiddleware, upload.array('media', 5),multerErrorHandler, newsValidator, validateNewsMedia, async (req, res) => {
+router.post('/post', authMiddleware, upload.array('media', 5), multerErrorHandler, newsValidator, validateNewsMedia, async (req, res) => {
     try {
         console.log("BODY DARI CLIENT:", req.body);
 
@@ -171,6 +172,36 @@ router.post('/post', authMiddleware, upload.array('media', 5),multerErrorHandler
                 });
             }
         }
+        if (postToInstagram === 'true') {
+            const igAccount = await prisma.facebookAccount.findUnique({
+                where: { userId: user_id }
+            });
+            if (!igAccount) {
+                return res.status(400).json({ message: 'Akun Instagram belum terhubung!' });
+            }
+            // Pisahkan media berdasarkan tipe
+            const images = mediaInfos.filter(media => media.mimetype.startsWith('image/'));
+            // const videos = mediaInfos.filter(media => media.mimetype.startsWith('video/'));
+            try {
+                // Posting gambar sebagai carousel jika lebih dari satu, atau sebagai gambar tunggal
+                if (images.length > 0) {
+                    await postImagesToInstagram({
+                        igUserId: igAccount.ig_user_id,
+                        accessToken: igAccount.page_access_token,
+                        images,
+                        caption: `${title}\n\n${content}`
+                    });
+                }
+
+            } catch (igError) {
+                console.error('Gagal posting ke Instagram:', igError.message);
+                return res.status(201).json({
+                    message: 'Berita berhasil disimpan, namun gagal diposting ke Instagram.',
+                    data: news,
+                    error: igError.message
+                });
+            }
+        }
         return res.status(201).json({ message: 'Berita berhasil ditambahkan dan diposting!', data: news });
 
     } catch (error) {
@@ -179,7 +210,7 @@ router.post('/post', authMiddleware, upload.array('media', 5),multerErrorHandler
     }
 })
 
-router.put('/:id', authMiddleware, upload.array('media',5), newsValidator, validateNewsMedia, async (req, res) => {
+router.put('/:id', authMiddleware, upload.array('media', 5), newsValidator, validateNewsMedia, async (req, res) => {
     try {
         // Cek validasi input dari express-validator
         const errors = validationResult(req);
