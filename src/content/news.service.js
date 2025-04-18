@@ -53,6 +53,10 @@ const postImagesToFacebook = async ({ pageId, pageAccessToken, images, caption }
                     access_token: pageAccessToken
                 }
             });
+            if (!res.data.id) {
+                console.warn('Facebook API tidak mengembalikan media ID:', res.data);
+                continue;
+            }
             mediaIds.push(res.data.id);
         }
 

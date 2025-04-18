@@ -227,7 +227,7 @@ router.post('/save-token', (req, res) => {
 });
 
 
-// 1.b Facebook Login
+// 1. Endpoint untuk menautkan akun Facebook
 router.post('/facebook/link',
     authMiddleware,
     async (req, res, next) => {

@@ -146,7 +146,7 @@ router.post('/post', authMiddleware, upload.array('media', 5),multerErrorHandler
                 if (images.length > 0) {
                     await postImagesToFacebook({
                         pageId: fbAccount.page_id,
-                        pageAccessToken: fbAccount.access_token,
+                        pageAccessToken: fbAccount.page_access_token,
                         images,
                         caption: `${title}\n\n${content}`
                     });
