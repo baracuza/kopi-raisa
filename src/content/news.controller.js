@@ -76,7 +76,7 @@ router.post('/post', authMiddleware, upload.array('media', 5), multerErrorHandle
             });
         }
 
-        const { title, content, postToFacebook } = req.body;
+        const { title, content, postToFacebook, postToInstagram} = req.body;
         const published = req.body.published === 'true';
         const user_id = req.user.id;
 
