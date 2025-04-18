@@ -117,7 +117,7 @@ router.get('/user', authMiddleware, async (req, res) => {
     }
 });
 
-router.put('/user', authMiddleware, upload.single('profil'),multerErrorHandler, validateUpdateProfile, validateProfilMedia, async (req, res) => {
+router.put('/user', authMiddleware, upload.single('media'),multerErrorHandler, validateUpdateProfile, validateProfilMedia, async (req, res) => {
     try {
         const errors = validationResult(req);
         console.log('errors:', errors.array());
