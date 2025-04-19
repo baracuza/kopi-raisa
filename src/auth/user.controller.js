@@ -8,7 +8,7 @@ const jwt = require('jsonwebtoken');
 const upload = require('../middleware/multer');
 
 
-const { createUser, loginUser, updateUser, sendResetPasswordEmail, resetPassword } = require('./user.service');
+const { createUser, loginUser, updateUser, sendResetPasswordEmail, resetPassword, getFacebookLoginUrl, upsertFacebook, fetchFacebookAccountData } = require('./user.service');
 const { validateRegister, validateLogin, validateUpdateProfile } = require('../validation/user.validation');
 const { authMiddleware, multerErrorHandler, validateProfilMedia } = require('../middleware/middleware');
 
@@ -391,8 +391,36 @@ router.get('/facebook/pages', authMiddleware, async (req, res) => {
     }
 });
 
+// Redirect user ke Facebook
+router.get('/facebook/login', async (req, res) => {
+    const fbLoginUrl = getFacebookLoginUrl();
+    return res.status(200).json({ message: 'Redirect to Facebook', url: fbLoginUrl });
+});
 
+// Callback setelah login Facebook
+router.get('/facebook/Callback', (req, res, next) => {
+    passport.authenticate('facebook-link', async (err, user, info) => {
+        if (err) return next(err);
 
+        req.login(user, async (err) => {
+            if (err) return next(err);
+            
+            try {
+                const userId = req.user.id; // user yang sedang login (dari session atau JWT)
+                if (!userId) return res.status(401).json({ message: 'Unauthorized' });
+
+                const fbData = await fetchFacebookAccountData(user.accessToken);
+                if (!fbData) return res.status(400).json({ message: 'Gagal mengambil data Facebook' });
+
+                const savedAccount = await upsertFacebook(userId, fbData);
+                return res.json({ message: 'Akun Facebook berhasil ditautkan', data: savedAccount });
+            } catch (error) {
+                console.error('Facebook callback error:', error);
+                return res.status(500).json({ message: 'Internal server error' });
+            }
+        });
+    })(req, res, next);
+});
 
 router.post('/logout', (req, res) => {
     res.clearCookie('token', {

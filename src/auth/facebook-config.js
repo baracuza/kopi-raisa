@@ -7,7 +7,7 @@ const dotenv = require('dotenv');
 dotenv.config();
 
 // Untuk POST /facebook/link (via token)
-passport.use('facebook-token',new FacebookTokenStrategy({
+passport.use('facebook-token', new FacebookTokenStrategy({
     clientID: process.env.FB_CLIENT_ID,
     clientSecret: process.env.FB_CLIENT_SECRET,
     callbackURL: process.env.FB_CALLBACK_URL,
@@ -21,28 +21,40 @@ passport.use('facebook-token',new FacebookTokenStrategy({
 }));
 
 
-// passport.use('facebook-link', new FacebookStrategy({
-//     clientID: process.env.FB_CLIENT_ID,
-//     clientSecret: process.env.FB_CLIENT_SECRET,
-//     callbackURL: process.env.FB_CALLBACK_URL,
-//     profileFields: ['id', 'displayName', 'photos', 'email'],
-//     enableProof: false
-// }, async (accessToken, refreshToken, profile, done) => {
-//     try {
-//         console.log('FB Profile:', profile);
-//         profile.accessToken = accessToken;
+passport.use('facebook-link', new FacebookStrategy({
+    clientID: process.env.FACEBOOK_CLIENT_ID,
+    clientSecret: process.env.FACEBOOK_CLIENT_SECRET,
+    callbackURL: process.env.FACEBOOK_CALLBACK_URL,
+    profileFields: ['id', 'displayName', 'emails', 'picture.type(large)'],
+    passReqToCallback: true
+}, async (req, accessToken, refreshToken, profile, done) => {
+    try {
+        // contoh ambil userId dari query (sementara)
+        const userId = req.query.userId;
 
-//         // Di sini hanya kirim ke route, data disimpan di sana
-//         return done(null, profile);
-//     } catch (error) {
-//         done(error, null);
-//     }
-// }));
+        // atau bisa cari user dari DB berdasarkan facebookId
+        const user = {
+            id: userId,
+            name: profile.displayName,
+            accessToken: accessToken
+        };
+
+        done(null, user); // penting! supaya req.user bisa terisi
+    } catch (error) {
+        done(error);
+    }
+}));
+
 
 
 passport.serializeUser((user, done) => {
-    done(null, user);
+    done(null, user.id); // hanya simpan user.id ke session
 });
-passport.deserializeUser((obj, done) => {
-    done(null, obj);
+
+passport.deserializeUser((id, done) => {
+    // Ambil user dari DB berdasarkan id
+    const { findUserByID} = require('../auth/user.repository');
+    findUserByID(id)
+        .then(user => done(null, user))
+        .catch(err => done(err));
 });

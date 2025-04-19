@@ -5,8 +5,8 @@ const passport = require('passport');
 const cors = require('cors');
 require('./src/auth/passport-config');
 require('./src/auth/facebook-config');
-const passportLink = require('./src/auth/facebook-config');
-
+// const passportLink = require('./src/auth/facebook-config');
+const session = require('express-session');
 
 dotenv.config();
 
@@ -22,7 +22,19 @@ const corsOption = {
 
 app.use(express.json());
 
+app.use(session({
+    secret: process.env.SESSION_SECRET || 'kopi-secret',
+    resave: false,
+    saveUninitialized: false,
+    cookie: {
+        secure: false, // true kalau HTTPS
+        httpOnly: true,
+        maxAge: 24 * 60 * 60 * 1000 // 1 hari
+    }
+}));
+
 app.use(passport.initialize());
+app.use(passport.session()); // tambahkan ini!
 app.use(cookieParser());
 app.use(cors(corsOption));
 
