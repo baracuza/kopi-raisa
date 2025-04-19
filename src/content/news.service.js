@@ -100,6 +100,27 @@ const postVideoToFacebook = async ({ pageId, pageAccessToken, videoUrl, caption 
     }
 };
 
+const delay = (ms) => new Promise(resolve => setTimeout(resolve, ms));
+
+const waitForMediaReady = async (creationId, accessToken, maxAttempts = 10, interval = 1500) => {
+    for (let attempt = 0; attempt < maxAttempts; attempt++) {
+        const res = await axios.get(`https://graph.facebook.com/v18.0/${creationId}`, {
+            params: {
+                fields: 'status_code',
+                access_token: accessToken
+            }
+        });
+
+        const status = res.data.status_code;
+        if (status === 'FINISHED') return true;
+        if (status === 'ERROR') throw new Error('Media gagal diproses oleh Instagram');
+
+        await delay(interval); // tunggu sebelum cek ulang
+    }
+    throw new Error('Media belum siap setelah beberapa kali percobaan');
+};
+
+
 const postImagesToInstagram = async ({ igUserId, images, caption, accessToken }) => {
     try {
         const mediaIds = [];
@@ -115,8 +136,13 @@ const postImagesToInstagram = async ({ igUserId, images, caption, accessToken })
                 }
             });
 
-            mediaIds.push(res.data.id);
+            const creationId = res.data.id;
+            // Tunggu media siap
+            await waitForMediaReady(creationId, accessToken);
+
+            mediaIds.push(creationId);
         }
+
 
         // Step 2: Publish sebagai carousel jika lebih dari satu
         if (mediaIds.length > 1) {
@@ -130,6 +156,9 @@ const postImagesToInstagram = async ({ igUserId, images, caption, accessToken })
             });
 
             const creationId = carousel.data.id;
+
+            // Tunggu carousel siap
+            await waitForMediaReady(creationId, accessToken);
 
             // Step 3: Publish carousel
             const publish = await axios.post(`https://graph.facebook.com/v18.0/${igUserId}/media_publish`, null, {
