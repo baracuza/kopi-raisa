@@ -203,7 +203,6 @@ const updateNews = async (id, editedNewsData) => {
 
     let uploadedUrl = [];
 
-    /// Kalau ada media baru
     if (mediaFiles && mediaFiles.length > 0) {
         // Hapus media lama dari Cloudinary dan DB
         for (const media of existingNews.newsMedia) {
@@ -225,13 +224,19 @@ const updateNews = async (id, editedNewsData) => {
             console.log("File berhasil diupload:", url);
         }
 
-
         return {
             ...updatedNews,
-            newsMedia: uploadedUrl.length > 0 ? uploadedUrl : existingNews.newsMedia
+            newsMedia: uploadedUrl
+        };
+    } else {
+        // Tidak ada media baru, kembalikan data berita dengan media lama
+        return {
+            ...updatedNews,
+            newsMedia: existingNews.newsMedia
         };
     }
 };
+
 
 const removeNews = async (id) => {
     const existingNews = await getNewsByIdData(id);
