@@ -55,3 +55,9 @@ app.use("/api/v1/partner", partnerRoutes);
 app.listen(port, () => {
     console.log(`Server is running on... http://localhost:${port}`);
 });
+
+// Error handler
+app.use((err, req, res, next) => {
+    console.error('Unhandled error:', err.stack);
+    res.status(500).json({ message: 'Terjadi kesalahan di server.' });
+});
