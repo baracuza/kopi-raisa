@@ -23,7 +23,7 @@ const getNews = async () => {
 const getNewsById = async (newsId) => {
     const news = await getNewsByIdData(newsId);
     if (!news) {
-        throw new Error("Berita tidak ditemukan!");
+        throw new Error("*Berita tidak ditemukan!");
     }
     return news;
 };
@@ -81,7 +81,7 @@ const postImagesToFacebook = async ({ pageId, pageAccessToken, images, caption }
         }
     } catch (error) {
         console.error('Gagal memposting gambar ke Facebook:', error.response?.data || error.message);
-        throw new Error('Posting gambar ke Facebook gagal: ' + (error.response?.data?.error?.message || error.message));
+        throw new Error('*Posting gambar ke Facebook gagal: ' + (error.response?.data?.error?.message || error.message));
     }
 };
 
@@ -98,11 +98,11 @@ const waitForMediaReady = async (creationId, accessToken, maxAttempts = 10, inte
 
         const status = res.data.status_code;
         if (status === 'FINISHED') return true;
-        if (status === 'ERROR') throw new Error('Media gagal diproses oleh Instagram');
+        if (status === 'ERROR') throw new Error('*Media gagal diproses oleh Instagram');
 
         await delay(interval); // tunggu sebelum cek ulang
     }
-    throw new Error('Media belum siap setelah beberapa kali percobaan');
+    throw new Error('*Media belum siap setelah beberapa kali percobaan');
 };
 
 const postImagesToInstagram = async ({ igUserId, images, caption, accessToken }) => {
@@ -167,7 +167,7 @@ const postImagesToInstagram = async ({ igUserId, images, caption, accessToken })
 
     } catch (error) {
         console.error('Gagal post ke Instagram:', error.response?.data || error.message);
-        throw new Error('Posting ke Instagram gagal: ' + (error.response?.data?.error?.message || error.message));
+        throw new Error('*Posting ke Instagram gagal: ' + (error.response?.data?.error?.message || error.message));
     }
 };
 
@@ -182,7 +182,7 @@ const postVideoToFacebook = async ({ pageId, pageAccessToken, videoUrl, caption 
         });
     } catch (error) {
         console.error('Gagal memposting video ke Facebook:', error.response?.data || error.message);
-        throw new Error('Posting video ke Facebook gagal: ' + (error.response?.data?.error?.message || error.message));
+        throw new Error('*Posting video ke Facebook gagal: ' + (error.response?.data?.error?.message || error.message));
     }
 };
 
@@ -190,7 +190,7 @@ const postVideoToFacebook = async ({ pageId, pageAccessToken, videoUrl, caption 
 const updateNews = async (id, editedNewsData) => {
     const existingNews = await getNewsByIdData(id);
     if (!existingNews) {
-        throw new Error("Berita tidak ditemukan!");
+        throw new Error("*Berita tidak ditemukan!");
     }
 
     const { title, content, mediaFiles } = editedNewsData;
@@ -241,7 +241,7 @@ const updateNews = async (id, editedNewsData) => {
 const removeNews = async (id) => {
     const existingNews = await getNewsByIdData(id);
     if (!existingNews) {
-        throw new Error("Berita tidak ditemukan!");
+        throw new Error("*Berita tidak ditemukan!");
     }
     // Hapus semua media dari Cloudinary berdasarkan URL
     if (existingNews.newsMedia && existingNews.newsMedia.length > 0) {

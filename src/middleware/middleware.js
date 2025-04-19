@@ -12,7 +12,7 @@ const authMiddleware = async (req, res, next) => {
         console.log('Cookies:', req.cookies); // <--- ini penting
 
         if (!authHeader) {
-            return res.status(401).json({ message: 'Access Denied / Tidak ada token' });
+            return res.status(401).json({ message: '*Access Denied / Tidak ada token' });
         }
 
         const verify = jwt.verify(authHeader, process.env.JWT_SECRET);
@@ -22,13 +22,13 @@ const authMiddleware = async (req, res, next) => {
         });
 
         if (!user) {
-            return res.status(404).json({ message: 'User tidak ditemukan!' });
+            return res.status(404).json({ message: '*User tidak ditemukan!' });
         }
 
         req.user = user;
         next();
     } catch (error) {
-        return res.status(401).json({ message: 'Token invalid atau sudah kadaluwarsa!' });
+        return res.status(401).json({ message: '*Token invalid atau sudah kadaluwarsa!' });
     }
 };
 

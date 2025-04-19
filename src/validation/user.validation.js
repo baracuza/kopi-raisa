@@ -85,7 +85,7 @@ const newsValidator = [
     body('title')
         .trim()
         .notEmpty().withMessage('*Judul wajib diisi')
-        .isLength({ max: 500 }).withMessage('Judul maksimal 500 karakter'),
+        .isLength({ max: 500 }).withMessage('*Judul maksimal 500 karakter'),
     // .isLength({ min: 5, max: 100 }).withMessage('*Judul berita harus lebih dari 5 karakter'),
 
     body('content')
@@ -96,7 +96,7 @@ const newsValidator = [
             const title = req.body.title || '';
             const combinedLength = `${title}\n\n${value}`.length;
             if (combinedLength > 2200) {
-                throw new Error('Judul dan Caption/Deskripsi terlalu panjang');
+                throw new Error('*Judul dan Konten Berita Terlalu Panjang');
             }
             return true;
         }),

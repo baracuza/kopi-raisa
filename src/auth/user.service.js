@@ -19,7 +19,7 @@ const createUser = async (newUserData) => {
     const existingUser = await findUserByIdentifier(newUserData.email) || (newUserData.phone_number && await findUserByIdentifier(newUserData.phone_number));
 
     if (existingUser) {
-        throw new Error('Email atau nomor HP sudah terdaftar');
+        throw new Error('*Email atau nomor HP sudah terdaftar');
     }
     const userData = await insertUser(newUserData);
     return userData;
@@ -79,7 +79,7 @@ const loginUser = async ({ emailOrPhone, password }) => {
 const updateUser = async ({ updateData, userId }) => {
     const existingUser = await findUserByID(userId);
     if (!existingUser) {
-        throw new ApiError(400,'User tidak ditemukan!');
+        throw new ApiError(400,'*User tidak ditemukan!');
     }
     const { name, phone_number, file } = updateData;
     const updatePayload = { name, phone_number };
@@ -87,7 +87,7 @@ const updateUser = async ({ updateData, userId }) => {
     if (phone_number && phone_number !== existingUser.phone_number) {
         const userWithSamePhone = await findUserNumber(phone_number, userId);
         if (userWithSamePhone) {
-            throw new ApiError(400,'Nomor sudah digunakan');
+            throw new ApiError(400,'*Nomor sudah digunakan');
         }
     }
 
@@ -110,11 +110,11 @@ const sendResetPasswordEmail = async (email) => {
     console.log('user', user);
 
     if (!user) {
-        throw new Error('User tidak ditemukan!');
+        throw new Error('*User tidak ditemukan!');
     }
 
     if (user.verified) {
-        throw new Error(`Gagal mengirim Email reset password. Akun ${user.email} telah terdaftar dengan metode lain. Silahkan coba dengan metode yang anda gunakan sebelumnya!`);
+        throw new Error(`*Gagal mengirim Email reset password. Akun ${user.email} telah terdaftar dengan metode lain. Silahkan coba dengan metode yang anda gunakan sebelumnya!`);
     }
 
     const resetToken = await jsonwebtoken.sign({ id: user.id }, process.env.JWT_SECRET, { expiresIn: '5m' });
@@ -144,24 +144,24 @@ const resetPassword = async ({ token, newPassword }) => {
     const decoded = await jsonwebtoken.verify(token, process.env.JWT_SECRET);
 
     if (!decoded) {
-        throw new Error('Token tidak valid!');
+        throw new Error('*Token tidak valid!');
     }
 
     const currentUser = await findUserByID(decoded.id);
     if (!currentUser) {
-        throw new Error('Pengguna tidak ditemukan.');
+        throw new Error('*Pengguna tidak ditemukan.');
     }
     console.log('newPassword:', typeof newPassword, newPassword);
     console.log('currentUser.password:', typeof currentUser.password, currentUser.password);
 
     if (!currentUser.password) {
-        throw new Error('Akun ini didaftarkan melalui metode lain. Silahkan coba dengan metode yang anda gunakan sebelumnya!');
+        throw new Error('*Akun ini didaftarkan melalui metode lain. Silahkan coba dengan metode yang anda gunakan sebelumnya!');
     }
 
 
     const isSamePassword = await bcrypt.compare(newPassword, currentUser.password);
     if (isSamePassword) {
-        throw new Error('Password baru tidak boleh sama dengan yang lama.');
+        throw new Error('*Password baru tidak boleh sama dengan yang lama.');
     }
 
 
