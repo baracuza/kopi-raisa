@@ -148,7 +148,7 @@ router.put('/user', authMiddleware, upload.single('media'), multerErrorHandler, 
         });
     } catch (error) {
     
-        return res.status(500).json({ message: 'Gagal memperbarui profil!', error: error.message });
+        return res.status(500).json({ message: error.message });
     }
 });
 
