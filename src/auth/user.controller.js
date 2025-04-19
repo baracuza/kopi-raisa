@@ -263,7 +263,7 @@ router.post('/facebook/link',
                 try {
                     const { data: pageData } = await axios.get(`https://graph.facebook.com/v19.0/me/accounts`, {
                         params: {
-                            access_token: accessToken
+                            access_token: facebookProfile.accessToken,
                         }
                     });
 
