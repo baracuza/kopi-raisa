@@ -117,7 +117,7 @@ router.get('/user', authMiddleware, async (req, res) => {
     }
 });
 
-router.put('/user', authMiddleware, upload.single('media'),multerErrorHandler, validateUpdateProfile, validateProfilMedia, async (req, res) => {
+router.put('/user', authMiddleware, upload.single('media'), multerErrorHandler, validateUpdateProfile, validateProfilMedia, async (req, res) => {
     try {
         const errors = validationResult(req);
         console.log('errors:', errors.array());
@@ -277,6 +277,32 @@ router.post('/facebook/link',
                     return res.status(500).json({ message: 'Gagal mengambil Facebook Page.' });
                 }
 
+                // Ambil akun Instagram yang terhubung ke Page
+                let instagramData = {};
+                try {
+                    const { data: igData } = await axios.get(
+                        `https://graph.facebook.com/v19.0/${selectedPage.id}`,
+                        {
+                            params: {
+                                fields: 'instagram_business_account{name,username,id}',
+                                access_token: selectedPage.access_token,
+                            },
+                        }
+                    );
+
+                    if (igData.instagram_business_account) {
+                        instagramData = {
+                            ig_user_id: igData.instagram_business_account.id,
+                            instagram_username: igData.instagram_business_account.username,
+                            instagramAccount_id: igData.instagram_business_account.id, // Bisa sama dengan ig_user_id
+                        };
+                    }
+                } catch (igErr) {
+                    console.error('⚠️ Gagal mengambil data akun Instagram:', igErr.response?.data || igErr.message);
+                }
+
+
+
                 // Simpan ke DB
                 const upserted = await prisma.facebookAccount.upsert({
                     where: { facebook_id: facebookProfile.id },
@@ -289,6 +315,9 @@ router.post('/facebook/link',
                         page_id: selectedPage.id,
                         page_name: selectedPage.name,
                         page_access_token: selectedPage.access_token,
+                        ig_user_id: instagramData.ig_user_id || null,
+                        instagram_username: instagramData.instagram_username || null,
+                        instagramAccount_id: instagramData.instagramAccount_id || null,
                     },
                     create: {
                         facebook_id: facebookProfile.id,
@@ -300,11 +329,15 @@ router.post('/facebook/link',
                         page_id: selectedPage.id,
                         page_name: selectedPage.name,
                         page_access_token: selectedPage.access_token,
+                        ig_user_id: instagramData.ig_user_id || null,
+                        instagram_username: instagramData.instagram_username || null,
+                        instagramAccount_id: instagramData.instagramAccount_id || null,
+                        // Hubungkan dengan user yang sedang login
                         user: { connect: { id: currentUser.id } },
                     }
                 });
 
-                return res.json({ message: 'Akun Facebook & Page berhasil ditautkan.', data: upserted });
+                return res.json({ message: 'Akun Facebook & Page berhasil ditautkan.', data: { ...upserted, instagram: instagramData, } });
             })(req, res, next);
 
         } catch (error) {
