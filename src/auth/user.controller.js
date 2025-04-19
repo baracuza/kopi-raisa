@@ -278,28 +278,28 @@ router.post('/facebook/link',
                 }
 
                 // Ambil akun Instagram yang terhubung ke Page
-                // let instagramData = {};
-                // try {
-                //     const { data: igData } = await axios.get(
-                //         `https://graph.facebook.com/v19.0/${selectedPage.id}`,
-                //         {
-                //             params: {
-                //                 fields: 'instagram_business_account{name,username,id}',
-                //                 access_token: selectedPage.access_token,
-                //             },
-                //         }
-                //     );
+                let instagramData = {};
+                try {
+                    const { data: igData } = await axios.get(
+                        `https://graph.facebook.com/v19.0/${selectedPage.id}`,
+                        {
+                            params: {
+                                fields: 'instagram_business_account{name,username,id}',
+                                access_token: selectedPage.access_token,
+                            },
+                        }
+                    );
 
-                //     if (igData.instagram_business_account) {
-                //         instagramData = {
-                //             ig_user_id: igData.instagram_business_account.id,
-                //             instagram_username: igData.instagram_business_account.username,
-                //             instagramAccount_id: igData.instagram_business_account.id, // Bisa sama dengan ig_user_id
-                //         };
-                //     }
-                // } catch (igErr) {
-                //     console.error('⚠️ Gagal mengambil data akun Instagram:', igErr.response?.data || igErr.message);
-                // }
+                    if (igData.instagram_business_account) {
+                        instagramData = {
+                            ig_user_id: igData.instagram_business_account.id,
+                            instagram_username: igData.instagram_business_account.username,
+                            instagramAccount_id: igData.instagram_business_account.id, // Bisa sama dengan ig_user_id
+                        };
+                    }
+                } catch (igErr) {
+                    console.error('⚠️ Gagal mengambil data akun Instagram:', igErr.response?.data || igErr.message);
+                }
 
 
 
