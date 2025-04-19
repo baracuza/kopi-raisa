@@ -160,6 +160,7 @@ router.post('/post', authMiddleware, upload.array('media', 5), multerErrorHandle
                 });
             }
         }
+        
         if (postToInstagram === 'true') {
             const igAccount = await prisma.facebookAccount.findUnique({
                 where: { userId: user_id }

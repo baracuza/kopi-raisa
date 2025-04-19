@@ -84,13 +84,22 @@ const validateLogin = [
 const newsValidator = [
     body('title')
         .trim()
-        .notEmpty().withMessage('*Judul wajib diisi'),
-        // .isLength({ min: 5, max: 100 }).withMessage('*Judul berita harus lebih dari 5 karakter'),
+        .notEmpty().withMessage('*Judul wajib diisi')
+        .isLength({ max: 500 }).withMessage('Judul maksimal 500 karakter'),
+    // .isLength({ min: 5, max: 100 }).withMessage('*Judul berita harus lebih dari 5 karakter'),
 
     body('content')
         .trim()
-        .notEmpty().withMessage('*deskripsi/caption wajib diisi'),
+        .notEmpty().withMessage('*deskripsi/caption wajib diisi')
         // .isLength({ min: 20 }).withMessage('*Konten berita minimal 20 karakter'),
+        .custom((value, { req }) => {
+            const title = req.body.title || '';
+            const combinedLength = `${title}\n\n${value}`.length;
+            if (combinedLength > 2200) {
+                throw new Error('Judul dan Caption/Deskripsi terlalu panjang');
+            }
+            return true;
+        }),
 ];
 
 
