@@ -83,13 +83,6 @@ const updatePasswordByID = async ({ password, userId }) => {
     return user;
 };
 
-const upsertFacebookAccount = async (userId, data) => {
-  return prisma.facebookAccount.upsert({
-    where: { userId },
-    update: data,
-    create: { userId, ...data }
-  });
-};
 
 
-module.exports = { insertUser, isPhoneNumberTaken, isEmailTaken, findUserByIdentifier, updateByID, findUserByEmail, updatePasswordByID, findUserByID, upsertFacebookAccount };
+module.exports = { insertUser, isPhoneNumberTaken, isEmailTaken, findUserByIdentifier, updateByID, findUserByEmail, updatePasswordByID, findUserByID };

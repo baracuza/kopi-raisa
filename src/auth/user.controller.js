@@ -8,7 +8,7 @@ const jwt = require('jsonwebtoken');
 const upload = require('../middleware/multer');
 
 
-const { createUser, loginUser, updateUser, sendResetPasswordEmail, resetPassword, getFacebookLoginUrl, upsertFacebook, fetchFacebookAccountData } = require('./user.service');
+const { createUser, loginUser, updateUser, sendResetPasswordEmail, resetPassword } = require('./user.service');
 const { validateRegister, validateLogin, validateUpdateProfile } = require('../validation/user.validation');
 const { authMiddleware, multerErrorHandler, validateProfilMedia } = require('../middleware/middleware');
 
@@ -117,7 +117,7 @@ router.get('/user', authMiddleware, async (req, res) => {
     }
 });
 
-router.put('/user', authMiddleware, upload.single('media'), multerErrorHandler, validateUpdateProfile, validateProfilMedia, async (req, res) => {
+router.put('/user', authMiddleware, upload.single('media'),multerErrorHandler, validateUpdateProfile, validateProfilMedia, async (req, res) => {
     try {
         const errors = validationResult(req);
         console.log('errors:', errors.array());
@@ -277,28 +277,6 @@ router.post('/facebook/link',
                     return res.status(500).json({ message: 'Gagal mengambil Facebook Page.' });
                 }
 
-                // Ambil akun Instagram Business yang tertaut ke Page
-                let instagramAccount = null;
-                try {
-                    const { data: pageDetails } = await axios.get(
-                        `https://graph.facebook.com/v19.0/${selectedPage.id}`,
-                        {
-                            params: {
-                                access_token: selectedPage.access_token,
-                                fields: 'instagram_business_account{name,username}'
-                            }
-                        }
-                    );
-
-                    instagramAccount = pageDetails.instagram_business_account;
-
-                    if (!instagramAccount) {
-                        console.warn('Tidak ada akun Instagram Business yang tertaut ke page ini.');
-                    }
-                } catch (igError) {
-                    console.error('Gagal mengambil akun Instagram Business:', igError?.response?.data || igError.message);
-                }
-
                 // Simpan ke DB
                 const upserted = await prisma.facebookAccount.upsert({
                     where: { facebook_id: facebookProfile.id },
@@ -311,9 +289,6 @@ router.post('/facebook/link',
                         page_id: selectedPage.id,
                         page_name: selectedPage.name,
                         page_access_token: selectedPage.access_token,
-                        instagramAccount_id: instagramAccount?.id || null,
-                        instagram_username: instagramAccount?.username || null,
-                        ig_user_id: instagramAccount?.id || null,
                     },
                     create: {
                         facebook_id: facebookProfile.id,
@@ -325,14 +300,11 @@ router.post('/facebook/link',
                         page_id: selectedPage.id,
                         page_name: selectedPage.name,
                         page_access_token: selectedPage.access_token,
-                        instagramAccount_id: instagramAccount?.id || null,
-                        instagram_username: instagramAccount?.username || null,
-                        ig_user_id: instagramAccount?.id || null,
                         user: { connect: { id: currentUser.id } },
                     }
                 });
 
-                return res.json({ message: 'Akun Facebook, akun Instagram & Page berhasil ditautkan.', data: upserted });
+                return res.json({ message: 'Akun Facebook & Page berhasil ditautkan.', data: upserted });
             })(req, res, next);
 
         } catch (error) {
@@ -391,36 +363,8 @@ router.get('/facebook/pages', authMiddleware, async (req, res) => {
     }
 });
 
-// Redirect user ke Facebook
-router.get('/facebook/login', async (req, res) => {
-    const fbLoginUrl = getFacebookLoginUrl();
-    return res.status(200).json({ message: 'Redirect to Facebook', url: fbLoginUrl });
-});
 
-// Callback setelah login Facebook
-router.get('/facebook/Callback', (req, res, next) => {
-    passport.authenticate('facebook-link', async (err, user, info) => {
-        if (err) return next(err);
 
-        req.login(user, async (err) => {
-            if (err) return next(err);
-            
-            try {
-                const userId = req.user.id; // user yang sedang login (dari session atau JWT)
-                if (!userId) return res.status(401).json({ message: 'Unauthorized' });
-
-                const fbData = await fetchFacebookAccountData(user.accessToken);
-                if (!fbData) return res.status(400).json({ message: 'Gagal mengambil data Facebook' });
-
-                const savedAccount = await upsertFacebook(userId, fbData);
-                return res.json({ message: 'Akun Facebook berhasil ditautkan', data: savedAccount });
-            } catch (error) {
-                console.error('Facebook callback error:', error);
-                return res.status(500).json({ message: 'Internal server error', error: error.message });
-            }
-        });
-    })(req, res, next);
-});
 
 router.post('/logout', (req, res) => {
     res.clearCookie('token', {
