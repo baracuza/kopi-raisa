@@ -289,6 +289,7 @@ router.post('/facebook/link',
                             },
                         }
                     );
+                    console.log('Instagram Data:', igData); 
 
                     if (igData.instagram_business_account) {
                         instagramData = {
@@ -299,6 +300,7 @@ router.post('/facebook/link',
                     }
                 } catch (igErr) {
                     console.error('⚠️ Gagal mengambil data akun Instagram:', igErr.response?.data || igErr.message);
+                    return res.status(500).json({ message: 'Gagal mengambil data akun Instagram.' });
                 }
 
 
