@@ -63,7 +63,75 @@ const validateProfilMedia = (req, res, next) => {
 };
 
 
-const validateNewsMedia = (options = {}) => {
+const validateInsertNewsMedia = (req, res, next) => {
+    const maxFiles = 5;
+    const maxSizeMB = 5;
+    const maxSizeBytes = maxSizeMB * 1024 * 1024;
+    const allowedTypes = ['image/jpeg', 'image/png', 'image/webp', 'video/mp4', 'video/quicktime'];
+
+
+    if (!req.files) {
+        return next();
+    }
+
+    // Cek jika tidak ada file yang diunggah
+    if (!req.files || req.files.length === 0) {
+        return res.status(400).json({
+            message: 'Validasi gagal!',
+            errors: {
+                media: '*Minimal satu file gambar/video wajib diunggah'
+            }
+        });
+    }
+
+    // Cek jumlah maksimal file
+    if (req.files.length > maxFiles) {
+        return res.status(400).json({
+            message: 'Validasi gagal!',
+            errors: {
+                media: `*Maksimal hanya ${maxFiles} file yang diperbolehkan`
+            }
+        });
+    }
+
+    // Validasi tipe file
+    const invalidFiles = req.files.filter(file => !allowedTypes.includes(file.mimetype));
+    if (invalidFiles.length > 0) {
+        return res.status(400).json({
+            message: 'Validasi gagal!',
+            errors: {
+                media: '*Hanya file gambar (jpg,jpeg, png, webp)'
+            }
+        });
+    }
+
+    // Validasi ukuran file
+    const oversizedFiles = req.files.filter(file => file.size > maxSizeBytes);
+    if (oversizedFiles.length > 0) {
+        return res.status(400).json({
+            message: 'Validasi gagal!',
+            errors: {
+                media: `*Ukuran setiap file maksimal ${maxSizeMB}MB`
+            }
+        });
+    }
+
+    //validasi jumlah total ukuran file diupload
+    const totalSize = req.files.reduce((acc, file) => acc + file.size, 0);
+    const maxTotalSize = 20 * 1024 * 1024; // 20MB
+    if (totalSize > maxTotalSize) {
+        return res.status(400).json({
+            message: 'Validasi gagal!',
+            errors: {
+                media: '*Total ukuran file tidak boleh lebih dari 20MB'
+            }
+        });
+    }
+
+    next(); // lanjut ke controller
+};
+
+const validateUpdateNewsMedia = (options = {}) => {
 
     return (req, res, next) => {
         const { skipIfNoFile = false } = options;
@@ -189,4 +257,4 @@ const multerErrorHandler = (err, req, res, next) => {
 
 
 
-module.exports = { authMiddleware, validateNewsMedia, multerErrorHandler, validateProfilMedia };
+module.exports = { authMiddleware, validateUpdateNewsMedia, validateInsertNewsMedia, multerErrorHandler, validateProfilMedia };
