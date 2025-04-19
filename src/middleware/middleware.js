@@ -67,7 +67,7 @@ const validateInsertNewsMedia = (req, res, next) => {
     const maxFiles = 5;
     const maxSizeMB = 5;
     const maxSizeBytes = maxSizeMB * 1024 * 1024;
-    const allowedTypes = ['image/jpeg', 'image/png', 'image/webp', 'video/mp4', 'video/quicktime'];
+    const allowedTypes = ['image/jpeg', 'image/png', 'image/webp', 'image/jpg'];
 
 
     if (!req.files) {
@@ -79,7 +79,7 @@ const validateInsertNewsMedia = (req, res, next) => {
         return res.status(400).json({
             message: 'Validasi gagal!',
             errors: {
-                media: '*Minimal satu file gambar/video wajib diunggah'
+                media: '*Minimal satu file gambar wajib diunggah'
             }
         });
     }
@@ -100,7 +100,7 @@ const validateInsertNewsMedia = (req, res, next) => {
         return res.status(400).json({
             message: 'Validasi gagal!',
             errors: {
-                media: '*Hanya file gambar (jpg,jpeg, png, webp)'
+                media: '*Hanya file gambar (jpg, jpeg, png, webp)'
             }
         });
     }
@@ -139,7 +139,7 @@ const validateUpdateNewsMedia = (options = {}) => {
         const maxFiles = 5;
         const maxSizeMB = 5;
         const maxSizeBytes = maxSizeMB * 1024 * 1024;
-        const allowedTypes = ['image/jpeg', 'image/png', 'image/webp', 'video/mp4', 'video/quicktime'];
+        const allowedTypes = ['image/jpeg', 'image/png', 'image/webp', 'image/jpg'];
 
         //Skip jika tidak ada file dan diminta skip validasi (misal saat update)
         if ((!req.files || req.files.length === 0) && skipIfNoFile) {
@@ -151,7 +151,7 @@ const validateUpdateNewsMedia = (options = {}) => {
             return res.status(400).json({
                 message: 'Validasi gagal!',
                 errors: {
-                    media: '*Minimal satu file gambar/video wajib diunggah'
+                    media: '*Minimal satu file gambar wajib diunggah'
                 }
             });
         }
@@ -172,7 +172,7 @@ const validateUpdateNewsMedia = (options = {}) => {
             return res.status(400).json({
                 message: 'Validasi gagal!',
                 errors: {
-                    media: '*Hanya file gambar (jpg,jpeg, png, webp)'
+                    media: '*Hanya file gambar (jpg, jpeg, png, webp)'
                 }
             });
         }
@@ -218,7 +218,7 @@ const multerErrorHandler = (err, req, res, next) => {
                 return res.status(400).json({
                     message: 'Validasi gagal!',
                     errors: {
-                        media: '*Jumlah file yang diunggah melebihi batas(maks.5)'
+                        media: '*Jumlah file yang diunggah melebihi batas'
                     }
                 });
             case 'LIMIT_UNEXPECTED_FILE':
@@ -241,7 +241,7 @@ const multerErrorHandler = (err, req, res, next) => {
         return res.status(400).json({
             message: 'Upload gagal',
             errors: {
-                media: '*Hanya boleh mengunggah file pada field yang sesuai (misal: "profil")'
+                media: '*Hanya boleh mengunggah file pada field yang sesuai'
             }
         });
     }
