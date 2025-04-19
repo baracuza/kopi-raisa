@@ -416,7 +416,7 @@ router.get('/facebook/Callback', (req, res, next) => {
                 return res.json({ message: 'Akun Facebook berhasil ditautkan', data: savedAccount });
             } catch (error) {
                 console.error('Facebook callback error:', error);
-                return res.status(500).json({ message: 'Internal server error' });
+                return res.status(500).json({ message: 'Internal server error', error: error.message });
             }
         });
     })(req, res, next);
