@@ -74,6 +74,20 @@ const findUserByID = async (userId) => {
     return user;
 };
 
+const findUserNumber = async (phoneNumber,userIdToExclude) => { 
+    const user = await prisma.User.findFirst({
+        where: {
+            phone_number: phoneNumber,
+            NOT: {
+                id: userIdToExclude
+            }
+        }
+    });
+
+    return user;
+}
+
+
 const updatePasswordByID = async ({ password, userId }) => {
     const user = await prisma.User.update({
         where: { id: userId },
@@ -85,4 +99,4 @@ const updatePasswordByID = async ({ password, userId }) => {
 
 
 
-module.exports = { insertUser, isPhoneNumberTaken, isEmailTaken, findUserByIdentifier, updateByID, findUserByEmail, updatePasswordByID, findUserByID };
+module.exports = { insertUser, isPhoneNumberTaken, isEmailTaken, findUserByIdentifier, updateByID, findUserByEmail, updatePasswordByID, findUserByID, findUserNumber };
