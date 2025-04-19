@@ -8,6 +8,7 @@ const nodemailer = require('nodemailer');
 
 const { deleteFromCloudinaryByUrl } = require('../utils/cloudinary');
 const { uploadToCloudinary } = require('../services/cloudinaryUpload.service');
+const ApiError = require('../utils/apiError');
 
 
 dotenv.config();
@@ -78,7 +79,7 @@ const loginUser = async ({ emailOrPhone, password }) => {
 const updateUser = async ({ updateData, userId }) => {
     const existingUser = await findUserByID(userId);
     if (!existingUser) {
-        throw new Error('User tidak ditemukan!');
+        throw new ApiError(400,'User tidak ditemukan!');
     }
     const { name, phone_number, file } = updateData;
     const updatePayload = { name, phone_number };
@@ -86,7 +87,7 @@ const updateUser = async ({ updateData, userId }) => {
     if (phone_number && phone_number !== existingUser.phone_number) {
         const userWithSamePhone = await findUserNumber(phone_number, userId);
         if (userWithSamePhone) {
-            throw new Error('Nomor sudah digunakan');
+            throw new ApiError(400,'Nomor sudah digunakan');
         }
     }
 

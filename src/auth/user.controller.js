@@ -147,8 +147,10 @@ router.put('/user', authMiddleware, upload.single('media'), multerErrorHandler, 
             data: updatedUser,
         });
     } catch (error) {
-    
-        return res.status(500).json({ message: error.message });
+        console.error("Gagal memperbarui profil:", error);
+
+        const statusCode = error instanceof ApiError ? error.statusCode : 500;
+        return res.status(statusCode).json({ message: error.message });
     }
 });
 
@@ -290,7 +292,7 @@ router.post('/facebook/link',
                             },
                         }
                     );
-                    console.log('Instagram Data:', igData); 
+                    console.log('Instagram Data:', igData);
 
                     if (igData.instagram_business_account) {
                         instagramData = {
