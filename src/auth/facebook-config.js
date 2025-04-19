@@ -21,9 +21,9 @@ passport.use('facebook-token', new FacebookTokenStrategy({
 }));
 
 try {
-    const clientID = process.env.FACEBOOK_CLIENT_ID;
-    const clientSecret = process.env.FACEBOOK_CLIENT_SECRET;
-    const callbackURL = process.env.FACEBOOK_CALLBACK_URL;
+    const clientID = process.env.FB_CLIENT_ID;
+    const clientSecret = process.env.FB_CLIENT_SECRET;
+    const callbackURL = process.env.FB_CALLBACK_URL;
 
     // Cek dulu apakah semua environment variabel sudah ada
     if (!clientID || !clientSecret || !callbackURL) {
