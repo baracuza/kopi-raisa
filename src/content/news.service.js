@@ -29,8 +29,8 @@ const getNewsById = async (newsId) => {
 };
 
 const createNewsWithMedia = async (newsData, user_id) => {
-    const { title, content, published, mediaInfos } = newsData;
-    const news = await insertNews({ title, content, published, user_id });
+    const { title, content, mediaInfos } = newsData;
+    const news = await insertNews({ title, content, user_id });
 
     // Simpan semua media secara paralel
     await Promise.all(
@@ -85,21 +85,6 @@ const postImagesToFacebook = async ({ pageId, pageAccessToken, images, caption }
     }
 };
 
-const postVideoToFacebook = async ({ pageId, pageAccessToken, videoUrl, caption }) => {
-    try {
-        await axios.post(`https://graph.facebook.com/v20.0/${pageId}/videos`, null, {
-            params: {
-                file_url: videoUrl,
-                description: caption,
-                access_token: pageAccessToken
-            }
-        });
-    } catch (error) {
-        console.error('Gagal memposting video ke Facebook:', error.response?.data || error.message);
-        throw new Error('Posting video ke Facebook gagal: ' + (error.response?.data?.error?.message || error.message));
-    }
-};
-
 const delay = (ms) => new Promise(resolve => setTimeout(resolve, ms));
 
 const waitForMediaReady = async (creationId, accessToken, maxAttempts = 10, interval = 1500) => {
@@ -119,7 +104,6 @@ const waitForMediaReady = async (creationId, accessToken, maxAttempts = 10, inte
     }
     throw new Error('Media belum siap setelah beberapa kali percobaan');
 };
-
 
 const postImagesToInstagram = async ({ igUserId, images, caption, accessToken }) => {
     try {
@@ -187,6 +171,20 @@ const postImagesToInstagram = async ({ igUserId, images, caption, accessToken })
     }
 };
 
+const postVideoToFacebook = async ({ pageId, pageAccessToken, videoUrl, caption }) => {
+    try {
+        await axios.post(`https://graph.facebook.com/v20.0/${pageId}/videos`, null, {
+            params: {
+                file_url: videoUrl,
+                description: caption,
+                access_token: pageAccessToken
+            }
+        });
+    } catch (error) {
+        console.error('Gagal memposting video ke Facebook:', error.response?.data || error.message);
+        throw new Error('Posting video ke Facebook gagal: ' + (error.response?.data?.error?.message || error.message));
+    }
+};
 
 
 const updateNews = async (id, editedNewsData) => {

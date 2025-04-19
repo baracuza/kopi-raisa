@@ -77,11 +77,10 @@ router.post('/post', authMiddleware, upload.array('media', 5), multerErrorHandle
         }
 
         const { title, content, postToFacebook, postToInstagram} = req.body;
-        const published = req.body.published === 'true';
         const user_id = req.user.id;
 
         // Validasi agar hanya admin bisa publish berita
-        if (published && !req.user.admin) {
+        if (!req.user.admin) {
             return res.status(403).json({ message: 'Hanya admin yang dapat mempublikasi berita!' });
         }
 
@@ -114,7 +113,6 @@ router.post('/post', authMiddleware, upload.array('media', 5), multerErrorHandle
             news = await createNewsWithMedia({
                 title,
                 content,
-                published: published === 'true',
                 mediaInfos,
             }, user_id);
 
@@ -152,16 +150,6 @@ router.post('/post', authMiddleware, upload.array('media', 5), multerErrorHandle
                         caption: `${title}\n\n${content}`
                     });
                 }
-
-                // Posting video secara terpisah
-                // for (const video of videos) {
-                //     await postVideoToFacebook({
-                //         pageId: fbAccount.page_id,
-                //         pageAccessToken: fbAccount.access_token,
-                //         videoUrl: video.url,
-                //         caption: `${title}\n\n${content}`
-                //     });
-                // }
 
             } catch (fbError) {
                 console.error('Gagal posting ke Facebook:', fbError.message);
