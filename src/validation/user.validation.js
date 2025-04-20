@@ -160,9 +160,9 @@ const updateNewsValidator = [
             .replace(/\s+/g, " ")
             .trim();
 
-        const wordCount = text.split(" ").filter(Boolean).length;
+            const charCount = text.length;
 
-        if (wordCount > 2200) {
+        if (charCount > 2200) {
             throw new Error("Jumlah total kata tidak boleh lebih dari 2200");
         }
 
