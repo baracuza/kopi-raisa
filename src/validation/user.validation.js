@@ -140,31 +140,26 @@ const updateNewsValidator = [
     body("content")
         .optional()
         .custom((value) => {
-            const trimmed = value.trim();
-            if (!trimmed || trimmed === "<p><br></p>") {
-                throw new Error("Konten/deskripsi tidak boleh kosong");
+            const stripped = value.replace(/<[^>]*>/g, "").replace(/\s|&nbsp;/g, "");
+            if (!stripped) {
+                throw new Error("Konten/deskripsi tidak boleh kosong jika diisi");
             }
             return true;
         }),
 
-    // postToFacebook & Instagram boolean opsional
-    // body("postToFacebook")
-    //     .optional()
-    //     .isBoolean().withMessage("postToFacebook harus berupa boolean"),
-
-    // body("postToInstagram")
-    //     .optional()
-    //     .isBoolean().withMessage("postToInstagram harus berupa boolean"),
-
-    // Opsional: validasi total panjang (title + content) tetap tidak lebih dari 2200 kata
+    // Jika title dan/atau content diisi, cek total kata gabungan
     body().custom((_, { req }) => {
         const title = req.body.title || "";
         const content = req.body.content || "";
+
+        // Kalau keduanya tidak diisi, validasi tetap lolos (karena PUT bisa parsial)
+        if (!title && !content) return true;
 
         const text = `${title} ${content}`
             .replace(/<[^>]+>/g, "")
             .replace(/\s+/g, " ")
             .trim();
+
         const wordCount = text.split(" ").filter(Boolean).length;
 
         if (wordCount > 2200) {
@@ -173,6 +168,15 @@ const updateNewsValidator = [
 
         return true;
     }),
+
+    //postToFacebook & Instagram boolean opsional
+    // body("postToFacebook")
+    //     .optional()
+    //     .isBoolean().withMessage("postToFacebook harus berupa boolean"),
+
+    // body("postToInstagram")
+    //     .optional()
+    //     .isBoolean().withMessage("postToInstagram harus berupa boolean"),
 ];
 
 module.exports = { validateRegister, validateLogin, createNewsValidator, updateNewsValidator, validateUpdateProfile };
