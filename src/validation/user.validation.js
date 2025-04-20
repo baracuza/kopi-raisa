@@ -101,7 +101,7 @@ const createNewsValidator = [
         }),
 
     // Validasi total kata dari title + content tidak melebihi 2200 kata
-    body().custom((_, { req }) => {
+    body("content").custom((_, { req }) => {
         const title = req.body.title || "";
         const content = req.body.content || "";
 
