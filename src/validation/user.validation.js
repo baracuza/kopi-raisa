@@ -90,7 +90,7 @@ const createNewsValidator = [
 
     // Konten wajib dan harus berisi teks nyata (bukan hanya tag kosong)
     body("content")
-        .notEmpty().withMessage("Konten wajib diisi")
+        .notEmpty().withMessage("Konten/deskripsi wajib diisi")
         .custom((value) => {
             // Hilangkan tag HTML
             const stripped = value.replace(/<[^>]*>/g, "").replace(/\s|&nbsp;/g, "");
