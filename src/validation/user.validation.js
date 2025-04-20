@@ -113,7 +113,7 @@ const createNewsValidator = [
             const charCount = text.length;
 
         if (charCount > 2200) {
-            throw new Error("Jumlah total karakter tidak boleh lebih dari 2200");
+            throw new Error("*Jumlah total karakter tidak boleh lebih dari 2200");
         }
 
         return true;

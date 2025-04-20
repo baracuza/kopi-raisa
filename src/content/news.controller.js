@@ -64,15 +64,17 @@ router.post('/post', authMiddleware, upload.array('media', 5), multerErrorHandle
         // Cek validasi input dari express-validator
         const errors = validationResult(req);
         if (!errors.isEmpty()) {
-            return res.status(400).json({
-                message: 'Validasi gagal!',
-                errors: errors.array().reduce((acc, curr) => {
-                    if (!acc[curr.path]) {
-                        acc[curr.path] = curr.msg;
-                    }
-                    return acc;
-                }, {})
+            const errorObject = errors.array().reduce((acc, curr) => {
+                const key = curr.path && curr.path !== '' ? curr.path : 'global';
+                if (!acc[key]) {
+                    acc[key] = curr.msg;
+                }
+                return acc;
+            }, {});
 
+            return res.status(400).json({
+                message: "Validasi gagal!",
+                errors: errorObject
             });
         }
 
@@ -118,7 +120,7 @@ router.post('/post', authMiddleware, upload.array('media', 5), multerErrorHandle
             // Simpan ke DB
             news = await createNewsWithMedia({
                 title,
-                content:plainContent,
+                content: plainContent,
                 mediaInfos,
             }, user_id);
 
@@ -235,7 +237,7 @@ router.put('/:id', authMiddleware, upload.array('media', 5), updateNewsValidator
 
         const editedData = {
             title,
-            content:plainContent,
+            content: plainContent,
             mediaFiles: req.files
         };
 
