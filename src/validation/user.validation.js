@@ -148,7 +148,7 @@ const updateNewsValidator = [
         }),
 
     // Jika title dan/atau content diisi, cek total kata gabungan
-    body().custom((_, { req }) => {
+    body("content").custom((_, { req }) => {
         const title = req.body.title || "";
         const content = req.body.content || "";
 
