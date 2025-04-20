@@ -82,21 +82,42 @@ const validateLogin = [
 ];
 
 const createNewsValidator = [
+
     // Title wajib, tidak boleh kosong, dan maksimal 255 karakter
     body("title")
         .notEmpty().withMessage("Judul wajib diisi")
         .isLength({ max: 255 }).withMessage("Judul maksimal 255 karakter"),
 
-    // Konten wajib dan tidak boleh hanya <p><br></p>
+    // Konten wajib dan harus berisi teks nyata (bukan hanya tag kosong)
     body("content")
         .notEmpty().withMessage("Konten wajib diisi")
         .custom((value) => {
-            const trimmed = value.trim();
-            if (!trimmed || trimmed === "<p><br></p>") {
+            // Hilangkan tag HTML
+            const stripped = value.replace(/<[^>]*>/g, "").replace(/\s|&nbsp;/g, "");
+            if (!stripped) {
                 throw new Error("Konten/deskripsi tidak boleh kosong");
             }
             return true;
         }),
+
+    // Validasi total kata dari title + content tidak melebihi 2200 kata
+    body().custom((_, { req }) => {
+        const title = req.body.title || "";
+        const content = req.body.content || "";
+
+        const text = `${title} ${content}`
+            .replace(/<[^>]+>/g, "")
+            .replace(/\s+/g, " ")
+            .trim();
+
+        const wordCount = text.split(" ").filter(Boolean).length;
+
+        if (wordCount > 2200) {
+            throw new Error("Jumlah total kata tidak boleh lebih dari 2200");
+        }
+
+        return true;
+    }),
 
     // postToFacebook & Instagram boleh ada, tapi harus boolean
     // body("postToFacebook")
@@ -106,24 +127,6 @@ const createNewsValidator = [
     // body("postToInstagram")
     //     .optional()
     //     .isBoolean().withMessage("postToInstagram harus berupa boolean"),
-
-    // Validasi total kata dari title + content maksimal 2200 kata
-    body().custom((_, { req }) => {
-        const title = req.body.title || "";
-        const content = req.body.content || "";
-
-        const text = `${title} ${content}`
-            .replace(/<[^>]+>/g, "")
-            .replace(/\s+/g, " ")
-            .trim();
-        const wordCount = text.split(" ").filter(Boolean).length;
-
-        if (wordCount > 2200) {
-            throw new Error("Jumlah total kata tidak boleh lebih dari 2200");
-        }
-
-        return true;
-    }),
 ];
 
 const updateNewsValidator = [
