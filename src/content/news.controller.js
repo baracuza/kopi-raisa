@@ -227,10 +227,15 @@ router.put('/:id', authMiddleware, upload.array('media', 5), updateNewsValidator
         const { id } = req.params;
         const { title, content } = req.body;
 
+        // Bersihkan konten dari tag HTML
+        const plainContent = content
+            .replace(/<[^>]+>/g, "")
+            .replace(/\s+/g, " ")
+            .trim();
 
         const editedData = {
             title,
-            content,
+            content:plainContent,
             mediaFiles: req.files
         };
 
