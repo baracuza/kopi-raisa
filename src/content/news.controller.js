@@ -5,7 +5,7 @@ const { uploadToCloudinary } = require('../services/cloudinaryUpload.service');
 const { validationResult } = require('express-validator');
 const { deleteFromCloudinaryByUrl, extractPublicId } = require('../utils/cloudinary');
 const { authMiddleware, validateUpdateNewsMedia, validateInsertNewsMedia, multerErrorHandler } = require('../middleware/middleware');
-const { createNewsValidator } = require('../validation/user.validation');
+const { createNewsValidator,updateNewsValidator } = require('../validation/user.validation');
 
 const { getNews,
     getNewsById,
@@ -199,7 +199,7 @@ router.post('/post', authMiddleware, upload.array('media', 5), multerErrorHandle
     }
 })
 
-router.put('/:id', authMiddleware, upload.array('media', 5), newsValidator, validateUpdateNewsMedia({ skipIfNoFile: true }), async (req, res) => {
+router.put('/:id', authMiddleware, upload.array('media', 5), updateNewsValidator, validateUpdateNewsMedia({ skipIfNoFile: true }), async (req, res) => {
     try {
         // Cek validasi input dari express-validator
         const errors = validationResult(req);

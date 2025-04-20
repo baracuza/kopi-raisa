@@ -93,7 +93,7 @@ const createNewsValidator = [
         .custom((value) => {
             const trimmed = value.trim();
             if (!trimmed || trimmed === "<p><br></p>") {
-                throw new Error("Konten tidak boleh kosong");
+                throw new Error("Konten/deskripsi tidak boleh kosong");
             }
             return true;
         }),
@@ -126,5 +126,50 @@ const createNewsValidator = [
     }),
 ];
 
+const updateNewsValidator = [
+    // Judul boleh dikirim, tapi jika ada harus valid
+    body("title")
+        .optional()
+        .notEmpty().withMessage("Judul tidak boleh kosong")
+        .isLength({ max: 255 }).withMessage("Judul maksimal 255 karakter"),
 
-module.exports = { validateRegister, validateLogin, createNewsValidator, validateUpdateProfile };
+    // Konten boleh dikirim, tapi harus valid jika ada
+    body("content")
+        .optional()
+        .custom((value) => {
+            const trimmed = value.trim();
+            if (!trimmed || trimmed === "<p><br></p>") {
+                throw new Error("Konten/deskripsi tidak boleh kosong");
+            }
+            return true;
+        }),
+
+    // postToFacebook & Instagram boolean opsional
+    // body("postToFacebook")
+    //     .optional()
+    //     .isBoolean().withMessage("postToFacebook harus berupa boolean"),
+
+    // body("postToInstagram")
+    //     .optional()
+    //     .isBoolean().withMessage("postToInstagram harus berupa boolean"),
+
+    // Opsional: validasi total panjang (title + content) tetap tidak lebih dari 2200 kata
+    body().custom((_, { req }) => {
+        const title = req.body.title || "";
+        const content = req.body.content || "";
+
+        const text = `${title} ${content}`
+            .replace(/<[^>]+>/g, "")
+            .replace(/\s+/g, " ")
+            .trim();
+        const wordCount = text.split(" ").filter(Boolean).length;
+
+        if (wordCount > 2200) {
+            throw new Error("Jumlah total kata tidak boleh lebih dari 2200");
+        }
+
+        return true;
+    }),
+];
+
+module.exports = { validateRegister, validateLogin, createNewsValidator, updateNewsValidator, validateUpdateProfile };
