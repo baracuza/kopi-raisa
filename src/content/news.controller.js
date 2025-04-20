@@ -5,7 +5,7 @@ const { uploadToCloudinary } = require('../services/cloudinaryUpload.service');
 const { validationResult } = require('express-validator');
 const { deleteFromCloudinaryByUrl, extractPublicId } = require('../utils/cloudinary');
 const { authMiddleware, validateUpdateNewsMedia, validateInsertNewsMedia, multerErrorHandler } = require('../middleware/middleware');
-const { createNewsValidator,updateNewsValidator } = require('../validation/user.validation');
+const { createNewsValidator, updateNewsValidator } = require('../validation/user.validation');
 
 const { getNews,
     getNewsById,
@@ -76,13 +76,19 @@ router.post('/post', authMiddleware, upload.array('media', 5), multerErrorHandle
             });
         }
 
-        const { title, content, postToFacebook, postToInstagram} = req.body;
+        const { title, content, postToFacebook, postToInstagram } = req.body;
         const user_id = req.user.id;
 
         // Validasi agar hanya admin bisa publish berita
         if (!req.user.admin) {
             return res.status(403).json({ message: 'Hanya admin yang dapat mempublikasi berita!' });
         }
+
+        // Bersihkan konten dari tag HTML
+        const plainContent = content
+            .replace(/<[^>]+>/g, "")
+            .replace(/\s+/g, " ")
+            .trim();
 
         let uploadedResults;
         try {
@@ -112,7 +118,7 @@ router.post('/post', authMiddleware, upload.array('media', 5), multerErrorHandle
             // Simpan ke DB
             news = await createNewsWithMedia({
                 title,
-                content,
+                content:plainContent,
                 mediaInfos,
             }, user_id);
 
@@ -147,7 +153,7 @@ router.post('/post', authMiddleware, upload.array('media', 5), multerErrorHandle
                         pageId: fbAccount.page_id,
                         pageAccessToken: fbAccount.page_access_token,
                         images,
-                        caption: `${title}\n\n${content}`
+                        caption: `${title}\n\n${plainContent}`
                     });
                 }
 
@@ -160,7 +166,7 @@ router.post('/post', authMiddleware, upload.array('media', 5), multerErrorHandle
                 });
             }
         }
-        
+
         if (postToInstagram === 'true') {
             const igAccount = await prisma.facebookAccount.findUnique({
                 where: { userId: user_id }
@@ -178,7 +184,7 @@ router.post('/post', authMiddleware, upload.array('media', 5), multerErrorHandle
                         igUserId: igAccount.ig_user_id,
                         accessToken: igAccount.page_access_token,
                         images,
-                        caption: `${title}\n\n${content}`
+                        caption: `${title}\n\n${plainContent}`
                     });
                 }
 
