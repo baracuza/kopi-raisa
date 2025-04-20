@@ -212,17 +212,20 @@ router.put('/:id', authMiddleware, upload.array('media', 5), updateNewsValidator
         // Cek validasi input dari express-validator
         const errors = validationResult(req);
         if (!errors.isEmpty()) {
-            return res.status(400).json({
-                message: 'Validasi gagal!',
-                errors: errors.array().reduce((acc, curr) => {
-                    if (!acc[curr.path]) {
-                        acc[curr.path] = curr.msg;
-                    }
-                    return acc;
-                }, {})
+            const errorObject = errors.array().reduce((acc, curr) => {
+                const key = curr.path && curr.path !== '' ? curr.path : 'global';
+                if (!acc[key]) {
+                    acc[key] = curr.msg;
+                }
+                return acc;
+            }, {});
 
+            return res.status(400).json({
+                message: "Validasi gagal!",
+                errors: errorObject
             });
         }
+        
         if (!req.user.admin) {
             return res.status(403).json({ message: 'Akses ditolak! Hanya admin yang bisa mengedit berita.' });
         }
