@@ -138,11 +138,13 @@ router.post('/post', authMiddleware, upload.fields([{ name: 'media', maxCount: 4
             }
 
             if (mediaFiles.length > 0) {
+                
+                const uploadPromises = mediaFiles.map(file =>
+                    uploadToCloudinary(file.buffer, file.originalname));
                 try {
                     // Upload semua file ke Cloudinary secara paralel
-                    uploadedResults = await Promise.all(
-                        mediaFiles.map(file => uploadToCloudinary(file.buffer, file.originalname))
-                    );
+                    uploadedResults = await Promise.all(uploadPromises);
+                    console.log("✅ Media berhasil diupload:", uploadedResults);
 
                 } catch (uploadError) {
                     console.error('Gagal mengupload ke Cloudinary:', uploadError.message);
