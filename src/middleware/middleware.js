@@ -251,6 +251,13 @@ const multerErrorHandler = (err, req, res, next) => {
                         media: '*terlalu banyak file yang diunggah'
                     }
                 });
+            case 'LIMIT_FILE_COUNT':
+                return res.status(400).json({
+                    message: 'Validasi gagal!',
+                    errors: {
+                        media: '*terlalu banyak yang diunggah, Maksimal 4 file yang diperbolehkan'
+                    }
+                });
             default:
                 return res.status(400).json({
                     message: 'Upload gagal',
