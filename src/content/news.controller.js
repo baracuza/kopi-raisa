@@ -86,11 +86,21 @@ router.post('/post', authMiddleware, upload.array('media', 5), multerErrorHandle
             return res.status(403).json({ message: 'Hanya admin yang dapat mempublikasi berita!' });
         }
 
+        // Sanitize HTML untuk disimpan
+        const cleanHtml = DOMPurify.sanitize(content || "");
+
         // Bersihkan konten dari tag HTML
         const plainContent = content
             .replace(/<[^>]+>/g, "")
             .replace(/\s+/g, " ")
             .trim();
+
+        if (!plainContent) {
+            return res.status(400).json({
+                message: "Validasi gagal!",
+                errors: { content: "*Konten/Deskripsi Tidak Boleh Kosong" }
+            });
+        }
 
         let uploadedResults;
         try {
@@ -120,7 +130,7 @@ router.post('/post', authMiddleware, upload.array('media', 5), multerErrorHandle
             // Simpan ke DB
             news = await createNewsWithMedia({
                 title,
-                content: plainContent,
+                content: cleanHtml,
                 mediaInfos,
             }, user_id);
 
@@ -225,12 +235,15 @@ router.put('/:id', authMiddleware, upload.array('media', 5), updateNewsValidator
                 errors: errorObject
             });
         }
-        
+
         if (!req.user.admin) {
             return res.status(403).json({ message: 'Akses ditolak! Hanya admin yang bisa mengedit berita.' });
         }
         const { id } = req.params;
         const { title, content } = req.body;
+
+        // Sanitize HTML untuk disimpan
+        const cleanHtml = DOMPurify.sanitize(content || "");
 
         // Bersihkan konten dari tag HTML
         const plainContent = content
@@ -238,9 +251,16 @@ router.put('/:id', authMiddleware, upload.array('media', 5), updateNewsValidator
             .replace(/\s+/g, " ")
             .trim();
 
+        if (!plainContent) {
+            return res.status(400).json({
+                message: "Validasi gagal!",
+                errors: { content: "*Konten/Deskripsi Tidak Boleh Kosong" }
+            });
+        }
+
         const editedData = {
             title,
-            content: plainContent,
+            content: cleanHtml,
             mediaFiles: req.files
         };
 
