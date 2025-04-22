@@ -120,7 +120,6 @@ router.post('/post', authMiddleware, upload.fields([{ name: 'media', maxCount: 4
                     errors: { media: "*Minimal satu gambar (sampul) wajib diunggah" }
                 });
             }
-
             let thumbnailUrl = null;
             let uploadedResults = [];
             if (thumbnailFile) {
