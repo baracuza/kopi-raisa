@@ -117,7 +117,7 @@ router.post('/post', authMiddleware, upload.fields([{ name: 'media', maxCount: 4
             if (!thumbnailFile) {
                 return res.status(400).json({
                     message: "Validasi gagal!",
-                    errors: { media: "*Minimal satu gambar (sampul) wajib diunggah" }
+                    errors: { thumbnail: "*Minimal satu gambar (sampul) wajib diunggah" }
                 });
             }
             let thumbnailUrl = null;
