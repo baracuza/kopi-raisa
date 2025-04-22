@@ -193,7 +193,7 @@ const updateNews = async (id, editedNewsData) => {
         throw new Error("*Berita tidak ditemukan!");
     }
 
-    const { title, content, mediaFiles } = editedNewsData;
+    const { title, content, mediaFiles, thumbnailFile } = editedNewsData;
 
     // Update data berita
     const updatedNews = await updateNewsData(id, {
@@ -201,28 +201,39 @@ const updateNews = async (id, editedNewsData) => {
         content
     });
 
+    // Hapus thumbnail lama dari Cloudinary jika ada dan update thumbnail jika ada file baru
+    if (thumbnailFile) {
+        await deleteFromCloudinaryByUrl(existingNews.thumbnail_url);  // Hapus thumbnail lama
+        const thumbnailUrl = await uploadToCloudinary(thumbnailFile.buffer, thumbnailFile.originalname);
+        await updateNewsData(id, { thumbnail_url: thumbnailUrl });  // Update thumbnail di DB
+    }
+
     let uploadedUrl = [];
 
     if (mediaFiles && mediaFiles.length > 0) {
         // Hapus media lama dari Cloudinary dan DB
-        for (const media of existingNews.newsMedia) {
-            await deleteFromCloudinaryByUrl(media.media_url);
-        }
-        await deleteNewsMediaByNewsId(id);
+        const deleteMediaPromises = existingNews.newsMedia.map(media => deleteFromCloudinaryByUrl(media.media_url));
+        await Promise.all(deleteMediaPromises);  
+        await deleteNewsMediaByNewsId(id);  
 
         console.log("Upload file ke Cloudinary dimulai");
-        // Upload media baru ke Cloudinary
-        for (const file of mediaFiles) {
-            const url = await uploadToCloudinary(file.buffer, file.originalname);
-            const type = file.mimetype.startsWith('video') ? 'video' : 'image';
-            // Simpan media baru ke database
-            await addNewsMedia(id, url, type);
-            uploadedUrl.push({
-                media_url: url,
-                media_type: type
-            });
-            console.log("File berhasil diupload:", url);
-        }
+        console.log("Jumlah file yang diupload:", mediaFiles.length);
+
+        // Upload media baru ke Cloudinary secara paralel
+        const uploadPromises = mediaFiles.map(file =>
+            uploadToCloudinary(file.buffer, file.originalname).then(url => {
+                const type = file.mimetype.startsWith('video') ? 'video' : 'image';
+                return addNewsMedia(id, url, type, false).then(() => ({
+                    media_url: url,
+                    media_type: type,
+                    isThumbnail: false
+                }));
+            })
+        );
+
+        uploadedUrl = await Promise.all(uploadPromises);  // Upload media baru secara paralel
+
+        console.log("File berhasil diupload:", uploadedUrl);
 
         return {
             ...updatedNews,

@@ -138,7 +138,7 @@ router.post('/post', authMiddleware, upload.fields([{ name: 'media', maxCount: 4
             }
 
             if (mediaFiles.length > 0) {
-                
+
                 const uploadPromises = mediaFiles.map(file =>
                     uploadToCloudinary(file.buffer, file.originalname));
                 try {
@@ -270,68 +270,70 @@ router.post('/post', authMiddleware, upload.fields([{ name: 'media', maxCount: 4
         }
     })
 
-router.put('/:id', authMiddleware, upload.array('media', 5), updateNewsValidator, validateUpdateNewsMedia({ skipIfNoFile: true }), async (req, res) => {
-    try {
-        // Cek validasi input dari express-validator
-        const errors = validationResult(req);
-        if (!errors.isEmpty()) {
-            const errorObject = errors.array().reduce((acc, curr) => {
-                const key = curr.path && curr.path !== '' ? curr.path : 'global';
-                if (!acc[key]) {
-                    acc[key] = curr.msg;
-                }
-                return acc;
-            }, {});
+router.put('/:id', authMiddleware, upload.fields([{ name: 'media', maxCount: 4 }, { name: 'thumbnail', maxCount: 1 }]),
+    updateNewsValidator, validateUpdateNewsMedia({ skipIfNoFile: true }), async (req, res) => {
+        try {
+            // Cek validasi input dari express-validator
+            const errors = validationResult(req);
+            if (!errors.isEmpty()) {
+                const errorObject = errors.array().reduce((acc, curr) => {
+                    const key = curr.path && curr.path !== '' ? curr.path : 'global';
+                    if (!acc[key]) {
+                        acc[key] = curr.msg;
+                    }
+                    return acc;
+                }, {});
 
-            return res.status(400).json({
-                message: "Validasi gagal!",
-                errors: errorObject
+                return res.status(400).json({
+                    message: "Validasi gagal!",
+                    errors: errorObject
+                });
+            }
+
+            if (!req.user.admin) {
+                return res.status(403).json({ message: 'Akses ditolak! Hanya admin yang bisa mengedit berita.' });
+            }
+            const { id } = req.params;
+            const { title, content } = req.body;
+
+            // Sanitize HTML untuk disimpan
+            const cleanHtml = DOMPurify.sanitize(content || "");
+
+            // Bersihkan konten dari tag HTML
+            const plainContent = content
+                .replace(/<[^>]+>/g, "")
+                .replace(/\s+/g, " ")
+                .trim();
+
+            if (!plainContent) {
+                return res.status(400).json({
+                    message: "Validasi gagal!",
+                    errors: { content: "*Konten/Deskripsi Tidak Boleh Kosong" }
+                });
+            }
+
+            const editedData = {
+                title,
+                content: cleanHtml,
+                mediaFiles: req.files['media'],
+                thumbnailFile: req.files['thumbnail']?.[0] || null
+            };
+
+            console.log("Mulai update berita");
+            const updatedNews = await updateNews(parseInt(id), editedData);
+            console.log("Selesai update berita, mengirim response...");
+
+            res.status(200).json({
+                message: 'Berita berhasil diupdate!',
+                data: updatedNews,
+            });
+        } catch (error) {
+            return res.status(500).json({
+                message: 'Gagal mengupdate berita!',
+                error: error.message,
             });
         }
-
-        if (!req.user.admin) {
-            return res.status(403).json({ message: 'Akses ditolak! Hanya admin yang bisa mengedit berita.' });
-        }
-        const { id } = req.params;
-        const { title, content } = req.body;
-
-        // Sanitize HTML untuk disimpan
-        const cleanHtml = DOMPurify.sanitize(content || "");
-
-        // Bersihkan konten dari tag HTML
-        const plainContent = content
-            .replace(/<[^>]+>/g, "")
-            .replace(/\s+/g, " ")
-            .trim();
-
-        if (!plainContent) {
-            return res.status(400).json({
-                message: "Validasi gagal!",
-                errors: { content: "*Konten/Deskripsi Tidak Boleh Kosong" }
-            });
-        }
-
-        const editedData = {
-            title,
-            content: cleanHtml,
-            mediaFiles: req.files
-        };
-
-        console.log("Mulai update berita");
-        const updatedNews = await updateNews(parseInt(id), editedData);
-        console.log("Selesai update berita, mengirim response...");
-
-        res.status(200).json({
-            message: 'Berita berhasil diupdate!',
-            data: updatedNews,
-        });
-    } catch (error) {
-        return res.status(500).json({
-            message: 'Gagal mengupdate berita!',
-            error: error.message,
-        });
-    }
-});
+    });
 
 router.delete('/:id', authMiddleware, async (req, res) => {
     try {
