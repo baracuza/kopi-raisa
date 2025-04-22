@@ -283,7 +283,6 @@ router.put('/:id', authMiddleware, upload.fields([{ name: 'media', maxCount: 4 }
                     }
                     return acc;
                 }, {});
-
                 return res.status(400).json({
                     message: "Validasi gagal!",
                     errors: errorObject
