@@ -126,8 +126,10 @@ router.post('/post', authMiddleware, upload.fields([{ name: 'media', maxCount: 4
                 try {
                     // Upload thumbnail ke Cloudinary
                     thumbnailUrl = await uploadToCloudinary(thumbnailFile.buffer, thumbnailFile.originalname);
+                    console.log("✅ Thumbnail berhasil diupload:", thumbnailUrl);
                 } catch (uploadError) {
                     console.error('Gagal mengupload thumbnail ke Cloudinary:', uploadError.message);
+                    console.error('❌ Gagal upload thumbnail:', uploadError.message);
                     return res.status(500).json({
                         message: 'Gagal mengupload thumbnail ke Cloudinary',
                         error: uploadError.message
@@ -169,6 +171,12 @@ router.post('/post', authMiddleware, upload.fields([{ name: 'media', maxCount: 4
 
             let news;
             try {
+                console.log("📦 Data sebelum insert:", {
+                    title,
+                    content: cleanHtml,
+                    mediaInfos,
+                    thumbnailUrl,
+                });
                 // Simpan ke DB
                 news = await createNewsWithMedia({
                     title,

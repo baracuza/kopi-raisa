@@ -31,6 +31,7 @@ const insertNews = async ({ title, content, thumbnailUrl, user_id }) => {
     });
     return news;
 };
+console.log("✅ Data berhasil disimpan:", news);
 
 const addNewsMedia = async (newsId, url, mimetype, isThumbnail) => {
     return await prisma.newsMedia.create({
