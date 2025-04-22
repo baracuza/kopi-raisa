@@ -29,9 +29,9 @@ const insertNews = async ({ title, content, thumbnailUrl, user_id }) => {
             user: { connect: { id: user_id } },
         },
     });
+    console.log("✅ Data berhasil disimpan:", news);
     return news;
 };
-console.log("✅ Data berhasil disimpan:", news);
 
 const addNewsMedia = async (newsId, url, mimetype, isThumbnail) => {
     return await prisma.newsMedia.create({
