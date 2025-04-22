@@ -114,7 +114,7 @@ router.post('/post', authMiddleware, upload.fields([{ name: 'media', maxCount: 4
             const thumbnailFile = req.files['thumbnail']?.[0] || null;
 
             // Validasi wajib
-            if (mediaFiles.length === 0 && !thumbnailFile) {
+            if (!thumbnailFile) {
                 return res.status(400).json({
                     message: "Validasi gagal!",
                     errors: { media: "*Minimal satu gambar (sampul) wajib diunggah" }
