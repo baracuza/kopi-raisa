@@ -1,6 +1,13 @@
 const express = require('express');
 const prisma = require('../db');
 const upload = require('../middleware/multer');
+const createDOMPurify = require('isomorphic-dompurify');
+const { JSDOM } = require('jsdom');
+const window = new JSDOM('').window;
+const DOMPurify = createDOMPurify(window);
+
+
+
 const { uploadToCloudinary } = require('../services/cloudinaryUpload.service');
 const { validationResult } = require('express-validator');
 const { deleteFromCloudinaryByUrl, extractPublicId } = require('../utils/cloudinary');
