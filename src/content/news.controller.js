@@ -64,165 +64,202 @@ router.get('/:id', async (req, res) => {
     }
 });
 
-router.post('/post', authMiddleware, upload.array('media', 5), multerErrorHandler, createNewsValidator, validateInsertNewsMedia, async (req, res) => {
-    try {
-        console.log("BODY DARI CLIENT:", req.body);
-
-        // Cek validasi input dari express-validator
-        const errors = validationResult(req);
-        if (!errors.isEmpty()) {
-            const errorObject = errors.array().reduce((acc, curr) => {
-                const key = curr.path && curr.path !== '' ? curr.path : 'global';
-                if (!acc[key]) {
-                    acc[key] = curr.msg;
-                }
-                return acc;
-            }, {});
-
-            return res.status(400).json({
-                message: "Validasi gagal!",
-                errors: errorObject
-            });
-        }
-
-        const { title, content, postToFacebook, postToInstagram } = req.body;
-        const user_id = req.user.id;
-
-        // Validasi agar hanya admin bisa publish berita
-        if (!req.user.admin) {
-            return res.status(403).json({ message: 'Hanya admin yang dapat mempublikasi berita!' });
-        }
-
-        // Sanitize HTML untuk disimpan
-        const cleanHtml = DOMPurify.sanitize(content || "");
-
-        // Bersihkan konten dari tag HTML
-        const plainContent = content
-            .replace(/<[^>]+>/g, "")
-            .replace(/\s+/g, " ")
-            .trim();
-
-        if (!plainContent) {
-            return res.status(400).json({
-                message: "Validasi gagal!",
-                errors: { content: "*Konten/Deskripsi Tidak Boleh Kosong" }
-            });
-        }
-
-        let uploadedResults;
+router.post('/post', authMiddleware, upload.afields([{ name: 'media', maxCount: 4 }, { name: 'thumbnail', maxCount: 1 }]),
+    multerErrorHandler, createNewsValidator, validateInsertNewsMedia, async (req, res) => {
         try {
-            // Upload semua file ke Cloudinary secara paralel
-            uploadedResults = await Promise.all(
-                req.files.map(file => uploadToCloudinary(file.buffer, file.originalname))
-            );
+            console.log("BODY DARI CLIENT:", req.body);
 
-        } catch (uploadError) {
-            console.error('Gagal mengupload ke Cloudinary:', uploadError.message);
-            return res.status(500).json({
-                message: 'Gagal mengupload media ke Cloudinary',
-                error: uploadError.message
-            });
+            // Cek validasi input dari express-validator
+            const errors = validationResult(req);
+            if (!errors.isEmpty()) {
+                const errorObject = errors.array().reduce((acc, curr) => {
+                    const key = curr.path && curr.path !== '' ? curr.path : 'global';
+                    if (!acc[key]) {
+                        acc[key] = curr.msg;
+                    }
+                    return acc;
+                }, {});
 
-        }
-
-        // Gabungkan URL dan mimetype untuk disimpan ke DB
-        const mediaInfos = req.files.map((file, index) => ({
-            url: uploadedResults[index],
-            public_id: extractPublicId(uploadedResults[index]), // fungsi bisa dari getPublicIdFromUrl atau langsung dari upload result
-            mimetype: file.mimetype,
-        }));
-
-        let news;
-        try {
-            // Simpan ke DB
-            news = await createNewsWithMedia({
-                title,
-                content: cleanHtml,
-                mediaInfos,
-            }, user_id);
-
-        } catch (dbError) {
-            console.error('Gagal menyimpan berita:', dbError.message);
-            // Rollback: Hapus dari Cloudinary jika simpan ke DB gagal
-            await Promise.all(
-                uploadedResults.map(url => deleteFromCloudinaryByUrl(url))
-            );
-            return res.status(500).json({
-                message: 'Gagal menyimpan berita',
-                error: dbError.message
-            });
-
-        }
-
-        // Optional: Jika dicentang untuk auto-post ke Facebook
-        if (postToFacebook === 'true') {
-            const fbAccount = await prisma.facebookAccount.findUnique({
-                where: { userId: user_id }
-            });
-            if (!fbAccount) {
-                return res.status(400).json({ message: 'Akun Facebook belum terhubung!' });
-            }
-            // Pisahkan media berdasarkan tipe
-            const images = mediaInfos.filter(media => media.mimetype.startsWith('image/'));
-            // const videos = mediaInfos.filter(media => media.mimetype.startsWith('video/'));
-            try {
-                // Posting gambar sebagai carousel jika lebih dari satu, atau sebagai gambar tunggal
-                if (images.length > 0) {
-                    await postImagesToFacebook({
-                        pageId: fbAccount.page_id,
-                        pageAccessToken: fbAccount.page_access_token,
-                        images,
-                        caption: `${title}\n\n${plainContent}`
-                    });
-                }
-
-            } catch (fbError) {
-                console.error('Gagal posting ke Facebook:', fbError.message);
-                return res.status(201).json({
-                    message: 'Berita berhasil disimpan, namun gagal diposting ke Facebook.',
-                    data: news,
-                    error: fbError.message
+                return res.status(400).json({
+                    message: "Validasi gagal!",
+                    errors: errorObject
                 });
             }
-        }
 
-        if (postToInstagram === 'true') {
-            const igAccount = await prisma.facebookAccount.findUnique({
-                where: { userId: user_id }
-            });
-            if (!igAccount) {
-                return res.status(400).json({ message: 'Akun Instagram belum terhubung!' });
+            const { title, content, postToFacebook, postToInstagram } = req.body;
+            const user_id = req.user.id;
+
+            // Validasi agar hanya admin bisa publish berita
+            if (!req.user.admin) {
+                return res.status(403).json({ message: 'Hanya admin yang dapat mempublikasi berita!' });
             }
-            // Pisahkan media berdasarkan tipe
-            const images = mediaInfos.filter(media => media.mimetype.startsWith('image/'));
-            // const videos = mediaInfos.filter(media => media.mimetype.startsWith('video/'));
-            try {
-                // Posting gambar sebagai carousel jika lebih dari satu, atau sebagai gambar tunggal
-                if (images.length > 0) {
-                    await postImagesToInstagram({
-                        igUserId: igAccount.ig_user_id,
-                        accessToken: igAccount.page_access_token,
-                        images,
-                        caption: `${title}\n\n${plainContent}`
-                    });
-                }
 
-            } catch (igError) {
-                console.error('Gagal posting ke Instagram:', igError.message);
-                return res.status(201).json({
-                    message: 'Berita berhasil disimpan, namun gagal diposting ke Instagram.',
-                    data: news,
-                    error: igError.message
+            // Sanitize HTML untuk disimpan
+            const cleanHtml = DOMPurify.sanitize(content || "");
+
+            // Bersihkan konten dari tag HTML
+            const plainContent = content
+                .replace(/<[^>]+>/g, "")
+                .replace(/\s+/g, " ")
+                .trim();
+
+            if (!plainContent) {
+                return res.status(400).json({
+                    message: "Validasi gagal!",
+                    errors: { content: "*Konten/Deskripsi Tidak Boleh Kosong" }
                 });
             }
-        }
-        return res.status(201).json({ message: 'Berita berhasil ditambahkan dan diposting!', data: news });
 
-    } catch (error) {
-        console.error('Gagal memposting:', error);
-        return res.status(500).json({ message: 'Gagal memposting konten', error: error.message });
-    }
-})
+            const mediaFiles = req.files['media'] || [];
+            const thumbnailFile = req.files['thumbnail']?.[0] || null;
+
+            // Validasi wajib
+            if (mediaFiles.length === 0 && !thumbnailFile) {
+                return res.status(400).json({
+                    message: "Validasi gagal!",
+                    errors: { media: "*Minimal satu gambar (sampul) wajib diunggah" }
+                });
+            }
+
+            let thumbnailUrl = null;
+            let uploadedResults = [];
+            if (thumbnailFile) {
+                try {
+                    // Upload thumbnail ke Cloudinary
+                    thumbnailUrl = await uploadToCloudinary(thumbnailFile.buffer, thumbnailFile.originalname);
+                } catch (uploadError) {
+                    console.error('Gagal mengupload thumbnail ke Cloudinary:', uploadError.message);
+                    return res.status(500).json({
+                        message: 'Gagal mengupload thumbnail ke Cloudinary',
+                        error: uploadError.message
+                    });
+                }
+            }
+
+            if (mediaFiles.length > 0) {
+                try {
+                    // Upload semua file ke Cloudinary secara paralel
+                    uploadedResults = await Promise.all(
+                        mediaFiles.map(file => uploadToCloudinary(file.buffer, file.originalname))
+                    );
+
+                } catch (uploadError) {
+                    console.error('Gagal mengupload ke Cloudinary:', uploadError.message);
+                    return res.status(500).json({
+                        message: 'Gagal mengupload media ke Cloudinary',
+                        error: uploadError.message
+                    });
+                }
+            }
+
+            // Gabungkan URL dan mimetype untuk disimpan ke DB
+            let mediaInfos = mediaFiles.map((file, index) => ({
+                url: uploadedResults[index],
+                public_id: extractPublicId(uploadedResults[index]), // fungsi bisa dari getPublicIdFromUrl atau langsung dari upload result
+                mimetype: file.mimetype,
+                isThumbnail: false,
+            }));
+            if (thumbnailFile && thumbnailUrl) {
+                mediaInfos.unshift({
+                    url: thumbnailUrl,
+                    public_id: extractPublicId(thumbnailUrl),
+                    mimetype: thumbnailFile.mimetype,
+                    isThumbnail: true,
+                });
+            }
+
+            let news;
+            try {
+                // Simpan ke DB
+                news = await createNewsWithMedia({
+                    title,
+                    content: cleanHtml,
+                    mediaInfos,
+                    thumbnailUrl,
+                }, user_id);
+
+            } catch (dbError) {
+                console.error('Gagal menyimpan berita:', dbError.message);
+                // Rollback: Hapus dari Cloudinary jika simpan ke DB gagal
+                await Promise.all(
+                    uploadedResults.map(url => deleteFromCloudinaryByUrl(url))
+                );
+                return res.status(500).json({
+                    message: 'Gagal menyimpan berita',
+                    error: dbError.message
+                });
+
+            }
+
+            // Optional: Jika dicentang untuk auto-post ke Facebook
+            if (postToFacebook === 'true') {
+                const fbAccount = await prisma.facebookAccount.findUnique({
+                    where: { userId: user_id }
+                });
+                if (!fbAccount) {
+                    return res.status(400).json({ message: 'Akun Facebook belum terhubung!' });
+                }
+                // Pisahkan media berdasarkan tipe
+                const images = mediaInfos.filter(media => media.mimetype.startsWith('image/'));
+                // const videos = mediaInfos.filter(media => media.mimetype.startsWith('video/'));
+                try {
+                    // Posting gambar sebagai carousel jika lebih dari satu, atau sebagai gambar tunggal
+                    if (images.length > 0) {
+                        await postImagesToFacebook({
+                            pageId: fbAccount.page_id,
+                            pageAccessToken: fbAccount.page_access_token,
+                            images,
+                            caption: `${title}\n\n${plainContent}`
+                        });
+                    }
+
+                } catch (fbError) {
+                    console.error('Gagal posting ke Facebook:', fbError.message);
+                    return res.status(201).json({
+                        message: 'Berita berhasil disimpan, namun gagal diposting ke Facebook.',
+                        data: news,
+                        error: fbError.message
+                    });
+                }
+            }
+
+            if (postToInstagram === 'true') {
+                const igAccount = await prisma.facebookAccount.findUnique({
+                    where: { userId: user_id }
+                });
+                if (!igAccount) {
+                    return res.status(400).json({ message: 'Akun Instagram belum terhubung!' });
+                }
+                // Pisahkan media berdasarkan tipe
+                const images = mediaInfos.filter(media => media.mimetype.startsWith('image/'));
+                // const videos = mediaInfos.filter(media => media.mimetype.startsWith('video/'));
+                try {
+                    // Posting gambar sebagai carousel jika lebih dari satu, atau sebagai gambar tunggal
+                    if (images.length > 0) {
+                        await postImagesToInstagram({
+                            igUserId: igAccount.ig_user_id,
+                            accessToken: igAccount.page_access_token,
+                            images,
+                            caption: `${title}\n\n${plainContent}`
+                        });
+                    }
+
+                } catch (igError) {
+                    console.error('Gagal posting ke Instagram:', igError.message);
+                    return res.status(201).json({
+                        message: 'Berita berhasil disimpan, namun gagal diposting ke Instagram.',
+                        data: news,
+                        error: igError.message
+                    });
+                }
+            }
+            return res.status(201).json({ message: 'Berita berhasil ditambahkan dan diposting!', data: news });
+
+        } catch (error) {
+            console.error('Gagal memposting:', error);
+            return res.status(500).json({ message: 'Gagal memposting konten', error: error.message });
+        }
+    })
 
 router.put('/:id', authMiddleware, upload.array('media', 5), updateNewsValidator, validateUpdateNewsMedia({ skipIfNoFile: true }), async (req, res) => {
     try {

@@ -20,23 +20,25 @@ const getNewsMediaByNewsId = async (newsId) => {
     });
 };
 
-const insertNews = async ({ title, content, user_id }) => {
+const insertNews = async ({ title, content, thumbnailUrl, user_id }) => {
     const news = await prisma.news.create({
         data: {
             title,
             content,
+            thumbnail_url: thumbnailUrl,
             user: { connect: { id: user_id } },
         },
     });
     return news;
 };
 
-const addNewsMedia = async (newsId, url, mimetype) => {
+const addNewsMedia = async (newsId, url, mimetype, isThumbnail) => {
     return await prisma.newsMedia.create({
         data: {
             news_id: newsId,
             media_url: url,
             media_type: mimetype,
+            isThumbnail
         },
     });
 };

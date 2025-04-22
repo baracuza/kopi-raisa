@@ -29,13 +29,13 @@ const getNewsById = async (newsId) => {
 };
 
 const createNewsWithMedia = async (newsData, user_id) => {
-    const { title, content, mediaInfos } = newsData;
-    const news = await insertNews({ title, content, user_id });
+    const { title, content, mediaInfos, thumbnailUrl } = newsData;
+    const news = await insertNews({ title, content, thumbnailUrl, user_id });
 
     // Simpan semua media secara paralel
     await Promise.all(
         mediaInfos.map(media =>
-            addNewsMedia(news.id, media.url, media.mimetype)
+            addNewsMedia(news.id, media.url, media.mimetype, media.isThumbnail)
         )
     );
     return news;

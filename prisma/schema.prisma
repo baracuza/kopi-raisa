@@ -215,23 +215,24 @@ model FormField {
 }
 
 model News {
-  id         Int      @id @default(autoincrement())
-  title      String
-  content    String
-  image_url  String?
-  user       User     @relation(fields: [user_id], references: [id])
-  user_id    Int
-  created_at DateTime @default(now())
-  updated_at DateTime @updatedAt
-  newsMedia  NewsMedia[]
+  id             Int      @id @default(autoincrement())
+  title          String
+  content        String
+  thumbnail_url  String?
+  user           User     @relation(fields: [user_id], references: [id])
+  user_id        Int
+  created_at     DateTime @default(now())
+  updated_at     DateTime @updatedAt
+  newsMedia      NewsMedia[]
 }
 
 model NewsMedia {
-  id         Int      @id @default(autoincrement())
-  news       News     @relation(fields: [news_id], references: [id])
-  news_id    Int
-  media_url  String
-  media_type String
+  id          Int      @id @default(autoincrement())
+  news        News     @relation(fields: [news_id], references: [id])
+  news_id     Int
+  media_url   String
+  media_type  String
+  isThumbnail Boolean @default(false)
 }
 
 model Review {
