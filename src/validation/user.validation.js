@@ -121,7 +121,6 @@ const createNewsValidator = [
 
     body("thumbnailUrl")
         .notEmpty().withMessage("*Sampul wajib diisi")
-        // .isURL().withMessage("*Thumbnail harus berupa URL yang valid"),
 
     // postToFacebook & Instagram boleh ada, tapi harus boolean
     // body("postToFacebook")
