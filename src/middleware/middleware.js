@@ -63,115 +63,115 @@ const validateProfilMedia = (req, res, next) => {
 };
 
 
-const validateInsertNewsMedia = (req, res, next) => {
-    const maxFiles = 5;
-    const maxSizeMB = 5;
-    const maxSizeBytes = maxSizeMB * 1024 * 1024;
-    const allowedTypes = ['image/jpeg', 'image/png', 'image/webp', 'image/jpg'];
+// const validateInsertNewsMedia = (req, res, next) => {
+//     const maxFiles = 5;
+//     const maxSizeMB = 5;
+//     const maxSizeBytes = maxSizeMB * 1024 * 1024;
+//     const allowedTypes = ['image/jpeg', 'image/png', 'image/webp', 'image/jpg'];
 
-    // if (!req.files) {
-    //     return next();
-    // }
+//     // Validasi untuk file 'thumbnail'
+//     const thumbnailFile = req.files['thumbnail'] && req.files['thumbnail'][0];
 
-    // Validasi untuk file 'media'
-    const mediaFiles = req.files['media'] || [];
-    if (mediaFiles.length === 0) {
-        return next();
-    }
+//     if (!thumbnailFile) {
+//         return res.status(400).json({
+//             message: 'Validasi gagal!',
+//             errors: {
+//                 thumbnail: '*Sampul wajib diunggah dari validate'
+//             }
+//         });
+//     }
 
-    if (mediaFiles.length > maxFiles) {
-        return res.status(400).json({
-            message: 'Validasi gagal!',
-            errors: {
-                media: `*Maksimal hanya ${maxFiles} file yang diperbolehkan`
-            }
-        });
-    }
+//     if (!allowedTypes.includes(thumbnailFile.mimetype)) {
+//         return res.status(400).json({
+//             message: 'Validasi gagal!',
+//             errors: {
+//                 thumbnail: '*Sampul hanya boleh berupa gambar (jpg, jpeg, png, webp) dari validate'
+//             }
+//         });
+//     }
 
-    const invalidFiles = mediaFiles.filter(file => !allowedTypes.includes(file.mimetype));
-    if (invalidFiles.length > 0) {
-        return res.status(400).json({
-            message: 'Validasi gagal!',
-            errors: {
-                media: '*Hanya file gambar (jpg, jpeg, png, webp) yang diperbolehkan'
-            }
-        });
-    }
+//     if (thumbnailFile.size > maxSizeBytes) {
+//         return res.status(400).json({
+//             message: 'Validasi gagal!',
+//             errors: {
+//                 thumbnail: `*Ukuran sampul maksimal ${maxSizeMB}MB dari validate`
+//             }
+//         });
+//     }
 
-    const oversizedFiles = mediaFiles.filter(file => file.size > maxSizeBytes);
-    if (oversizedFiles.length > 0) {
-        return res.status(400).json({
-            message: 'Validasi gagal!',
-            errors: {
-                media: `*Ukuran setiap file maksimal ${maxSizeMB}MB`
-            }
-        });
-    }
+//     if (!req.files) {
+//         return next();
+//     }
 
-    const totalSize = mediaFiles.reduce((acc, file) => acc + file.size, 0);
-    const maxTotalSize = 20 * 1024 * 1024; // 20MB
-    if (totalSize > maxTotalSize) {
-        return res.status(400).json({
-            message: 'Validasi gagal!',
-            errors: {
-                media: '*Total ukuran file tidak boleh lebih dari 20MB'
-            }
-        });
-    }
+//     // Validasi untuk file 'media'
+//     const mediaFiles = req.files['media'] || [];
+//     if (mediaFiles.length === 0) {
+//         return next();
+//     }
 
-    // Validasi untuk file 'thumbnail'
-    const thumbnailFile = req.files['thumbnail']?.[0] || null;
+//     if (mediaFiles.length > maxFiles) {
+//         return res.status(400).json({
+//             message: 'Validasi gagal!',
+//             errors: {
+//                 media: `*Maksimal hanya ${maxFiles} file yang diperbolehkan dari validate`
+//             }
+//         });
+//     }
 
-    if (!thumbnailFile) {
-        return res.status(400).json({
-            message: 'Validasi gagal!',
-            errors: {
-                thumbnail: '*Sampul wajib diunggah'
-            }
-        });
-    }
+//     const invalidFiles = mediaFiles.filter(file => !allowedTypes.includes(file.mimetype));
+//     if (invalidFiles.length > 0) {
+//         return res.status(400).json({
+//             message: 'Validasi gagal!',
+//             errors: {
+//                 media: '*Hanya file gambar (jpg, jpeg, png, webp) yang diperbolehkan dari validate'
+//             }
+//         });
+//     }
 
-    if (!allowedTypes.includes(thumbnailFile.mimetype)) {
-        return res.status(400).json({
-            message: 'Validasi gagal!',
-            errors: {
-                thumbnail: '*Sampul hanya boleh berupa gambar (jpg, jpeg, png, webp)'
-            }
-        });
-    }
+//     const oversizedFiles = mediaFiles.filter(file => file.size > maxSizeBytes);
+//     if (oversizedFiles.length > 0) {
+//         return res.status(400).json({
+//             message: 'Validasi gagal!',
+//             errors: {
+//                 media: `*Ukuran setiap file maksimal ${maxSizeMB}MB dari validate`
+//             }
+//         });
+//     }
 
-    if (thumbnailFile.size > maxSizeBytes) {
-        return res.status(400).json({
-            message: 'Validasi gagal!',
-            errors: {
-                thumbnail: `*Ukuran sampul maksimal ${maxSizeMB}MB`
-            }
-        });
-    }
+//     const totalSize = mediaFiles.reduce((acc, file) => acc + file.size, 0);
+//     const maxTotalSize = 20 * 1024 * 1024; // 20MB
+//     if (totalSize > maxTotalSize) {
+//         return res.status(400).json({
+//             message: 'Validasi gagal!',
+//             errors: {
+//                 media: '*Total ukuran file tidak boleh lebih dari 20MB dari validate'
+//             }
+//         });
+//     }
 
-    const title = req.body.title || '';
-    const content = req.body.content || '';
-    
-    if (!title) {
-        return res.status(400).json({
-            message: 'Validasi gagal!',
-            errors: {
-                title: '*Judul wajib diisi'
-            }
-        });
-    }
+//     const title = req.body.title || '';
+//     const content = req.body.content || '';
 
-    if (!content) {
-        return res.status(400).json({
-            message: 'Validasi gagal!',
-            errors: {
-                content: '*Konten/Deskripsi wajib diisi'
-            }
-        })
-    }
+//     if (!title) {
+//         return res.status(400).json({
+//             message: 'Validasi gagal!',
+//             errors: {
+//                 title: '*Judul wajib diisi dari validate'
+//             }
+//         });
+//     }
 
-    next();
-};
+//     if (!content) {
+//         return res.status(400).json({
+//             message: 'Validasi gagal!',
+//             errors: {
+//                 content: '*Konten/Deskripsi wajib diisi dari validate'
+//             }
+//         })
+//     }
+
+//     next();
+// };
 
 
 
@@ -185,7 +185,7 @@ const validateUpdateNewsMedia = (options = {}) => {
         const allowedTypes = ['image/jpeg', 'image/png', 'image/webp', 'image/jpg'];
 
         // Skip jika tidak ada file dan diminta skip validasi (misal saat update)
-        if ((!req.files || (!req.files['media'] || req.files['media'].length === 0) ) && skipIfNoFile) {
+        if ((!req.files || (!req.files['media'] || req.files['media'].length === 0)) && skipIfNoFile) {
             return next();
         }
 
@@ -298,13 +298,6 @@ const multerErrorHandler = (err, req, res, next) => {
                     message: 'Validasi gagal!',
                     errors: {
                         media: '*terlalu banyak file yang diunggah di multer'
-                    }
-                });
-            case 'LIMIT_FILE_COUNT':
-                return res.status(400).json({
-                    message: 'Validasi gagal!',
-                    errors: {
-                        media: '*terlalu banyak yang diunggah, Maksimal 4 file yang diperbolehkan di multer'
                     }
                 });
             default:

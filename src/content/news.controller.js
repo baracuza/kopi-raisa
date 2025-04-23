@@ -12,7 +12,7 @@ const { uploadToCloudinary } = require('../services/cloudinaryUpload.service');
 const { validationResult } = require('express-validator');
 const { deleteFromCloudinaryByUrl, extractPublicId } = require('../utils/cloudinary');
 const { authMiddleware, validateUpdateNewsMedia, validateInsertNewsMedia, multerErrorHandler } = require('../middleware/middleware');
-const { createNewsValidator, updateNewsValidator } = require('../validation/user.validation');
+const {validateInsertNewsData, updateNewsValidator } = require('../validation/user.validation');
 
 const { getNews,
     getNewsById,
@@ -65,7 +65,7 @@ router.get('/:id', async (req, res) => {
 });
 
 router.post('/post', authMiddleware, upload.fields([{ name: 'media', maxCount: 4 }, { name: 'thumbnail', maxCount: 1 }]),
-    multerErrorHandler, createNewsValidator, validateInsertNewsMedia, async (req, res) => {
+    multerErrorHandler, validateInsertNewsData, async (req, res) => {
         try {
             console.log("BODY DARI CLIENT:", req.body);
             console.log("FILES:", req.files);
@@ -114,7 +114,7 @@ router.post('/post', authMiddleware, upload.fields([{ name: 'media', maxCount: 4
             }
 
             const mediaFiles = req.files['media'] || [];
-            const thumbnailFile = req.files['thumbnail']?.[0] || null;
+            const thumbnailFile = req.files['thumbnail'] && req.files['thumbnail'][0];
 
             
             let thumbnailUrl = null;
