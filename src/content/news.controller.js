@@ -72,22 +72,6 @@ router.post('/post', authMiddleware, upload.fields([{ name: 'media', maxCount: 4
             console.log("FILES MEDIA:", req.files['media']);
             console.log("FILES THUMBNAIL:", req.files['thumbnail']);
 
-            // Cek validasi input dari express-validator
-            const errors = validationResult(req);
-            if (!errors.isEmpty()) {
-                const errorObject = errors.array().reduce((acc, curr) => {
-                    const key = curr.path && curr.path !== '' ? curr.path : 'global';
-                    if (!acc[key]) {
-                        acc[key] = curr.msg;
-                    }
-                    return acc;
-                }, {});
-
-                return res.status(400).json({
-                    message: "Validasi gagal!",
-                    errors: errorObject
-                });
-            }
 
             const { title, content, postToFacebook, postToInstagram } = req.body;
             const user_id = req.user.id;
