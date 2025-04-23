@@ -329,4 +329,4 @@ const multerErrorHandler = (err, req, res, next) => {
 
 
 
-module.exports = { authMiddleware, validateUpdateNewsMedia, validateInsertNewsMedia, multerErrorHandler, validateProfilMedia };
+module.exports = { authMiddleware, validateUpdateNewsMedia, multerErrorHandler, validateProfilMedia };
