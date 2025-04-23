@@ -85,7 +85,7 @@ const createNewsValidator = [
 
     // Title wajib, tidak boleh kosong, dan maksimal 255 karakter
     body("title")
-        .notEmpty().withMessage("*Judul wajib diisi val")
+        .notEmpty().withMessage("*Judul wajib diisi")
         .isLength({ max: 255 }).withMessage("*Judul maksimal 255 karakter"),
 
     // Konten wajib dan harus berisi teks nyata (bukan hanya tag kosong)
@@ -118,6 +118,10 @@ const createNewsValidator = [
 
         return true;
     }),
+
+    body("thumbnailUrl")
+        .notEmpty().withMessage("*Sampul wajib diisi")
+        // .isURL().withMessage("*Thumbnail harus berupa URL yang valid"),
 
     // postToFacebook & Instagram boleh ada, tapi harus boolean
     // body("postToFacebook")
