@@ -84,11 +84,12 @@ const validateLogin = [
 
 
 const validateInsertNewsData = [
-    // Validasi title dan content
+    // Validasi title
     body("title")
         .notEmpty().withMessage("*Judul wajib diisi")
-        .isLength({ max: 90 }).withMessage("*Judul maksimal 90 karakter"),
+        .isLength({ max: 255 }).withMessage("*Judul maksimal 255 karakter"),
 
+    // Validasi content
     body("content")
         .notEmpty().withMessage("*Konten/deskripsi wajib diisi data")
         .custom((value) => {
@@ -99,6 +100,7 @@ const validateInsertNewsData = [
             return true;
         }),
 
+    // Validasi total karakter
     body("content").custom((_, { req }) => {
         const title = req.body.title || "";
         const content = req.body.content || "";
@@ -107,7 +109,7 @@ const validateInsertNewsData = [
             .replace(/\s+/g, " ")
             .trim();
         if (text.length > 2200) {
-            throw new Error("*Jumlah total karakter judul dan konten tidak boleh lebih dari 2200");
+            throw new Error("*Jumlah total karakter tidak boleh lebih dari 2200");
         }
         return true;
     }),
@@ -120,9 +122,7 @@ const validateInsertNewsData = [
         const result = validationResult(req);
         if (!result.isEmpty()) {
             result.array().forEach(err => {
-                if (!formattedErrors[err.param]) {
-                    formattedErrors[err.param] = err.msg;
-                }
+                formattedErrors[err.param] = err.msg;
             });
         }
 
