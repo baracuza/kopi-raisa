@@ -11,7 +11,7 @@ const DOMPurify = createDOMPurify(window);
 const { uploadToCloudinary } = require('../services/cloudinaryUpload.service');
 const { validationResult } = require('express-validator');
 const { deleteFromCloudinaryByUrl, extractPublicId } = require('../utils/cloudinary');
-const { authMiddleware, validateUpdateNewsMedia, validateInsertNewsMedia, multerErrorHandler } = require('../middleware/middleware');
+const { authMiddleware, validateUpdateNewsMedia, multerErrorHandler } = require('../middleware/middleware');
 const {validateInsertNewsData, updateNewsValidator } = require('../validation/user.validation');
 
 const { getNews,

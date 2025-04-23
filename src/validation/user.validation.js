@@ -90,12 +90,12 @@ const validateInsertNewsData = [
         .isLength({ max: 255 }).withMessage("*Judul maksimal 90 karakter"),
 
     body("content")
-        .notEmpty().withMessage("*Konten/deskripsi wajib diisi")
+        .notEmpty().withMessage("*Konten/deskripsi wajib diisi data")
         .custom((value) => {
             // Hilangkan tag HTML
             const stripped = value.replace(/<[^>]*>/g, "").replace(/\s|&nbsp;/g, "");
             if (!stripped) {
-                throw new Error("*Konten/deskripsi tidak boleh kosong");
+                throw new Error("*Konten/deskripsi tidak boleh kosong data");
             }
             return true;
         }),
