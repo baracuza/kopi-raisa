@@ -119,7 +119,7 @@ const createNewsValidator = [
         return true;
     }),
 
-    body("thumbnailUrl")
+    body("thumbnail")
         .notEmpty().withMessage("*Sampul wajib diisi")
 
     // postToFacebook & Instagram boleh ada, tapi harus boolean
