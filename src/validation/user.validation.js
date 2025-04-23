@@ -1,7 +1,6 @@
-const { body } = require('express-validator');
+const { body, validationResult } = require('express-validator');
 const validator = require('validator');
 const multer = require('multer');
-const { validationResult } = require('express-validator');
 
 const validateRegister = [
     body('name')
@@ -85,15 +84,14 @@ const validateLogin = [
 
 
 const validateInsertNewsData = [
-    // Validasi untuk body (title dan content)
+    // Validasi title dan content
     body("title")
         .notEmpty().withMessage("*Judul wajib diisi")
-        .isLength({ max: 255 }).withMessage("*Judul maksimal 90 karakter"),
+        .isLength({ max: 90 }).withMessage("*Judul maksimal 90 karakter"),
 
     body("content")
         .notEmpty().withMessage("*Konten/deskripsi wajib diisi data")
         .custom((value) => {
-            // Hilangkan tag HTML
             const stripped = value.replace(/<[^>]*>/g, "").replace(/\s|&nbsp;/g, "");
             if (!stripped) {
                 throw new Error("*Konten/deskripsi tidak boleh kosong data");
@@ -101,93 +99,75 @@ const validateInsertNewsData = [
             return true;
         }),
 
-    // Validasi total kata dari title + content tidak melebihi 2200 karakter
     body("content").custom((_, { req }) => {
         const title = req.body.title || "";
         const content = req.body.content || "";
-
         const text = `${title} ${content}`
             .replace(/<[^>]+>/g, "")
             .replace(/\s+/g, " ")
             .trim();
-
-        const charCount = text.length;
-
-        if (charCount > 2200) {
-            throw new Error("*Jumlah total karakter tidak boleh lebih dari 2200");
+        if (text.length > 2200) {
+            throw new Error("*Jumlah total karakter judul dan konten tidak boleh lebih dari 2200");
         }
-
         return true;
     }),
 
-    // Middleware untuk validasi file menggunakan multer
+    // Middleware gabungan validasi express-validator + file
     (req, res, next) => {
+        const formattedErrors = {};
+
+        // 👉 1. Kumpulkan error dari express-validator
+        const result = validationResult(req);
+        if (!result.isEmpty()) {
+            result.array().forEach(err => {
+                if (!formattedErrors[err.param]) {
+                    formattedErrors[err.param] = err.msg;
+                }
+            });
+        }
+
+        // 👉 2. Validasi file (thumbnail & media)
         const maxFiles = 5;
         const maxSizeMB = 5;
         const maxSizeBytes = maxSizeMB * 1024 * 1024;
         const allowedTypes = ['image/jpeg', 'image/png', 'image/webp', 'image/jpg'];
 
-        const errors = {};
-
-        // Validasi untuk file 'thumbnail'
         const thumbnailFiles = Array.isArray(req.files?.['thumbnail']) ? req.files['thumbnail'] : [];
         const thumbnailFile = thumbnailFiles[0];
         if (!thumbnailFile) {
-            errors.thumbnail = '*Sampul wajib diunggah';
+            formattedErrors.thumbnail = '*Sampul wajib diunggah';
         } else {
             if (!allowedTypes.includes(thumbnailFile.mimetype)) {
-                errors.thumbnail = '*Sampul hanya boleh berupa gambar (jpg, jpeg, png, webp)';
+                formattedErrors.thumbnail = '*Sampul hanya boleh berupa gambar (jpg, jpeg, png, webp)';
             }
-
             if (thumbnailFile.size > maxSizeBytes) {
-                errors.thumbnail = `*Ukuran sampul maksimal ${maxSizeMB}MB`;
+                formattedErrors.thumbnail = `*Ukuran sampul maksimal ${maxSizeMB}MB`;
             }
         }
 
-
-        // Validasi untuk file 'media'
         const mediaFiles = Array.isArray(req.files?.['media']) ? req.files['media'] : [];
-
         if (mediaFiles.length > maxFiles) {
-            errors.media = `*Maksimal hanya ${maxFiles} file yang diperbolehkan`;
+            formattedErrors.media = `*Maksimal hanya ${maxFiles} file yang diperbolehkan`;
         }
 
-        const invalidFiles = mediaFiles.filter(file => !allowedTypes.includes(file.mimetype));
-        if (invalidFiles.length > 0) {
-            errors.media = '*Hanya file gambar (jpg, jpeg, png, webp) yang diperbolehkan';
+        const invalidMedia = mediaFiles.filter(file => !allowedTypes.includes(file.mimetype));
+        if (invalidMedia.length > 0) {
+            formattedErrors.media = '*Hanya file gambar (jpg, jpeg, png, webp) yang diperbolehkan';
         }
 
-        const oversizedFiles = mediaFiles.filter(file => file.size > maxSizeBytes);
-        if (oversizedFiles.length > 0) {
-            errors.media = `*Ukuran setiap file maksimal ${maxSizeMB}MB`;
+        const oversizedMedia = mediaFiles.filter(file => file.size > maxSizeBytes);
+        if (oversizedMedia.length > 0) {
+            formattedErrors.media = `*Ukuran setiap file maksimal ${maxSizeMB}MB`;
         }
 
         const totalSize = mediaFiles.reduce((acc, file) => acc + file.size, 0);
-        const maxTotalSize = 20 * 1024 * 1024; // 20MB
+        const maxTotalSize = 20 * 1024 * 1024;
         if (totalSize > maxTotalSize) {
-            errors.media = '*Total ukuran file tidak boleh lebih dari 20MB';
+            formattedErrors.media = '*Total ukuran file tidak boleh lebih dari 20MB';
         }
 
-        if (Object.keys(errors).length > 0) {
-            return res.status(400).json({
-                message: 'Validasi gagal!',
-                errors
-            });
-        }
-
-        next();
-    },
-    // Middleware untuk gabungkan semua error dari express-validator
-    (req, res, next) => {
-        const errors = validationResult(req);
-        if (!errors.isEmpty()) {
-            const formattedErrors = {};
-            errors.array().forEach(err => {
-                if (!formattedErrors[err.param]) {
-                    formattedErrors[err.param] = err.msg;
-                }
-            });
-
+        // 👉 3. Kirim semua error kalau ada
+        if (Object.keys(formattedErrors).length > 0) {
             return res.status(400).json({
                 message: "Validasi gagal!",
                 errors: formattedErrors
@@ -197,6 +177,7 @@ const validateInsertNewsData = [
         next();
     }
 ];
+
 
 // if (mediaFiles.length === 0) {
 //     return next();
