@@ -65,7 +65,7 @@ router.get('/:id', async (req, res) => {
 });
 
 router.post('/post', authMiddleware, upload.fields([{ name: 'media', maxCount: 4 }, { name: 'thumbnail', maxCount: 1 }]),
-    multerErrorHandler,validateInsertNewsMedia, async (req, res) => {
+    multerErrorHandler, createNewsValidator, validateInsertNewsMedia, async (req, res) => {
         try {
             console.log("BODY DARI CLIENT:", req.body);
 
@@ -111,7 +111,7 @@ router.post('/post', authMiddleware, upload.fields([{ name: 'media', maxCount: 4
             }
 
             const mediaFiles = req.files['media'] || [];
-            // const thumbnailFile = req.files['thumbnail']?.[0] || null;
+            const thumbnailFile = req.files['thumbnail']?.[0] || null;
 
             // Validasi wajib
             if (!thumbnailFile) {
