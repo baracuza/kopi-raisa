@@ -85,7 +85,7 @@ const createNewsValidator = [
 
     // Title wajib, tidak boleh kosong, dan maksimal 255 karakter
     body("title")
-        .notEmpty().withMessage("*Judul wajib diisi")
+        .notEmpty().withMessage("*Judul wajib diisi val")
         .isLength({ max: 255 }).withMessage("*Judul maksimal 255 karakter"),
 
     // Konten wajib dan harus berisi teks nyata (bukan hanya tag kosong)
