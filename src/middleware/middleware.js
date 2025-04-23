@@ -120,9 +120,9 @@ const validateInsertNewsMedia = (req, res, next) => {
     }
 
     // Validasi untuk file 'thumbnail'
-    const thumbnail = req.files['thumbnail']?.[0] || null;
+    const thumbnailFile = req.files['thumbnail']?.[0] || null;
 
-    if (!thumbnail) {
+    if (!thumbnailFile) {
         return res.status(400).json({
             message: 'Validasi gagal!',
             errors: {
@@ -131,7 +131,7 @@ const validateInsertNewsMedia = (req, res, next) => {
         });
     }
 
-    if (!allowedTypes.includes(thumbnail.mimetype)) {
+    if (!allowedTypes.includes(thumbnailFile.mimetype)) {
         return res.status(400).json({
             message: 'Validasi gagal!',
             errors: {
@@ -140,7 +140,7 @@ const validateInsertNewsMedia = (req, res, next) => {
         });
     }
 
-    if (thumbnail.size > maxSizeBytes) {
+    if (thumbnailFile.size > maxSizeBytes) {
         return res.status(400).json({
             message: 'Validasi gagal!',
             errors: {
