@@ -149,6 +149,27 @@ const validateInsertNewsMedia = (req, res, next) => {
         });
     }
 
+    const title = req.body.title || '';
+    const content = req.body.content || '';
+    
+    if (!title) {
+        return res.status(400).json({
+            message: 'Validasi gagal!',
+            errors: {
+                title: '*Judul wajib diisi'
+            }
+        });
+    }
+
+    if (!content) {
+        return res.status(400).json({
+            message: 'Validasi gagal!',
+            errors: {
+                content: '*Konten/Deskripsi wajib diisi'
+            }
+        })
+    }
+
     next();
 };
 
