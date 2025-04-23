@@ -129,21 +129,23 @@ const validateInsertNewsData = [
         const errors = {};
 
         // Validasi untuk file 'thumbnail'
-        const thumbnailFile = req.files['thumbnail'] && req.files['thumbnail'][0];
+        const thumbnailFiles = Array.isArray(req.files?.['thumbnail']) ? req.files['thumbnail'] : [];
+        const thumbnailFile = thumbnailFiles[0];
         if (!thumbnailFile) {
             errors.thumbnail = '*Sampul wajib diunggah';
+        }else{
+            if (!allowedTypes.includes(thumbnailFile.mimetype)) {
+                errors.thumbnail = '*Sampul hanya boleh berupa gambar (jpg, jpeg, png, webp)';
+            }
+    
+            if (thumbnailFile.size > maxSizeBytes) {
+                errors.thumbnail = `*Ukuran sampul maksimal ${maxSizeMB}MB`;
+            }
         }
 
-        if (!allowedTypes.includes(thumbnailFile.mimetype)) {
-            errors.thumbnail = '*Sampul hanya boleh berupa gambar (jpg, jpeg, png, webp)';
-        }
-
-        if (thumbnailFile.size > maxSizeBytes) {
-            errors.thumbnail = `*Ukuran sampul maksimal ${maxSizeMB}MB`;
-        }
 
         // Validasi untuk file 'media'
-        const mediaFiles = req.files?.['media'] || [];
+        const mediaFiles = Array.isArray(req.files?.['media']) ? req.files['media'] : [];
 
         if (mediaFiles.length > maxFiles) {
             errors.media = `*Maksimal hanya ${maxFiles} file yang diperbolehkan`;
