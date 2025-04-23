@@ -126,64 +126,68 @@ const validateInsertNewsData = [
         const maxSizeBytes = maxSizeMB * 1024 * 1024;
         const allowedTypes = ['image/jpeg', 'image/png', 'image/webp', 'image/jpg'];
 
+        const errors = {};
+
         // Validasi untuk file 'thumbnail'
         const thumbnailFile = req.files['thumbnail'] && req.files['thumbnail'][0];
         if (!thumbnailFile) {
-            return res.status(400).json({
-                message: 'Validasi gagal!',
-                errors: { thumbnail: '*Sampul wajib diunggah' }
-            });
+            errors.thumbnail = '*Sampul wajib diunggah';
         }
 
         if (!allowedTypes.includes(thumbnailFile.mimetype)) {
-            return res.status(400).json({
-                message: 'Validasi gagal!',
-                errors: { thumbnail: '*Sampul hanya boleh berupa gambar (jpg, jpeg, png, webp)' }
-            });
+            errors.thumbnail = '*Sampul hanya boleh berupa gambar (jpg, jpeg, png, webp)';
         }
 
         if (thumbnailFile.size > maxSizeBytes) {
-            return res.status(400).json({
-                message: 'Validasi gagal!',
-                errors: { thumbnail: `*Ukuran sampul maksimal ${maxSizeMB}MB` }
-            });
+            errors.thumbnail = `*Ukuran sampul maksimal ${maxSizeMB}MB`;
         }
 
         // Validasi untuk file 'media'
-        const mediaFiles = req.files['media'] || [];
-        if (mediaFiles.length === 0) {
-            return next();
-        }
+        const mediaFiles = req.files?.['media'] || [];
 
         if (mediaFiles.length > maxFiles) {
-            return res.status(400).json({
-                message: 'Validasi gagal!',
-                errors: { media: `*Maksimal hanya ${maxFiles} file yang diperbolehkan` }
-            });
+            errors.media = `*Maksimal hanya ${maxFiles} file yang diperbolehkan`;
         }
 
         const invalidFiles = mediaFiles.filter(file => !allowedTypes.includes(file.mimetype));
         if (invalidFiles.length > 0) {
-            return res.status(400).json({
-                message: 'Validasi gagal!',
-                errors: { media: '*Hanya file gambar (jpg, jpeg, png, webp) yang diperbolehkan' }
-            });
+            errors.media = '*Hanya file gambar (jpg, jpeg, png, webp) yang diperbolehkan';
         }
 
         const oversizedFiles = mediaFiles.filter(file => file.size > maxSizeBytes);
         if (oversizedFiles.length > 0) {
-            return res.status(400).json({
-                message: 'Validasi gagal!',
-                errors: { media: `*Ukuran setiap file maksimal ${maxSizeMB}MB` }
-            });
+            errors.media = `*Ukuran setiap file maksimal ${maxSizeMB}MB`;
         }
 
         const totalSize = mediaFiles.reduce((acc, file) => acc + file.size, 0);
         const maxTotalSize = 20 * 1024 * 1024; // 20MB
         if (totalSize > maxTotalSize) {
+            errors.media = '*Total ukuran file tidak boleh lebih dari 20MB';
+        }
+
+        if (Object.keys(errors).length > 0) {
             return res.status(400).json({
                 message: 'Validasi gagal!',
-                errors: { media: '*Total ukuran file tidak boleh lebih dari 20MB' }
+                errors
+            });
+        }
+
+        next();
+    },
+    // Middleware untuk gabungkan semua error dari express-validator
+    (req, res, next) => {
+        const errors = validationResult(req);
+        if (!errors.isEmpty()) {
+            const formattedErrors = {};
+            errors.array().forEach(err => {
+                if (!formattedErrors[err.param]) {
+                    formattedErrors[err.param] = err.msg;
+                }
+            });
+
+            return res.status(400).json({
+                message: "Validasi gagal!",
+                errors: formattedErrors
             });
         }
 
@@ -191,7 +195,9 @@ const validateInsertNewsData = [
     }
 ];
 
-
+// if (mediaFiles.length === 0) {
+//     return next();
+// }
 const updateNewsValidator = [
     // Judul boleh dikirim, tapi jika ada harus valid
     body("title")
