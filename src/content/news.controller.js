@@ -68,6 +68,9 @@ router.post('/post', authMiddleware, upload.fields([{ name: 'media', maxCount: 4
     multerErrorHandler, createNewsValidator, validateInsertNewsMedia, async (req, res) => {
         try {
             console.log("BODY DARI CLIENT:", req.body);
+            console.log("FILES:", req.files);
+            console.log("FILES MEDIA:", req.files['media']);
+            console.log("FILES THUMBNAIL:", req.files['thumbnail']);
 
             // Cek validasi input dari express-validator
             const errors = validationResult(req);
@@ -91,7 +94,7 @@ router.post('/post', authMiddleware, upload.fields([{ name: 'media', maxCount: 4
 
             // Validasi agar hanya admin bisa publish berita
             if (!req.user.admin) {
-                return res.status(403).json({ message: 'Hanya admin yang dapat mempublikasi berita!' });
+                return res.status(403).json({ message: 'Hanya admin yang dapat mempublikasi berita! admin' });
             }
 
             // Sanitize HTML untuk disimpan
@@ -106,20 +109,14 @@ router.post('/post', authMiddleware, upload.fields([{ name: 'media', maxCount: 4
             if (!plainContent) {
                 return res.status(400).json({
                     message: "Validasi gagal!",
-                    errors: { content: "*Konten/Deskripsi Tidak Boleh Kosong" }
+                    errors: { content: "*Konten/Deskripsi Tidak Boleh Kosong plain" }
                 });
             }
 
             const mediaFiles = req.files['media'] || [];
             const thumbnailFile = req.files['thumbnail']?.[0] || null;
 
-            // Validasi wajib
-            if (!thumbnailFile) {
-                return res.status(400).json({
-                    message: "Validasi gagal!",
-                    errors: { thumbnail: "*Minimal satu gambar (sampul) wajib diunggah" }
-                });
-            }
+            
             let thumbnailUrl = null;
             let uploadedResults = [];
             if (thumbnailFile) {

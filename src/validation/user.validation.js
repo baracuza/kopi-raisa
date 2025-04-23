@@ -82,13 +82,10 @@ const validateLogin = [
 ];
 
 const createNewsValidator = [
-
-    // Title wajib, tidak boleh kosong, dan maksimal 255 karakter
     body("title")
         .notEmpty().withMessage("*Judul wajib diisi")
         .isLength({ max: 255 }).withMessage("*Judul maksimal 255 karakter"),
 
-    // Konten wajib dan harus berisi teks nyata (bukan hanya tag kosong)
     body("content")
         .notEmpty().withMessage("*Konten/deskripsi wajib diisi")
         .custom((value) => {
@@ -118,25 +115,6 @@ const createNewsValidator = [
 
         return true;
     }),
-
-    body("thumbnail")
-        .notEmpty().withMessage("*Sampul wajib diisi")
-        .custom((value, { req }) => {
-            if (!req.file) {
-                throw new Error("*Sampul wajib diisi");
-            }
-            return true;
-    }),
-
-
-    // postToFacebook & Instagram boleh ada, tapi harus boolean
-    // body("postToFacebook")
-    //     .optional()
-    //     .isBoolean().withMessage("postToFacebook harus berupa boolean"),
-
-    // body("postToInstagram")
-    //     .optional()
-    //     .isBoolean().withMessage("postToInstagram harus berupa boolean"),
 ];
 
 const updateNewsValidator = [

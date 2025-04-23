@@ -283,28 +283,28 @@ const multerErrorHandler = (err, req, res, next) => {
                 return res.status(400).json({
                     message: 'Validasi gagal!',
                     errors: {
-                        thumbnail: '*Ukuran file maksimal 5MB'
+                        thumbnail: '*Ukuran file maksimal 5MB di multer'
                     }
                 });
             case 'LIMIT_FILE_COUNT':
                 return res.status(400).json({
                     message: 'Validasi gagal!',
                     errors: {
-                        media: '*Jumlah file yang diunggah melebihi batas'
+                        media: '*Jumlah file yang diunggah melebihi batas di multer'
                     }
                 });
             case 'LIMIT_UNEXPECTED_FILE':
                 return res.status(400).json({
                     message: 'Validasi gagal!',
                     errors: {
-                        media: '*terlalu banyak file yang diunggah'
+                        media: '*terlalu banyak file yang diunggah di multer'
                     }
                 });
             case 'LIMIT_FILE_COUNT':
                 return res.status(400).json({
                     message: 'Validasi gagal!',
                     errors: {
-                        media: '*terlalu banyak yang diunggah, Maksimal 4 file yang diperbolehkan'
+                        media: '*terlalu banyak yang diunggah, Maksimal 4 file yang diperbolehkan di multer'
                     }
                 });
             default:
