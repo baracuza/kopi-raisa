@@ -110,7 +110,7 @@ const createNewsValidator = [
             .replace(/\s+/g, " ")
             .trim();
 
-            const charCount = text.length;
+        const charCount = text.length;
 
         if (charCount > 2200) {
             throw new Error("*Jumlah total karakter tidak boleh lebih dari 2200");
@@ -121,6 +121,13 @@ const createNewsValidator = [
 
     body("thumbnail")
         .notEmpty().withMessage("*Sampul wajib diisi")
+        .custom((value, { req }) => {
+            if (!req.file) {
+                throw new Error("*Sampul wajib diisi");
+            }
+            return true;
+    }),
+
 
     // postToFacebook & Instagram boleh ada, tapi harus boolean
     // body("postToFacebook")
@@ -163,7 +170,7 @@ const updateNewsValidator = [
             .replace(/\s+/g, " ")
             .trim();
 
-            const charCount = text.length;
+        const charCount = text.length;
 
         if (charCount > 2200) {
             throw new Error("*Jumlah total karakter tidak boleh lebih dari 2200");
