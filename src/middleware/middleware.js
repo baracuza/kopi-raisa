@@ -69,9 +69,9 @@ const validateInsertNewsMedia = (req, res, next) => {
     const maxSizeBytes = maxSizeMB * 1024 * 1024;
     const allowedTypes = ['image/jpeg', 'image/png', 'image/webp', 'image/jpg'];
 
-    if (!req.files) {
-        return next();
-    }
+    // if (!req.files) {
+    //     return next();
+    // }
 
     // Validasi untuk file 'media'
     const mediaFiles = req.files['media'] || [];
