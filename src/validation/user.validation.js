@@ -1,6 +1,7 @@
 const { body } = require('express-validator');
 const validator = require('validator');
 const multer = require('multer');
+const { validationResult } = require('express-validator');
 
 const validateRegister = [
     body('name')
@@ -133,11 +134,11 @@ const validateInsertNewsData = [
         const thumbnailFile = thumbnailFiles[0];
         if (!thumbnailFile) {
             errors.thumbnail = '*Sampul wajib diunggah';
-        }else{
+        } else {
             if (!allowedTypes.includes(thumbnailFile.mimetype)) {
                 errors.thumbnail = '*Sampul hanya boleh berupa gambar (jpg, jpeg, png, webp)';
             }
-    
+
             if (thumbnailFile.size > maxSizeBytes) {
                 errors.thumbnail = `*Ukuran sampul maksimal ${maxSizeMB}MB`;
             }
