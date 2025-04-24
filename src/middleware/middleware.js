@@ -218,33 +218,34 @@ const validateUpdateNewsMedia = (options = {}) => {
 
 const multerErrorHandler = (err, req, res, next) => {
     if (err instanceof multer.MulterError) {
+        let field = err.field || 'media'; // Ambil nama field dari error
         switch (err.code) {
-            case 'LIMIT_FILE_SIZE':
-                return res.status(400).json({
-                    message: 'Validasi gagal!',
-                    errors: {
-                        thumbnail: '*Ukuran file maksimal 5MB'
-                    }
-                });
             case 'LIMIT_FILE_COUNT':
                 return res.status(400).json({
                     message: 'Validasi gagal!',
                     errors: {
-                        media: '*Jumlah file yang diunggah melebihi batas'
+                        [field]: '*Jumlah file yang diunggah melebihi batas'
+                    }
+                });
+            case 'LIMIT_FILE_SIZE':
+                return res.status(400).json({
+                    message: 'Validasi gagal!',
+                    errors: {
+                        [field]: '*Ukuran per file maksimal 5MB'
                     }
                 });
             case 'LIMIT_UNEXPECTED_FILE':
                 return res.status(400).json({
                     message: 'Validasi gagal!',
                     errors: {
-                        media: '*terlalu banyak file yang diunggah'
+                        [field]: '*terlalu banyak file yang diunggah'
                     }
                 });
             case 'LIMIT_FILE_COUNT':
                 return res.status(400).json({
                     message: 'Validasi gagal!',
                     errors: {
-                        media: '*terlalu banyak yang diunggah, Maksimal 4 file yang diperbolehkan'
+                        [field]: '*terlalu banyak yang diunggah, Maksimal 4 file yang diperbolehkan'
                     }
                 });
             default:
