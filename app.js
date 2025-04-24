@@ -21,6 +21,8 @@ const corsOption = {
 };
 
 app.use(express.json());
+app.use(express.urlencoded({ extended: true }));
+
 
 app.use(session({
     secret: process.env.SESSION_SECRET || 'kopi-secret',
@@ -37,6 +39,11 @@ app.use(passport.initialize());
 app.use(passport.session()); // tambahkan ini!
 app.use(cookieParser());
 app.use(cors(corsOption));
+
+app.use((req, res, next) => {
+    console.log(`[${req.method}] ${req.originalUrl}`);
+    next();
+});
 
 //endpoint try
 app.get('/', (req, res) => {
