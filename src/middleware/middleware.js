@@ -260,7 +260,7 @@ const multerErrorHandler = (err, req, res, next) => {
                 return res.status(400).json({
                     message: 'Validasi gagal!',
                     errors: {
-                        media: '*Ukuran file maksimal 5MB'
+                        thumbnail: '*Ukuran file maksimal 5MB'
                     }
                 });
             case 'LIMIT_FILE_COUNT':
