@@ -21,6 +21,8 @@ const router = express.Router();
  * /api/v1/auth/daftar:
  *   post:
  *     summary: Daftar pengguna baru
+ *     tags:
+ *       - Auth
  *     description: Mendaftar pengguna baru dengan validasi dan enkripsi password.
  *     requestBody:
  *       required: true
@@ -134,6 +136,70 @@ router.post('/daftar', validateRegister, async (req, res) => {
     }
 });
 
+/**
+ * @swagger
+ * /api/v1/auth/login:
+ *   post:
+ *     summary: Login pengguna
+ *     tags:
+ *       - Auth
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             required:
+ *               - email
+ *               - password
+ *             properties:
+ *               email:
+ *                 type: string
+ *                 example: user@example.com
+ *               password:
+ *                 type: string
+ *                 example: password123
+ *     responses:
+ *       200:
+ *         description: Login berhasil
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 message:
+ *                   type: string
+ *                   example: Login berhasil!
+ *                 data:
+ *                   type: object
+ *                   properties:
+ *                     id:
+ *                       type: string
+ *                       example: 1
+ *                     name:
+ *                       type: string
+ *                       example: Budi
+ *                     email:
+ *                       type: string
+ *                       example: user@example.com
+ *                     token:
+ *                       type: string
+ *                       example: eyJhbGciOiJIUzI1NiIsInR5cCI6...
+ *       400:
+ *         description: Validasi gagal atau kredensial salah
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 message:
+ *                   type: string
+ *                   example: Validasi gagal!
+ *                 errors:
+ *                   type: object
+ *                   example:
+ *                     email: Email tidak valid
+ */
 router.post('/login', validateLogin, async (req, res) => {
     try {
         console.log("BODY DARI CLIENT:", req.body);
@@ -177,6 +243,62 @@ router.post('/login', validateLogin, async (req, res) => {
     }
 });
 
+/**
+ * @swagger
+ * /api/v1/auth/user:
+ *   get:
+ *     summary: Ambil data profil pengguna yang sedang login
+ *     tags:
+ *       - Auth
+ *     security:
+ *       - cookieAuth: []
+ *     responses:
+ *       200:
+ *         description: Data profil berhasil diambil
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 message:
+ *                   type: string
+ *                   example: Data profil berhasil diambil!
+ *                 data:
+ *                   type: object
+ *                   properties:
+ *                     id:
+ *                       type: string
+ *                       example: 1
+ *                     name:
+ *                       type: string
+ *                       example: Budi
+ *                     email:
+ *                       type: string
+ *                       example: user@example.com
+ *                     phone_number:
+ *                       type: string
+ *                       example: "081234567890"
+ *                     image:
+ *                       type: string
+ *                       example: https://res.cloudinary.com/xxx/image/upload/v123456789/avatar.jpg
+ *                     admin:
+ *                       type: boolean
+ *                       example: false
+ *                     verified:
+ *                       type: boolean
+ *                       example: true
+ *       401:
+ *         description: Unauthorized (token tidak valid atau tidak ditemukan)
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 message:
+ *                   type: string
+ *                   example: Unauthorized
+ */
+
 router.get('/user', authMiddleware, async (req, res) => {
     try {
         const user = req.user;
@@ -197,6 +319,83 @@ router.get('/user', authMiddleware, async (req, res) => {
         return res.status(500).json({ message: 'Gagal mengambil data profil!', error: error.message });
     }
 });
+
+/**
+ * @swagger
+ * /api/v1/auth/user:
+ *   put:
+ *     summary: Perbarui profil pengguna
+ *     tags:
+ *       - Auth
+ *     security:
+ *       - cookieAuth: []
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         multipart/form-data:
+ *           schema:
+ *             type: object
+ *             properties:
+ *               name:
+ *                 type: string
+ *                 example: Budi Santoso
+ *               phone_number:
+ *                 type: string
+ *                 example: "081234567890"
+ *               media:
+ *                 type: string
+ *                 format: binary
+ *                 description: Gambar profil (opsional)
+ *     responses:
+ *       200:
+ *         description: Profil berhasil diperbarui
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 message:
+ *                   type: string
+ *                   example: Profil berhasil diperbarui!
+ *                 data:
+ *                   type: object
+ *                   properties:
+ *                     id:
+ *                       type: string
+ *                       example: 1
+ *                     name:
+ *                       type: string
+ *                       example: Budi Santoso
+ *                     email:
+ *                       type: string
+ *                       example: user@example.com
+ *                     phone_number:
+ *                       type: string
+ *                       example: "081234567890"
+ *                     image:
+ *                       type: string
+ *                       example: https://res.cloudinary.com/xxx/image/upload/v123456789/profile.jpg
+ *                     admin:
+ *                       type: boolean
+ *                       example: false
+ *                     verified:
+ *                       type: boolean
+ *                       example: true
+ *       400:
+ *         description: Validasi gagal
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 message:
+ *                   type: string
+ *                   example: Validasi gagal!
+ *                 errors:
+ *                   type: object
+ *                   additionalProperties:
+ *                     type: string
+ */
 
 router.put('/user', authMiddleware, upload.single('media'), multerErrorHandler, validateUpdateProfile, validateProfilMedia, async (req, res) => {
     try {

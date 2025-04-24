@@ -56,6 +56,15 @@ const swaggerOptions = {
             version: '1.0.0',
             description: 'API untuk aplikasi Sekolah Kopi Raisa'
         },
+        components: {
+            securitySchemes: {
+              cookieAuth: {
+                type: 'apiKey',
+                in: 'cookie',
+                name: 'token'
+              }
+            }
+          },
         servers: [
             {
                 url: 'https://sekolah-kopi-raisa.up.railway.app',
@@ -68,11 +77,8 @@ const swaggerOptions = {
         ]
     },
     apis: [
-        './src/auth/auth.controller.js',
-        './src/partners/partner.controller.js',
-        './src/content/news.controller.js',
-        './src/product/product.routes.js',
-    ], // Menunjukkan folder dimana file API berada (sesuaikan dengan projectmu)
+        './src/**/**/*.controller.js'
+    ],
 };
 
 const swaggerDocs = swaggerJsdoc(swaggerOptions);
