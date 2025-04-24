@@ -87,7 +87,7 @@ const createNewsValidator = [
     body("title")
         .trim()
         .notEmpty().withMessage("Judul wajib diisi")
-        .isLength({ max: 255 }).withMessage("Judul maksimal 255 karakter"),
+        .isLength({ max: 90 }).withMessage("Judul maksimal 90 karakter"),
 
     // Konten wajib dan harus berisi teks nyata (bukan hanya tag kosong)
     body("content")
@@ -114,7 +114,7 @@ const createNewsValidator = [
         const charCount = text.length;
 
         if (charCount > 2200) {
-            throw new Error("*Jumlah total karakter tidak boleh lebih dari 2200");
+            throw new Error("*Jumlah total karakter judul dan konten tidak boleh lebih dari 2200");
         }
 
         return true;
