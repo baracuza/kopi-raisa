@@ -69,6 +69,9 @@ router.post('/post', authMiddleware, upload.fields([{ name: 'media', maxCount: 4
         console.log("DEBUG req.body keys:", Object.keys(req.body));
         console.log("DEBUG req.body.title:", req.body.title);
         console.log("DEBUG req.body.content:", req.body.content);
+        console.log("DEBUG req.files:", req.files);
+        console.log("DEBUG req.files['thumbnail']:", req.files?.['thumbnail']);
+        console.log("DEBUG req.files['media']:", req.files?.['media']);
         try {
             console.log("BODY DARI CLIENT:", req.body);
 
