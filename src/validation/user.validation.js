@@ -2,6 +2,7 @@ const { body, validationResult } = require('express-validator');
 const validator = require('validator');
 const multer = require('multer');
 
+
 const validateRegister = [
     body('name')
         .trim()
@@ -82,20 +83,25 @@ const validateLogin = [
         .isLength({ min: 6 }).withMessage('*Password minimal 6 karakter')
 ];
 
+// Atur config upload
+const MAX_FILES = 5;
+const MAX_SIZE_MB = 5;
+const MAX_SIZE_BYTES = MAX_SIZE_MB * 1024 * 1024;
+const ALLOWED_TYPES = ['image/jpeg', 'image/png', 'image/webp', 'image/jpg'];
+const MAX_TOTAL_SIZE = 20 * 1024 * 1024;
 
-const validateInsertNewsData = [
-    // Validasi untuk title
+// Validasi Field: title & content
+const validateFields = [
     body("title")
-        .notEmpty().withMessage("*Judul wajib diisi").bail()
+        .notEmpty().withMessage("*Judul wajib diisi")
         .isLength({ max: 255 }).withMessage("*Judul maksimal 255 karakter"),
 
-    // Validasi untuk content
     body("content")
-        .notEmpty().withMessage("*Konten/deskripsi wajib diisi data").bail()
-        .custom((value) => {
+        .notEmpty().withMessage("*Konten/deskripsi wajib diisi data")
+        .custom((value, { path }) => {
             if (!value || typeof value !== 'string') {
                 const error = new Error("*Konten/deskripsi tidak boleh kosong data");
-                error.param = path; 
+                error.param = path;
                 throw error;
             }
 
@@ -105,18 +111,14 @@ const validateInsertNewsData = [
                 error.param = path;
                 throw error;
             }
+
+            return true;
         }),
 
-    // Validasi total karakter gabungan title + content
     body("content").custom((_, { req }) => {
         const title = req.body.title || "";
         const content = req.body.content || "";
-
-        const text = `${title} ${content}`
-            .replace(/<[^>]+>/g, "")
-            .replace(/\s+/g, " ")
-            .trim();
-
+        const text = `${title} ${content}`.replace(/<[^>]+>/g, "").replace(/\s+/g, " ").trim();
         const charCount = text.length;
 
         if (charCount > 2200) {
@@ -125,77 +127,72 @@ const validateInsertNewsData = [
 
         return true;
     }),
+];
 
-    // Middleware gabungan: validasi file + field
-    (req, res, next) => {
-        const errors = {};
+// Validasi File Uploads
+const validateFiles = (req, res, next) => {
+    const errors = {};
 
-        // --- VALIDASI FILE ---
-        const maxFiles = 5;
-        const maxSizeMB = 5;
-        const maxSizeBytes = maxSizeMB * 1024 * 1024;
-        const allowedTypes = ['image/jpeg', 'image/png', 'image/webp', 'image/jpg'];
+    // Thumbnail
+    const thumbnailFiles = Array.isArray(req.files?.['thumbnail']) ? req.files['thumbnail'] : [];
+    const thumbnailFile = thumbnailFiles[0];
 
-        const thumbnailFiles = Array.isArray(req.files?.['thumbnail']) ? req.files['thumbnail'] : [];
-        const thumbnailFile = thumbnailFiles[0];
-
-        if (!thumbnailFile) {
-            errors.thumbnail = '*Sampul wajib diunggah';
-        } else {
-            if (!allowedTypes.includes(thumbnailFile.mimetype)) {
-                errors.thumbnail = '*Sampul hanya boleh berupa gambar (jpg, jpeg, png, webp)';
-            }
-            if (thumbnailFile.size > maxSizeBytes) {
-                errors.thumbnail = `*Ukuran sampul maksimal ${maxSizeMB}MB`;
-            }
+    if (!thumbnailFile) {
+        errors.thumbnail = '*Sampul wajib diunggah';
+    } else {
+        if (!ALLOWED_TYPES.includes(thumbnailFile.mimetype)) {
+            errors.thumbnail = '*Sampul hanya boleh berupa gambar (jpg, jpeg, png, webp)';
         }
-
-        const mediaFiles = Array.isArray(req.files?.['media']) ? req.files['media'] : [];
-
-        if (mediaFiles.length > maxFiles) {
-            errors.media = `*Maksimal hanya ${maxFiles} file yang diperbolehkan`;
+        if (thumbnailFile.size > MAX_SIZE_BYTES) {
+            errors.thumbnail = `*Ukuran sampul maksimal ${MAX_SIZE_MB}MB`;
         }
-
-        const invalidFiles = mediaFiles.filter(file => !allowedTypes.includes(file.mimetype));
-        if (invalidFiles.length > 0) {
-            errors.media = '*Hanya file gambar (jpg, jpeg, png, webp) yang diperbolehkan';
-        }
-
-        const oversizedFiles = mediaFiles.filter(file => file.size > maxSizeBytes);
-        if (oversizedFiles.length > 0) {
-            errors.media = `*Ukuran setiap file maksimal ${maxSizeMB}MB`;
-        }
-
-        const totalSize = mediaFiles.reduce((acc, file) => acc + file.size, 0);
-        const maxTotalSize = 20 * 1024 * 1024;
-        if (totalSize > maxTotalSize) {
-            errors.media = '*Total ukuran file tidak boleh lebih dari 20MB';
-        }
-
-        // --- VALIDASI FIELD DARI express-validator ---
-        const result = validationResult(req);
-        if (!result.isEmpty()) {
-            result.array().forEach(err => {
-                errors[err.param] = err.msg;
-            });
-        }
-
-        // --- Jika ada error apapun, balikan response ---
-        if (Object.keys(errors).length > 0) {
-            return res.status(400).json({
-                message: 'Validasi gagal!',
-                errors
-            });
-        }
-
-        next();
     }
+
+    // Media
+    const mediaFiles = Array.isArray(req.files?.['media']) ? req.files['media'] : [];
+
+    if (mediaFiles.length > MAX_FILES) {
+        errors.media = `*Maksimal hanya ${MAX_FILES} file yang diperbolehkan`;
+    }
+
+    const invalidFiles = mediaFiles.filter(file => !ALLOWED_TYPES.includes(file.mimetype));
+    if (invalidFiles.length > 0) {
+        errors.media = '*Hanya file gambar (jpg, jpeg, png, webp) yang diperbolehkan';
+    }
+
+    const oversizedFiles = mediaFiles.filter(file => file.size > MAX_SIZE_BYTES);
+    if (oversizedFiles.length > 0) {
+        errors.media = `*Ukuran setiap file maksimal ${MAX_SIZE_MB}MB`;
+    }
+
+    const totalSize = mediaFiles.reduce((acc, file) => acc + file.size, 0);
+    if (totalSize > MAX_TOTAL_SIZE) {
+        errors.media = '*Total ukuran file tidak boleh lebih dari 20MB';
+    }
+
+    // Validasi express-validator
+    const result = validationResult(req);
+    if (!result.isEmpty()) {
+        result.array().forEach(err => {
+            errors[err.param] = err.msg;
+        });
+    }
+
+    if (Object.keys(errors).length > 0) {
+        return res.status(400).json({
+            message: 'Validasi gagal!',
+            errors,
+        });
+    }
+
+    next();
+};
+const validateInsertNewsData = [
+    ...validateFields,
+    validateFiles,
 ];
 
 
-// if (mediaFiles.length === 0) {
-//     return next();
-// }
 const updateNewsValidator = [
     // Judul boleh dikirim, tapi jika ada harus valid
     body("title")
