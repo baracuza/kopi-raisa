@@ -92,6 +92,7 @@ const createNewsValidator = [
     // Konten wajib dan harus berisi teks nyata (bukan hanya tag kosong)
     body("content")
         .notEmpty().withMessage("Konten/deskripsi wajib diisi")
+        .isLength({ max: 2110 }).withMessage("Judul maksimal 2110 karakter")
         .custom((value) => {
             // Hilangkan tag HTML
             const stripped = value.replace(/<[^>]*>/g, "").replace(/\s|&nbsp;/g, "");
@@ -102,23 +103,23 @@ const createNewsValidator = [
         }),
 
     // Validasi total kata dari title + content tidak melebihi 2200 kata
-    body("content").custom((_, { req }) => {
-        const title = req.body.title || "";
-        const content = req.body.content || "";
+    // body("content").custom((_, { req }) => {
+    //     const title = req.body.title || "";
+    //     const content = req.body.content || "";
 
-        const text = `${title} ${content}`
-            .replace(/<[^>]+>/g, "")
-            .replace(/\s+/g, " ")
-            .trim();
+    //     const text = `${title} ${content}`
+    //         .replace(/<[^>]+>/g, "")
+    //         .replace(/\s+/g, " ")
+    //         .trim();
 
-        const charCount = text.length;
+    //     const charCount = text.length;
 
-        if (charCount > 2200) {
-            throw new Error("*Jumlah total karakter judul dan konten tidak boleh lebih dari 2200");
-        }
+    //     if (charCount > 2200) {
+    //         throw new Error("*Jumlah total karakter judul dan konten tidak boleh lebih dari 2200");
+    //     }
 
-        return true;
-    }),
+    //     return true;
+    // }),
 ];
 
 const updateNewsValidator = [
