@@ -69,8 +69,36 @@ const validateInsertNewsMedia = (req, res, next) => {
     const maxSizeBytes = maxSizeMB * 1024 * 1024;
     const allowedTypes = ['image/jpeg', 'image/png', 'image/webp', 'image/jpg'];
 
-    if (!req.files) {
-        return next();
+    req.files = req.files || {};
+
+    // Validasi untuk file 'thumbnail'
+    const thumbnailFile = req.files['thumbnail']?.[0] || null;
+
+    if (!thumbnailFile) {
+        return res.status(400).json({
+            message: 'Validasi gagal!',
+            errors: {
+                thumbnail: '*Sampul wajib diunggah'
+            }
+        });
+    }
+
+    if (!allowedTypes.includes(thumbnailFile.mimetype)) {
+        return res.status(400).json({
+            message: 'Validasi gagal!',
+            errors: {
+                thumbnail: '*Sampul hanya boleh berupa gambar (jpg, jpeg, png, webp)'
+            }
+        });
+    }
+
+    if (thumbnailFile.size > maxSizeBytes) {
+        return res.status(400).json({
+            message: 'Validasi gagal!',
+            errors: {
+                thumbnail: `*Ukuran sampul maksimal ${maxSizeMB}MB`
+            }
+        });
     }
 
     // Validasi untuk file 'media'
@@ -119,36 +147,6 @@ const validateInsertNewsMedia = (req, res, next) => {
         });
     }
 
-    // Validasi untuk file 'thumbnail'
-    const thumbnailFile = req.files['thumbnail']?.[0] || null;
-
-    if (!thumbnailFile) {
-        return res.status(400).json({
-            message: 'Validasi gagal!',
-            errors: {
-                thumbnail: '*Sampul wajib diunggah'
-            }
-        });
-    }
-
-    if (!allowedTypes.includes(thumbnailFile.mimetype)) {
-        return res.status(400).json({
-            message: 'Validasi gagal!',
-            errors: {
-                thumbnail: '*Sampul hanya boleh berupa gambar (jpg, jpeg, png, webp)'
-            }
-        });
-    }
-
-    if (thumbnailFile.size > maxSizeBytes) {
-        return res.status(400).json({
-            message: 'Validasi gagal!',
-            errors: {
-                thumbnail: `*Ukuran sampul maksimal ${maxSizeMB}MB`
-            }
-        });
-    }
-
     next();
 };
 
@@ -164,7 +162,7 @@ const validateUpdateNewsMedia = (options = {}) => {
         const allowedTypes = ['image/jpeg', 'image/png', 'image/webp', 'image/jpg'];
 
         // Skip jika tidak ada file dan diminta skip validasi (misal saat update)
-        if ((!req.files || (!req.files['media'] || req.files['media'].length === 0) ) && skipIfNoFile) {
+        if ((!req.files || (!req.files['media'] || req.files['media'].length === 0)) && skipIfNoFile) {
             return next();
         }
 
