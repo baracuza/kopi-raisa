@@ -86,22 +86,25 @@ const validateLogin = [
 const validateInsertNewsData = [
     // Validasi untuk title
     body("title")
-        .notEmpty().withMessage("*Judul wajib diisi")
+        .notEmpty().withMessage("*Judul wajib diisi").bail()
         .isLength({ max: 255 }).withMessage("*Judul maksimal 255 karakter"),
 
     // Validasi untuk content
     body("content")
-        .notEmpty().withMessage("*Konten/deskripsi wajib diisi data")
+        .notEmpty().withMessage("*Konten/deskripsi wajib diisi data").bail()
         .custom((value) => {
             if (!value || typeof value !== 'string') {
-                throw new Error("*Konten/deskripsi tidak boleh kosong data");
+                const error = new Error("*Konten/deskripsi tidak boleh kosong data");
+                error.param = path; 
+                throw error;
             }
 
             const stripped = value.replace(/<[^>]*>/g, "").replace(/\s|&nbsp;/g, "");
             if (!stripped) {
-                throw new Error("*Konten/deskripsi tidak boleh kosong data");
+                const error = new Error("*Konten/deskripsi tidak boleh kosong data");
+                error.param = path;
+                throw error;
             }
-            return true;
         }),
 
     // Validasi total karakter gabungan title + content
