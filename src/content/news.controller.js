@@ -11,6 +11,7 @@ const DOMPurify = createDOMPurify(window);
 const { uploadToCloudinary } = require('../services/cloudinaryUpload.service');
 const { validationResult } = require('express-validator');
 const { deleteFromCloudinaryByUrl, extractPublicId } = require('../utils/cloudinary');
+const handleValidationResult = require('../middleware/handleValidationResult');
 const { authMiddleware, validateUpdateNewsMedia, validateInsertNewsMedia, multerErrorHandler } = require('../middleware/middleware');
 const { createNewsValidator, updateNewsValidator } = require('../validation/user.validation');
 
@@ -65,7 +66,7 @@ router.get('/:id', async (req, res) => {
 });
 
 router.post('/post', authMiddleware, upload.fields([{ name: 'media', maxCount: 4 }, { name: 'thumbnail', maxCount: 1 }]),
-    multerErrorHandler, createNewsValidator, validateInsertNewsMedia, async (req, res) => {
+    multerErrorHandler, createNewsValidator, handleValidationResult, validateInsertNewsMedia, async (req, res) => {
         console.log("DEBUG req.body keys:", Object.keys(req.body));
         console.log("DEBUG req.body.title:", req.body.title);
         console.log("DEBUG req.body.content:", req.body.content);
@@ -74,23 +75,6 @@ router.post('/post', authMiddleware, upload.fields([{ name: 'media', maxCount: 4
         console.log("DEBUG req.files['media']:", req.files?.['media']);
         try {
             console.log("BODY DARI CLIENT:", req.body);
-
-            // Cek validasi input dari express-validator
-            const errors = validationResult(req);
-            if (!errors.isEmpty()) {
-                const errorObject = errors.array().reduce((acc, curr) => {
-                    const key = curr.path && curr.path !== '' ? curr.path : 'global';
-                    if (!acc[key]) {
-                        acc[key] = curr.msg;
-                    }
-                    return acc;
-                }, {});
-
-                return res.status(400).json({
-                    message: "Validasi gagal!",
-                    errors: errorObject
-                });
-            }
 
             const { title, content, postToFacebook, postToInstagram } = req.body;
             const user_id = req.user.id;
