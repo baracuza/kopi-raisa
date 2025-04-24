@@ -14,6 +14,7 @@ const { deleteFromCloudinaryByUrl, extractPublicId } = require('../utils/cloudin
 const handleValidationResult = require('../middleware/handleValidationResult');
 const { authMiddleware, validateUpdateNewsMedia, validateInsertNewsMedia, multerErrorHandler } = require('../middleware/middleware');
 const { createNewsValidator, updateNewsValidator } = require('../validation/user.validation');
+const handleValidationResultFinal = require('../middleware/handleValidationResultFinal');
 
 const { getNews,
     getNewsById,
@@ -66,7 +67,7 @@ router.get('/:id', async (req, res) => {
 });
 
 router.post('/post', authMiddleware, upload.fields([{ name: 'media', maxCount: 4 }, { name: 'thumbnail', maxCount: 1 }]),
-    multerErrorHandler, createNewsValidator, handleValidationResult, validateInsertNewsMedia, async (req, res) => {
+    multerErrorHandler, validateInsertNewsMedia, createNewsValidator, handleValidationResult, handleValidationResultFinal, async (req, res) => {
         console.log("DEBUG req.body keys:", Object.keys(req.body));
         console.log("DEBUG req.body.title:", req.body.title);
         console.log("DEBUG req.body.content:", req.body.content);
