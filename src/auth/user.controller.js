@@ -150,10 +150,10 @@ router.post('/daftar', validateRegister, async (req, res) => {
  *           schema:
  *             type: object
  *             required:
- *               - email
+ *               - emailOrPhone
  *               - password
  *             properties:
- *               email:
+ *               emailOrPhone:
  *                 type: string
  *                 example: user@example.com
  *               password:
@@ -179,7 +179,7 @@ router.post('/daftar', validateRegister, async (req, res) => {
  *                     name:
  *                       type: string
  *                       example: Budi
- *                     email:
+ *                     emailOrPhone:
  *                       type: string
  *                       example: user@example.com
  *                     token:
@@ -680,9 +680,6 @@ router.get('/facebook/pages', authMiddleware, async (req, res) => {
         });
     }
 });
-
-
-
 
 router.post('/logout', (req, res) => {
     res.clearCookie('token', {
