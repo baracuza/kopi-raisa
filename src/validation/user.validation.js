@@ -87,17 +87,17 @@ const createNewsValidator = [
     body("title")
         .trim()
         .notEmpty().withMessage("Judul wajib diisi")
-        .isLength({ max: 90 }).withMessage("Judul maksimal 90 karakter"),
+        .isLength({ max: 90 }).withMessage("*Judul maksimal 90 karakter"),
 
     // Konten wajib dan harus berisi teks nyata (bukan hanya tag kosong)
     body("content")
-        .notEmpty().withMessage("Konten/deskripsi wajib diisi")
-        .isLength({ max: 2110 }).withMessage("Judul maksimal 2110 karakter")
+        .notEmpty().withMessage("*Konten/deskripsi wajib diisi")
+        .isLength({ max: 2110 }).withMessage("*Konten/deskripsi maksimal 2110 karakter")
         .custom((value) => {
             // Hilangkan tag HTML
             const stripped = value.replace(/<[^>]*>/g, "").replace(/\s|&nbsp;/g, "");
             if (!stripped) {
-                throw new Error("Konten/deskripsi tidak boleh kosong");
+                throw new Error("*Konten/deskripsi tidak boleh kosong");
             }
             return true;
         }),
