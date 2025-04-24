@@ -11,8 +11,8 @@ const DOMPurify = createDOMPurify(window);
 const { uploadToCloudinary } = require('../services/cloudinaryUpload.service');
 const { validationResult } = require('express-validator');
 const { deleteFromCloudinaryByUrl, extractPublicId } = require('../utils/cloudinary');
-const { authMiddleware, validateUpdateNewsMedia, multerErrorHandler } = require('../middleware/middleware');
-const {validateInsertNewsData, updateNewsValidator } = require('../validation/user.validation');
+const { authMiddleware, validateUpdateNewsMedia, validateInsertNewsMedia, multerErrorHandler } = require('../middleware/middleware');
+const { createNewsValidator, updateNewsValidator } = require('../validation/user.validation');
 
 const { getNews,
     getNewsById,
@@ -65,20 +65,33 @@ router.get('/:id', async (req, res) => {
 });
 
 router.post('/post', authMiddleware, upload.fields([{ name: 'media', maxCount: 4 }, { name: 'thumbnail', maxCount: 1 }]),
-    multerErrorHandler, validateInsertNewsData, async (req, res) => {
+    multerErrorHandler, createNewsValidator, validateInsertNewsMedia, async (req, res) => {
         try {
             console.log("BODY DARI CLIENT:", req.body);
-            console.log("FILES:", req.files);
-            console.log("FILES MEDIA:", req.files['media']);
-            console.log("FILES THUMBNAIL:", req.files['thumbnail']);
 
+            // Cek validasi input dari express-validator
+            const errors = validationResult(req);
+            if (!errors.isEmpty()) {
+                const errorObject = errors.array().reduce((acc, curr) => {
+                    const key = curr.path && curr.path !== '' ? curr.path : 'global';
+                    if (!acc[key]) {
+                        acc[key] = curr.msg;
+                    }
+                    return acc;
+                }, {});
+
+                return res.status(400).json({
+                    message: "Validasi gagal!",
+                    errors: errorObject
+                });
+            }
 
             const { title, content, postToFacebook, postToInstagram } = req.body;
             const user_id = req.user.id;
 
             // Validasi agar hanya admin bisa publish berita
             if (!req.user.admin) {
-                return res.status(403).json({ message: 'Hanya admin yang dapat mempublikasi berita! admin' });
+                return res.status(403).json({ message: 'Hanya admin yang dapat mempublikasi berita!' });
             }
 
             // Sanitize HTML untuk disimpan
@@ -93,14 +106,20 @@ router.post('/post', authMiddleware, upload.fields([{ name: 'media', maxCount: 4
             if (!plainContent) {
                 return res.status(400).json({
                     message: "Validasi gagal!",
-                    errors: { content: "*Konten/Deskripsi Tidak Boleh Kosong plain" }
+                    errors: { content: "*Konten/Deskripsi Tidak Boleh Kosong" }
                 });
             }
 
             const mediaFiles = req.files['media'] || [];
-            const thumbnailFile = req.files['thumbnail'] && req.files['thumbnail'][0];
+            const thumbnailFile = req.files['thumbnail']?.[0] || null;
 
-            
+            // Validasi wajib
+            if (!thumbnailFile) {
+                return res.status(400).json({
+                    message: "Validasi gagal!",
+                    errors: { thumbnail: "*Minimal satu gambar (sampul) wajib diunggah" }
+                });
+            }
             let thumbnailUrl = null;
             let uploadedResults = [];
             if (thumbnailFile) {

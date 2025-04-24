@@ -1,7 +1,5 @@
-const { body, validationResult } = require('express-validator');
+const { body } = require('express-validator');
 const validator = require('validator');
-const multer = require('multer');
-
 
 const validateRegister = [
     body('name')
@@ -83,35 +81,36 @@ const validateLogin = [
         .isLength({ min: 6 }).withMessage('*Password minimal 6 karakter')
 ];
 
-// Atur config upload
-const MAX_FILES = 5;
-const MAX_SIZE_MB = 5;
-const MAX_SIZE_BYTES = MAX_SIZE_MB * 1024 * 1024;
-const ALLOWED_TYPES = ['image/jpeg', 'image/png', 'image/webp', 'image/jpg'];
-const MAX_TOTAL_SIZE = 20 * 1024 * 1024;
+const createNewsValidator = [
 
-// Validasi Field: title & content
-const validateFields = [
+    // Title wajib, tidak boleh kosong, dan maksimal 255 karakter
     body("title")
-        .notEmpty().withMessage("*Judul wajib diisi")
-        .isLength({ max: 255 }).withMessage("*Judul maksimal 255 karakter"),
+        .notEmpty().withMessage("Judul wajib diisi")
+        .isLength({ max: 255 }).withMessage("Judul maksimal 255 karakter"),
 
+    // Konten wajib dan harus berisi teks nyata (bukan hanya tag kosong)
     body("content")
-        .notEmpty().withMessage("*Konten/deskripsi wajib diisi data").bail()
+        .notEmpty().withMessage("Konten/deskripsi wajib diisi")
         .custom((value) => {
+            // Hilangkan tag HTML
             const stripped = value.replace(/<[^>]*>/g, "").replace(/\s|&nbsp;/g, "");
             if (!stripped) {
-                throw { msg: "*Konten/deskripsi tidak boleh kosong data", param: "content" };
+                throw new Error("Konten/deskripsi tidak boleh kosong");
             }
             return true;
         }),
 
-
+    // Validasi total kata dari title + content tidak melebihi 2200 kata
     body("content").custom((_, { req }) => {
         const title = req.body.title || "";
         const content = req.body.content || "";
-        const text = `${title} ${content}`.replace(/<[^>]+>/g, "").replace(/\s+/g, " ").trim();
-        const charCount = text.length;
+
+        const text = `${title} ${content}`
+            .replace(/<[^>]+>/g, "")
+            .replace(/\s+/g, " ")
+            .trim();
+
+            const charCount = text.length;
 
         if (charCount > 2200) {
             throw new Error("*Jumlah total karakter tidak boleh lebih dari 2200");
@@ -121,76 +120,12 @@ const validateFields = [
     }),
 ];
 
-// Validasi File Uploads
-const validateFiles = (req, res, next) => {
-    const errors = {};
-
-    // Thumbnail
-    const thumbnailFiles = Array.isArray(req.files?.['thumbnail']) ? req.files['thumbnail'] : [];
-    const thumbnailFile = thumbnailFiles[0];
-
-    if (!thumbnailFile) {
-        errors.thumbnail = '*Sampul wajib diunggah';
-    } else {
-        if (!ALLOWED_TYPES.includes(thumbnailFile.mimetype)) {
-            errors.thumbnail = '*Sampul hanya boleh berupa gambar (jpg, jpeg, png, webp)';
-        }
-        if (thumbnailFile.size > MAX_SIZE_BYTES) {
-            errors.thumbnail = `*Ukuran sampul maksimal ${MAX_SIZE_MB}MB`;
-        }
-    }
-
-    // Media
-    const mediaFiles = Array.isArray(req.files?.['media']) ? req.files['media'] : [];
-
-    if (mediaFiles.length > MAX_FILES) {
-        errors.media = `*Maksimal hanya ${MAX_FILES} file yang diperbolehkan`;
-    }
-
-    const invalidFiles = mediaFiles.filter(file => !ALLOWED_TYPES.includes(file.mimetype));
-    if (invalidFiles.length > 0) {
-        errors.media = '*Hanya file gambar (jpg, jpeg, png, webp) yang diperbolehkan';
-    }
-
-    const oversizedFiles = mediaFiles.filter(file => file.size > MAX_SIZE_BYTES);
-    if (oversizedFiles.length > 0) {
-        errors.media = `*Ukuran setiap file maksimal ${MAX_SIZE_MB}MB`;
-    }
-
-    const totalSize = mediaFiles.reduce((acc, file) => acc + file.size, 0);
-    if (totalSize > MAX_TOTAL_SIZE) {
-        errors.media = '*Total ukuran file tidak boleh lebih dari 20MB';
-    }
-
-    // Validasi express-validator
-    const result = validationResult(req);
-    if (!result.isEmpty()) {
-        result.array().forEach(err => {
-            errors[err.param] = err.msg;
-        });
-    }
-
-    if (Object.keys(errors).length > 0) {
-        return res.status(400).json({
-            message: 'Validasi gagal!',
-            errors,
-        });
-    }
-
-    next();
-};
-const validateInsertNewsData = [
-    ...validateFields,
-    validateFiles,
-];
-
-
 const updateNewsValidator = [
     // Judul boleh dikirim, tapi jika ada harus valid
     body("title")
         .optional()
-        .notEmpty().withMessage("*Judul tidak boleh kosong")
-        .isLength({ max: 255 }).withMessage("*Judul maksimal 255 karakter"),
+        .notEmpty().withMessage("Judul tidak boleh kosong")
+        .isLength({ max: 255 }).withMessage("Judul maksimal 255 karakter"),
 
     // Konten boleh dikirim, tapi harus valid jika ada
     body("content")
@@ -198,7 +133,7 @@ const updateNewsValidator = [
         .custom((value) => {
             const stripped = value.replace(/<[^>]*>/g, "").replace(/\s|&nbsp;/g, "");
             if (!stripped) {
-                throw new Error("*Konten/deskripsi tidak boleh kosong jika diisi");
+                throw new Error("Konten/deskripsi tidak boleh kosong jika diisi");
             }
             return true;
         }),
@@ -216,7 +151,7 @@ const updateNewsValidator = [
             .replace(/\s+/g, " ")
             .trim();
 
-        const charCount = text.length;
+            const charCount = text.length;
 
         if (charCount > 2200) {
             throw new Error("*Jumlah total karakter tidak boleh lebih dari 2200");
@@ -235,4 +170,4 @@ const updateNewsValidator = [
     //     .isBoolean().withMessage("postToInstagram harus berupa boolean"),
 ];
 
-module.exports = { validateRegister, validateLogin, validateInsertNewsData, updateNewsValidator, validateUpdateProfile };
+module.exports = { validateRegister, validateLogin, createNewsValidator, updateNewsValidator, validateUpdateProfile };
