@@ -97,23 +97,15 @@ const validateFields = [
         .isLength({ max: 255 }).withMessage("*Judul maksimal 255 karakter"),
 
     body("content")
-        .notEmpty().withMessage("*Konten/deskripsi wajib diisi data")
-        .custom((value, { path }) => {
-            if (!value || typeof value !== 'string') {
-                const error = new Error("*Konten/deskripsi tidak boleh kosong data");
-                error.param = path;
-                throw error;
-            }
-
+        .notEmpty().withMessage("*Konten/deskripsi wajib diisi data").bail()
+        .custom((value) => {
             const stripped = value.replace(/<[^>]*>/g, "").replace(/\s|&nbsp;/g, "");
             if (!stripped) {
-                const error = new Error("*Konten/deskripsi tidak boleh kosong data");
-                error.param = path;
-                throw error;
+                throw { msg: "*Konten/deskripsi tidak boleh kosong data", param: "content" };
             }
-
             return true;
         }),
+
 
     body("content").custom((_, { req }) => {
         const title = req.body.title || "";
