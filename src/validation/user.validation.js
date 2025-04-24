@@ -93,6 +93,10 @@ const validateInsertNewsData = [
     body("content")
         .notEmpty().withMessage("*Konten/deskripsi wajib diisi data")
         .custom((value) => {
+            if (!value || typeof value !== 'string') {
+                throw new Error("*Konten/deskripsi tidak boleh kosong data");
+            }
+
             const stripped = value.replace(/<[^>]*>/g, "").replace(/\s|&nbsp;/g, "");
             if (!stripped) {
                 throw new Error("*Konten/deskripsi tidak boleh kosong data");
