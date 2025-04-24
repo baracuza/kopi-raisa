@@ -75,7 +75,7 @@ const validateInsertNewsMedia = (req, res, next) => {
     // Validasi untuk file 'thumbnail'
     const thumbnailFile = req.files['thumbnail']?.[0] || null;
     if (!thumbnailFile) {
-        erros.thumbnail = '*Sampul wajib diunggah';
+        errors.thumbnail = '*Sampul wajib diunggah';
     } else {
         if (!allowedTypes.includes(thumbnailFile.mimetype)) {
             errors.thumbnail = '*Sampul hanya boleh berupa gambar (jpg, jpeg, png, webp)';
