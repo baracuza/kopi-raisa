@@ -18,7 +18,7 @@ const handleValidationResultFinal = (req, res, next) => {
         });
     }
 
-    next(); // lanjutkan ke middleware berikutnya jika tidak ada error
+    next();
 };
 
 module.exports = handleValidationResultFinal;

@@ -16,7 +16,87 @@ const ApiError = require('../utils/apiError');
 
 const router = express.Router();
 
-
+/**
+ * @swagger
+ * /api/v1/auth/daftar:
+ *   post:
+ *     summary: Daftar pengguna baru
+ *     description: Mendaftar pengguna baru dengan validasi dan enkripsi password.
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             properties:
+ *               name:
+ *                 type: string
+ *                 description: Nama lengkap pengguna
+ *               email:
+ *                 type: string
+ *                 description: Alamat email pengguna
+ *               phone_number:
+ *                 type: string
+ *                 description: Nomor telepon pengguna
+ *               password:
+ *                 type: string
+ *                 description: Password pengguna
+ *             required:
+ *               - name
+ *               - email
+ *               - phone_number
+ *               - password
+ *     responses:
+ *       201:
+ *         description: User berhasil didaftarkan
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 message:
+ *                   type: string
+ *                   example: 'User berhasil didaftarkan!'
+ *                 data:
+ *                   type: object
+ *                   properties:
+ *                     id:
+ *                       type: integer
+ *                       description: ID pengguna
+ *                     name:
+ *                       type: string
+ *                       description: Nama lengkap pengguna
+ *                     email:
+ *                       type: string
+ *                       description: Email pengguna
+ *                     phone_number:
+ *                       type: string
+ *                       description: Nomor telepon pengguna
+ *       400:
+ *         description: Validasi gagal
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 message:
+ *                   type: string
+ *                   example: 'Validasi gagal!'
+ *                 errors:
+ *                   type: object
+ *                   additionalProperties:
+ *                     type: string
+ *       500:
+ *         description: Terjadi kesalahan di server
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 message:
+ *                   type: string
+ *                   example: 'Terjadi kesalahan di server.'
+ */
 router.post('/daftar', validateRegister, async (req, res) => {
     try {
         console.log('Content-Type:', req.headers['content-type']);

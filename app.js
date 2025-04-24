@@ -3,6 +3,8 @@ const dotenv = require('dotenv');
 const cookieParser = require('cookie-parser');
 const passport = require('passport');
 const cors = require('cors');
+const swaggerUi = require('swagger-ui-express');
+const swaggerJsdoc = require('swagger-jsdoc');
 require('./src/auth/passport-config');
 require('./src/auth/facebook-config');
 // const passportLink = require('./src/auth/facebook-config');
@@ -44,6 +46,37 @@ app.use((req, res, next) => {
     console.log(`[${req.method}] ${req.originalUrl}`);
     next();
 });
+
+// Swagger setup
+const swaggerOptions = {
+    definition: {
+        openapi: '3.0.0',
+        info: {
+            title: 'API Sekolah Kopi Raisa',
+            version: '1.0.0',
+            description: 'API untuk aplikasi Sekolah Kopi Raisa'
+        },
+        servers: [
+            {
+                url: 'https://sekolah-kopi-raisa.up.railway.app',
+                description: 'Production Server'
+            },
+            {
+                url: 'http://localhost:3000',
+                description: 'Local Environment'
+            }
+        ]
+    },
+    apis: [
+        './src/auth/auth.controller.js',
+        './src/partners/partner.controller.js',
+        './src/content/news.controller.js',
+        './src/product/product.routes.js',
+    ], // Menunjukkan folder dimana file API berada (sesuaikan dengan projectmu)
+};
+
+const swaggerDocs = swaggerJsdoc(swaggerOptions);
+app.use('/api-docs', swaggerUi.serve, swaggerUi.setup(swaggerDocs));
 
 //endpoint try
 app.get('/', (req, res) => {

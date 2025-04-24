@@ -217,6 +217,7 @@ const validateUpdateNewsMedia = (options = {}) => {
 };
 
 const multerErrorHandler = (err, req, res, next) => {
+    console.error('Multer Error:', err);  
     if (err instanceof multer.MulterError) {
         let field = err.field || 'media'; // Ambil nama field dari error
         switch (err.code) {
