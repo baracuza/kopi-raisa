@@ -113,8 +113,6 @@ const validateInsertNewsMedia = (req, res, next) => {
 };
 
 
-
-
 const validateUpdateNewsMedia = (options = {}) => {
     return (req, res, next) => {
         const { skipIfNoFile = false } = options;
@@ -123,6 +121,23 @@ const validateUpdateNewsMedia = (options = {}) => {
         const maxSizeMB = 5;
         const maxSizeBytes = maxSizeMB * 1024 * 1024;
         const allowedTypes = ['image/jpeg', 'image/png', 'image/webp', 'image/jpg'];
+
+        req.files = req.files || {};
+        req.mediaValidationErrors = {}; // Inisialisasi error object
+
+        // Validasi 'thumbnail'
+        const thumbnailFile = req.files['thumbnail']?.[0] || null;
+
+        if (!thumbnailFile) {
+            req.mediaValidationErrors.thumbnail = '*Sampul wajib diunggah';
+        } else {
+            if (!allowedTypes.includes(thumbnailFile.mimetype)) {
+                req.mediaValidationErrors.thumbnail = '*Sampul hanya boleh berupa gambar (jpg, jpeg, png, webp)';
+            } else if (thumbnailFile.size > maxSizeBytes) {
+                req.mediaValidationErrors.thumbnail = `*Ukuran sampul maksimal ${maxSizeMB}MB`;
+            }
+        }
+
 
         // Skip jika tidak ada file dan diminta skip validasi (misal saat update)
         if ((!req.files || (!req.files['media'] || req.files['media'].length === 0)) && skipIfNoFile) {
@@ -217,7 +232,7 @@ const validateUpdateNewsMedia = (options = {}) => {
 };
 
 const multerErrorHandler = (err, req, res, next) => {
-    console.error('Multer Error:', err);  
+    console.error('Multer Error:', err);
     if (err instanceof multer.MulterError) {
         let field = err.field || 'media'; // Ambil nama field dari error
         switch (err.code) {

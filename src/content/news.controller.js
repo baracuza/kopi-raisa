@@ -26,6 +26,60 @@ const { getNews,
 
 const router = express.Router();
 
+/**
+ * @swagger
+ * /api/v1/news:
+ *   get:
+ *     summary: Ambil semua data berita
+ *     tags:
+ *       - News
+ *     responses:
+ *       200:
+ *         description: Data berita berhasil didapatkan
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 message:
+ *                   type: string
+ *                   example: Data berita berhasil didapatkan!
+ *                 data:
+ *                   type: array
+ *                   items:
+ *                     type: object
+ *                     properties:
+ *                       id:
+ *                         type: string
+ *                         example: "1"
+ *                       title:
+ *                         type: string
+ *                         example: "Judul Berita"
+ *                       content:
+ *                         type: string
+ *                         example: "Isi lengkap berita di sini..."
+ *                       image:
+ *                         type: string
+ *                         example: "https://example.com/image.jpg"
+ *                       created_at:
+ *                         type: string
+ *                         format: date-time
+ *                         example: "2025-04-24T12:34:56Z"
+ *       500:
+ *         description: Gagal mendapatkan data berita
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 message:
+ *                   type: string
+ *                   example: Gagal mendapatkan data berita!
+ *                 error:
+ *                   type: string
+ *                   example: Terjadi kesalahan pada server
+ */
+
 router.get('/', async (req, res) => {
     // console.log('GET /api/v1/news');
     try {
@@ -42,6 +96,47 @@ router.get('/', async (req, res) => {
         });
     }
 });
+
+/**
+ * @swagger
+ * /api/v1/news/{id}:
+ *   get:
+ *     summary: Ambil detail berita berdasarkan ID
+ *     tags:
+ *       - News
+ *     parameters:
+ *       - in: path
+ *         name: id
+ *         schema:
+ *           type: string
+ *         required: true
+ *         description: ID berita
+ *     responses:
+ *       200:
+ *         description: Data berita berhasil didapatkan
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 message:
+ *                   type: string
+ *                   example: Data berita berhasil didapatkan!
+ *                 data:
+ *                   type: object
+ *       404:
+ *         description: Data berita tidak ditemukan
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 message:
+ *                   type: string
+ *                   example: Data berita tidak ditemukan!
+ *       500:
+ *         description: Gagal mendapatkan data berita
+ */
 
 router.get('/:id', async (req, res) => {
     try {
@@ -65,6 +160,65 @@ router.get('/:id', async (req, res) => {
         });
     }
 });
+
+/**
+ * @swagger
+ * /api/v1/news/post:
+ *   post:
+ *     summary: Tambah berita baru (admin only)
+ *     tags:
+ *       - News
+ *     security:
+ *       - cookieAuth: []
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         multipart/form-data:
+ *           schema:
+ *             type: object
+ *             properties:
+ *               title:
+ *                 type: string
+ *                 example: "Pelatihan Barista Profesional"
+ *               content:
+ *                 type: string
+ *                 example: "<p>Deskripsi berita lengkap di sini...</p>"
+ *               postToFacebook:
+ *                 type: string
+ *                 enum: [true, false]
+ *                 example: "false"
+ *               postToInstagram:
+ *                 type: string
+ *                 enum: [true, false]
+ *                 example: "true"
+ *               media:
+ *                 type: array
+ *                 items:
+ *                   type: string
+ *                   format: binary
+ *               thumbnail:
+ *                 type: string
+ *                 format: binary
+ *     responses:
+ *       201:
+ *         description: Berita berhasil ditambahkan
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 message:
+ *                   type: string
+ *                   example: Berita berhasil ditambahkan dan diposting!
+ *                 data:
+ *                   type: object
+ *       400:
+ *         description: Validasi gagal atau akun sosial belum terhubung
+ *       403:
+ *         description: Hanya admin yang bisa posting
+ *       500:
+ *         description: Gagal menyimpan berita atau upload media
+ */
 
 router.post('/post', authMiddleware, upload.fields([{ name: 'media', maxCount: 4 }, { name: 'thumbnail', maxCount: 1 }]),
     multerErrorHandler, validateInsertNewsMedia, createNewsValidator, handleValidationResult, handleValidationResultFinal, async (req, res) => {
@@ -121,13 +275,6 @@ router.post('/post', authMiddleware, upload.fields([{ name: 'media', maxCount: 4
             const mediaFiles = req.files['media'] || [];
             const thumbnailFile = req.files['thumbnail']?.[0] || null;
 
-            // Validasi wajib
-            if (!thumbnailFile) {
-                return res.status(400).json({
-                    message: "Validasi gagal!",
-                    errors: { thumbnail: "*Minimal satu gambar (sampul) wajib diunggah" }
-                });
-            }
             let thumbnailUrl = null;
             let uploadedResults = [];
             if (thumbnailFile) {
@@ -146,7 +293,6 @@ router.post('/post', authMiddleware, upload.fields([{ name: 'media', maxCount: 4
             }
 
             if (mediaFiles.length > 0) {
-
                 const uploadPromises = mediaFiles.map(file =>
                     uploadToCloudinary(file.buffer, file.originalname));
                 try {
@@ -278,6 +424,64 @@ router.post('/post', authMiddleware, upload.fields([{ name: 'media', maxCount: 4
         }
     })
 
+    /**
+ * @swagger
+ * /api/v1/news/{id}:
+ *   put:
+ *     summary: Update berita berdasarkan ID (admin only)
+ *     tags:
+ *       - News
+ *     security:
+ *       - cookieAuth: []
+ *     parameters:
+ *       - in: path
+ *         name: id
+ *         schema:
+ *           type: integer
+ *         required: true
+ *         description: ID berita yang ingin diupdate
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         multipart/form-data:
+ *           schema:
+ *             type: object
+ *             properties:
+ *               title:
+ *                 type: string
+ *                 example: "Judul Berita Terbaru"
+ *               content:
+ *                 type: string
+ *                 example: "<p>Konten berita setelah update</p>"
+ *               media:
+ *                 type: array
+ *                 items:
+ *                   type: string
+ *                   format: binary
+ *               thumbnail:
+ *                 type: string
+ *                 format: binary
+ *     responses:
+ *       200:
+ *         description: Berita berhasil diupdate
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 message:
+ *                   type: string
+ *                   example: Berita berhasil diupdate!
+ *                 data:
+ *                   type: object
+ *       400:
+ *         description: Validasi gagal
+ *       403:
+ *         description: Akses ditolak! Hanya admin
+ *       500:
+ *         description: Gagal mengupdate berita
+ */
+
 router.put('/:id', authMiddleware, upload.fields([{ name: 'media', maxCount: 4 }, { name: 'thumbnail', maxCount: 1 }]),
     updateNewsValidator, validateUpdateNewsMedia({ skipIfNoFile: true }), async (req, res) => {
         try {
@@ -341,6 +545,41 @@ router.put('/:id', authMiddleware, upload.fields([{ name: 'media', maxCount: 4 }
             });
         }
     });
+
+    /**
+ * @swagger
+ * /api/v1/news/{id}:
+ *   delete:
+ *     summary: Hapus berita berdasarkan ID (admin only)
+ *     tags:
+ *       - News
+ *     security:
+ *       - cookieAuth: []
+ *     parameters:
+ *       - in: path
+ *         name: id
+ *         schema:
+ *           type: integer
+ *         required: true
+ *         description: ID berita yang ingin dihapus
+ *     responses:
+ *       200:
+ *         description: Berita berhasil dihapus
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 message:
+ *                   type: string
+ *                   example: Berita berhasil dihapus!
+ *                 data:
+ *                   type: object
+ *       403:
+ *         description: Akses ditolak! Hanya admin
+ *       500:
+ *         description: Gagal menghapus berita
+ */
 
 router.delete('/:id', authMiddleware, async (req, res) => {
     try {

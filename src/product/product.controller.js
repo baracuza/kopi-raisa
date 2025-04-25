@@ -6,6 +6,8 @@ const { authMiddleware } = require('../middleware/middleware');
 
 const router = express.Router();
 
+
+
 router.get('/', async (req, res) => {
     try {
         const products = await getProducts();

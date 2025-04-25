@@ -101,11 +101,34 @@ const createNewsValidator = [
             }
             return true;
         }),
+];
 
-    // Validasi total kata dari title + content tidak melebihi 2200 kata
+const updateNewsValidator = [
+    // Judul boleh dikirim, tapi jika ada harus valid
+    body("title")
+        .optional()
+        .notEmpty().withMessage("Judul tidak boleh kosong")
+        .isLength({ max: 90 }).withMessage("Judul maksimal 90 karakter"),
+
+    // Konten boleh dikirim, tapi harus valid jika ada
+    body("content")
+        .optional()
+        .isLength({ max: 2110 }).withMessage("*Konten/deskripsi maksimal 2110 karakter")
+        .custom((value) => {
+            const stripped = value.replace(/<[^>]*>/g, "").replace(/\s|&nbsp;/g, "");
+            if (!stripped) {
+                throw new Error("Konten/deskripsi tidak boleh kosong");
+            }
+            return true;
+        }),
+
+    // Jika title dan/atau content diisi, cek total kata gabungan
     // body("content").custom((_, { req }) => {
     //     const title = req.body.title || "";
     //     const content = req.body.content || "";
+
+    //     // Kalau keduanya tidak diisi, validasi tetap lolos (karena PUT bisa parsial)
+    //     if (!title && !content) return true;
 
     //     const text = `${title} ${content}`
     //         .replace(/<[^>]+>/g, "")
@@ -115,52 +138,11 @@ const createNewsValidator = [
     //     const charCount = text.length;
 
     //     if (charCount > 2200) {
-    //         throw new Error("*Jumlah total karakter judul dan konten tidak boleh lebih dari 2200");
+    //         throw new Error("*Jumlah total karakter tidak boleh lebih dari 2200");
     //     }
 
     //     return true;
     // }),
-];
-
-const updateNewsValidator = [
-    // Judul boleh dikirim, tapi jika ada harus valid
-    body("title")
-        .optional()
-        .notEmpty().withMessage("Judul tidak boleh kosong")
-        .isLength({ max: 255 }).withMessage("Judul maksimal 255 karakter"),
-
-    // Konten boleh dikirim, tapi harus valid jika ada
-    body("content")
-        .optional()
-        .custom((value) => {
-            const stripped = value.replace(/<[^>]*>/g, "").replace(/\s|&nbsp;/g, "");
-            if (!stripped) {
-                throw new Error("Konten/deskripsi tidak boleh kosong jika diisi");
-            }
-            return true;
-        }),
-
-    // Jika title dan/atau content diisi, cek total kata gabungan
-    body("content").custom((_, { req }) => {
-        const title = req.body.title || "";
-        const content = req.body.content || "";
-
-        // Kalau keduanya tidak diisi, validasi tetap lolos (karena PUT bisa parsial)
-        if (!title && !content) return true;
-
-        const text = `${title} ${content}`
-            .replace(/<[^>]+>/g, "")
-            .replace(/\s+/g, " ")
-            .trim();
-
-        const charCount = text.length;
-
-        if (charCount > 2200) {
-            throw new Error("*Jumlah total karakter tidak boleh lebih dari 2200");
-        }
-
-        return true;
-    }),
 
     //postToFacebook & Instagram boolean opsional
     // body("postToFacebook")

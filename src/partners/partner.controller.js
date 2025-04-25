@@ -6,6 +6,146 @@ const { authMiddleware } = require('../middleware/middleware');
 
 const router = express.Router();
 
+/**
+ * @swagger
+ * tags:
+ *   name: Partner
+ *   description: API untuk mengelola data partner
+ */
+
+/**
+ * @swagger
+ * /api/v1/partners:
+ *   get:
+ *     summary: Mendapatkan seluruh data partner
+ *     tags: [Partner]
+ *     security:
+ *       - cookieAuth: []
+ *     responses:
+ *       200:
+ *         description: Berhasil mendapatkan data partner
+ *       500:
+ *         description: Gagal mendapatkan data partner
+ */
+
+/**
+ * @swagger
+ * /api/v1/partners/{id}:
+ *   get:
+ *     summary: Mendapatkan partner berdasarkan ID
+ *     tags: [Partner]
+ *     security:
+ *       - cookieAuth: []
+ *     parameters:
+ *       - in: path
+ *         name: id
+ *         schema:
+ *           type: string
+ *         required: true
+ *         description: ID partner
+ *     responses:
+ *       200:
+ *         description: Berhasil mendapatkan data partner
+ *       404:
+ *         description: Partner tidak ditemukan
+ *       500:
+ *         description: Gagal mendapatkan data partner
+ */
+
+/**
+ * @swagger
+ * /api/v1/partners:
+ *   post:
+ *     summary: Menambahkan partner baru (admin only)
+ *     tags: [Partner]
+ *     security:
+ *       - cookieAuth: []
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             properties:
+ *               name:
+ *                 type: string
+ *               description:
+ *                 type: string
+ *               logo:
+ *                 type: string
+ *             required:
+ *               - name
+ *     responses:
+ *       201:
+ *         description: Partner berhasil ditambahkan
+ *       403:
+ *         description: Akses ditolak (bukan admin)
+ *       500:
+ *         description: Gagal menambahkan partner
+ */
+
+/**
+ * @swagger
+ * /api/v1/partners/{id}:
+ *   put:
+ *     summary: Memperbarui partner berdasarkan ID (admin only)
+ *     tags: [Partner]
+ *     security:
+ *       - cookieAuth: []
+ *     parameters:
+ *       - in: path
+ *         name: id
+ *         schema:
+ *           type: string
+ *         required: true
+ *         description: ID partner
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             properties:
+ *               name:
+ *                 type: string
+ *               description:
+ *                 type: string
+ *               logo:
+ *                 type: string
+ *     responses:
+ *       200:
+ *         description: Partner berhasil diperbarui
+ *       403:
+ *         description: Akses ditolak (bukan admin)
+ *       500:
+ *         description: Gagal memperbarui partner
+ */
+
+/**
+ * @swagger
+ * /api/v1/partners/{id}:
+ *   delete:
+ *     summary: Menghapus partner berdasarkan ID (admin only)
+ *     tags: [Partner]
+ *     security:
+ *       - cookieAuth: []
+ *     parameters:
+ *       - in: path
+ *         name: id
+ *         schema:
+ *           type: string
+ *         required: true
+ *         description: ID partner
+ *     responses:
+ *       200:
+ *         description: Partner berhasil dihapus
+ *       403:
+ *         description: Akses ditolak (bukan admin)
+ *       500:
+ *         description: Gagal menghapus partner
+ */
+
+
 router.get('/', authMiddleware, async (req, res) => {
     try {
         const partners = await getPartner();
