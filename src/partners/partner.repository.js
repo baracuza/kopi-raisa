@@ -31,9 +31,10 @@ const insertPartner = async (newPartnerData, user_id) => {
     const partner = await prisma.Partner.create({
         data: {
             name: newPartnerData.name,
-            description: newPartnerData.description,
-            image_url: newPartnerData.image_url || null,
-            user_id: user_id,
+            owner_name: newPartnerData.owner_name,
+            phone_number: newPartnerData.phone_number,
+            address: newPartnerData.address || null,
+
         },
     });
 

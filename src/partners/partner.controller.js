@@ -190,15 +190,17 @@ router.post('/', authMiddleware, async (req, res) => {
         if (!req.user.admin) {
             return res.status(403).json({ message: 'Akses ditolak! Hanya admin yang bisa menambahkan partner.' });
         }
-        const partnerData = req.body;
+        const dataPartner = req.body;
         const user_id = req.user.id;
-        const newPartner = await createPartner(partnerData, user_id);
+        const newPartner = await createPartner(dataPartner, user_id);
 
+        console.log(newPartner);
         res.status(201).json({
             message: 'Partner berhasil ditambahkan!',
             data: newPartner,
         });
     } catch (error) {
+        console.error('Error adding partner:', error);
         return res.status(500).json({
             message: 'Gagal menambahkan partner!',
             error: error.message,
