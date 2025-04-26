@@ -44,6 +44,12 @@ const addNewsMedia = async (newsId, url, mimetype, isThumbnail) => {
     });
 };
 
+const deleteNewsMediaByUrls = async (urls) => {
+    return prisma.newsMedia.deleteMany({
+        where: { media_url: { in: urls } }
+    });
+};
+
 //belum dipakai
 const addMultipleNewsMedia = async (newsId, mediaUrls) => {
     const mediaData = mediaUrls.map((url, mimetype) => ({
@@ -56,12 +62,23 @@ const addMultipleNewsMedia = async (newsId, mediaUrls) => {
     });
 }
 
+//UPDATE NEWS
 const updateNewsData = async (id, data) => {
     return await prisma.news.update({
         where: { id: parseInt(id) },
         data
     });
 };
+
+const deleteThumbnailNewsMedia = async (newsId) => {
+
+    return await prisma.newsMedia.deleteMany({
+        where: {
+            news_id: parseInt(newsId),
+            isThumbnail: true
+        }
+    });
+}
 
 const deleteNewsMediaByNewsId = async (newsId) => {
     return await prisma.newsMedia.deleteMany({
@@ -74,4 +91,4 @@ const deleteNews = async (id) => {
     return await prisma.news.delete({ where: { id: parseInt(id) } });
 };
 
-module.exports = { getNewsByIdData, insertNews, addNewsMedia, addMultipleNewsMedia, deleteNews, deleteNewsMediaByNewsId, updateNewsData, getAllNews };
+module.exports = { getNewsByIdData, insertNews, addNewsMedia, deleteNewsMediaByUrls, deleteThumbnailNewsMedia, addMultipleNewsMedia, deleteNews, deleteNewsMediaByNewsId, updateNewsData, getAllNews };

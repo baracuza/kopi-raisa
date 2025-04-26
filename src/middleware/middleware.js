@@ -138,14 +138,8 @@ const validateUpdateNewsMedia = (options = {}) => {
             }
         }
 
-
         // Skip jika tidak ada file dan diminta skip validasi (misal saat update)
         if ((!req.files || (!req.files['media'] || req.files['media'].length === 0)) && skipIfNoFile) {
-            return next();
-        }
-
-        // Cek jika tidak ada file yang diunggah pada media
-        if (!req.files || !req.files['media'] || req.files['media'].length === 0) {
             return next();
         }
 

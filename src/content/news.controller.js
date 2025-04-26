@@ -483,7 +483,7 @@ router.post('/post', authMiddleware, upload.fields([{ name: 'media', maxCount: 4
  */
 
 router.put('/:id', authMiddleware, upload.fields([{ name: 'media', maxCount: 4 }, { name: 'thumbnail', maxCount: 1 }]),
-    updateNewsValidator, validateUpdateNewsMedia({ skipIfNoFile: true }), async (req, res) => {
+    updateNewsValidator, validateUpdateNewsMedia, handleValidationResult, handleValidationResultFinal({ skipIfNoFile: true }), async (req, res) => {
         try {
             // Cek validasi input dari express-validator
             const errors = validationResult(req);
@@ -505,7 +505,7 @@ router.put('/:id', authMiddleware, upload.fields([{ name: 'media', maxCount: 4 }
                 return res.status(403).json({ message: 'Akses ditolak! Hanya admin yang bisa mengedit berita.' });
             }
             const { id } = req.params;
-            const { title, content } = req.body;
+            const { title, content, retainedMedia } = req.body;
 
             // Sanitize HTML untuk disimpan
             const cleanHtml = DOMPurify.sanitize(content || "");
@@ -527,7 +527,8 @@ router.put('/:id', authMiddleware, upload.fields([{ name: 'media', maxCount: 4 }
                 title,
                 content: cleanHtml,
                 mediaFiles: req.files['media'],
-                thumbnailFile: req.files['thumbnail']?.[0] || null
+                thumbnailFile: req.files['thumbnail']?.[0] || null,
+                retainedMedia: retainedMedia ? JSON.parse(retainedMedia) : []
             };
 
             console.log("Mulai update berita");
