@@ -509,7 +509,72 @@ router.post('/save-token', (req, res) => {
     return res.status(200).json({ message: 'Token berhasil disimpan di cookie!' });
 });
 
-
+/**
+ * @swagger
+ * /api/facebook/link:
+ *   post:
+ *     summary: Tautkan akun Facebook, Facebook Page, dan Instagram ke user yang sedang login
+ *     tags:
+ *       - Facebook Integration
+ *     security:
+ *       - bearerAuth: []
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             required:
+ *               - accessToken
+ *             properties:
+ *               accessToken:
+ *                 type: string
+ *                 description: Access token Facebook user
+ *     responses:
+ *       200:
+ *         description: Akun Facebook & Page berhasil ditautkan
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 message:
+ *                   type: string
+ *                 data:
+ *                   type: object
+ *                   properties:
+ *                     id:
+ *                       type: integer
+ *                     facebook_id:
+ *                       type: string
+ *                     name:
+ *                       type: string
+ *                     email:
+ *                       type: string
+ *                     image:
+ *                       type: string
+ *                     access_token:
+ *                       type: string
+ *                     token_expires:
+ *                       type: string
+ *                       format: date-time
+ *                     page_id:
+ *                       type: string
+ *                     page_name:
+ *                       type: string
+ *                     page_access_token:
+ *                       type: string
+ *                     ig_user_id:
+ *                       type: string
+ *                     instagram_username:
+ *                       type: string
+ *       400:
+ *         description: Access token tidak diberikan atau tidak ada page ditemukan
+ *       401:
+ *         description: Gagal autentikasi Facebook atau user tidak ditemukan
+ *       500:
+ *         description: Server error saat mengambil page atau akun Instagram
+ */
 // 1. Endpoint untuk menautkan akun Facebook
 router.post('/facebook/link',
     authMiddleware,

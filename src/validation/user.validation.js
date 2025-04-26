@@ -121,37 +121,6 @@ const updateNewsValidator = [
             }
             return true;
         }),
-
-    // Jika title dan/atau content diisi, cek total kata gabungan
-    // body("content").custom((_, { req }) => {
-    //     const title = req.body.title || "";
-    //     const content = req.body.content || "";
-
-    //     // Kalau keduanya tidak diisi, validasi tetap lolos (karena PUT bisa parsial)
-    //     if (!title && !content) return true;
-
-    //     const text = `${title} ${content}`
-    //         .replace(/<[^>]+>/g, "")
-    //         .replace(/\s+/g, " ")
-    //         .trim();
-
-    //     const charCount = text.length;
-
-    //     if (charCount > 2200) {
-    //         throw new Error("*Jumlah total karakter tidak boleh lebih dari 2200");
-    //     }
-
-    //     return true;
-    // }),
-
-    //postToFacebook & Instagram boolean opsional
-    // body("postToFacebook")
-    //     .optional()
-    //     .isBoolean().withMessage("postToFacebook harus berupa boolean"),
-
-    // body("postToInstagram")
-    //     .optional()
-    //     .isBoolean().withMessage("postToInstagram harus berupa boolean"),
 ];
 
 module.exports = { validateRegister, validateLogin, createNewsValidator, updateNewsValidator, validateUpdateProfile };
