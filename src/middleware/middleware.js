@@ -128,7 +128,6 @@ const validateUpdateNewsMedia = (options = {}) => {
         const thumbnailFile = req.files['thumbnail']?.[0] || null;
         const mediaFiles = req.files['media'] || [];
 
-        // Peletakan skipIfNoFile paling awal
         const noThumbnail = !thumbnailFile;
         const noMedia = mediaFiles.length === 0;
         if (skipIfNoFile && noThumbnail && noMedia) {

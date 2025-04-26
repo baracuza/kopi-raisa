@@ -359,8 +359,8 @@ router.post('/post', authMiddleware, upload.fields([{ name: 'media', maxCount: 4
                 const fbAccount = await prisma.facebookAccount.findUnique({
                     where: { userId: user_id }
                 });
-                if (!fbAccount) {
-                    return res.status(400).json({ message: 'Akun Facebook belum terhubung!' });
+                if (!fbAccount.page_access_token) {
+                    return res.status(400).json({ message: 'Access Token Page tidak tersedia. Silakan login ulang Facebook Anda!' });
                 }
                 // Pisahkan media berdasarkan tipe
                 const images = mediaInfos.filter(media => media.mimetype.startsWith('image/'));
@@ -390,8 +390,8 @@ router.post('/post', authMiddleware, upload.fields([{ name: 'media', maxCount: 4
                 const igAccount = await prisma.facebookAccount.findUnique({
                     where: { userId: user_id }
                 });
-                if (!igAccount) {
-                    return res.status(400).json({ message: 'Akun Instagram belum terhubung!' });
+                if (!igAccount.ig_user_id || !igAccount.page_access_token) {
+                    return res.status(400).json({ message: 'Access token akun Instagram tidak valid atau belum terhubung. Silakan login ulang!' });
                 }
                 // Pisahkan media berdasarkan tipe
                 const images = mediaInfos.filter(media => media.mimetype.startsWith('image/'));
