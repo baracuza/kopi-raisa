@@ -483,7 +483,7 @@ router.post('/post', authMiddleware, upload.fields([{ name: 'media', maxCount: 4
  */
 
 router.put('/:id', authMiddleware, upload.fields([{ name: 'media', maxCount: 4 }, { name: 'thumbnail', maxCount: 1 }]),
-    updateNewsValidator, validateUpdateNewsMedia, handleValidationResult, handleValidationResultFinal({ skipIfNoFile: true }), async (req, res) => {
+    updateNewsValidator, validateUpdateNewsMedia({ skipIfNoFile: true }), handleValidationResult, handleValidationResultFinal, async (req, res) => {
         try {
             // Cek validasi input dari express-validator
             const errors = validationResult(req);
