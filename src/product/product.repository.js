@@ -8,5 +8,17 @@ const findAllProducts = async () => {
     return products;
 };
 
+const createNewProduct = async (newProductData) => {
+    const productNewData = await prisma.Product.create({
+        data: newProductData,
+    });
+    return productNewData;
+};
 
-module.exports = {findAllProducts};
+const createInventory = async (inventoryProduct) => {
+    const inventoryData = await prisma.Inventory.create({
+        data:inventoryProduct,
+    });
+    return inventoryData;
+};
+module.exports = {findAllProducts, createNewProduct, createInventory};

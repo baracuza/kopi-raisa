@@ -9,11 +9,11 @@ const DOMPurify = createDOMPurify(window);
 
 
 const { uploadToCloudinary } = require('../services/cloudinaryUpload.service');
-const { validationResult } = require('express-validator');
 const { deleteFromCloudinaryByUrl, extractPublicId } = require('../utils/cloudinary');
-const handleValidationResult = require('../middleware/handleValidationResult');
 const { authMiddleware, validateUpdateNewsMedia, validateInsertNewsMedia, multerErrorHandler } = require('../middleware/middleware');
-const { createNewsValidator, updateNewsValidator } = require('../validation/user.validation');
+const validationResult = require('express-validator');
+const { createNewsValidator, updateNewsValidator } = require('../validation/validation');
+const handleValidationResult = require('../middleware/handleValidationResult');
 const handleValidationResultFinal = require('../middleware/handleValidationResultFinal');
 
 const { getNews,
