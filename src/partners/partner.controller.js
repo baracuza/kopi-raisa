@@ -155,16 +155,19 @@ router.get('/', authMiddleware, async (req, res) => {
         }
         const partners = await getAllPartners();
 
+        console.log(partners);
         res.status(200).json({
             message: 'Data partner berhasil didapatkan!',
             data: partners,
         });
     } catch (error) {
-        if (error instanceof ApiError) {
+        if(error instanceof ApiError){
+            console.error('ApiError:', error);
             return res.status(error.statusCode).json({
-                message: error.message,
-            });
+                message:error.message,
+            })
         }
+        
         console.error('Error getting partners:', error);
         return res.status(500).json({
             message: 'Terjadi kesalahan di server!',
@@ -178,12 +181,14 @@ router.get('/:id', authMiddleware, async (req, res) => {
         const { id } = req.params;
         const partner = await getPartnerById(id);
 
+        console.log(partner);
         res.status(200).json({
             message: 'Data partner berhasil didapatkan!',
             data: partner,
         });
     } catch (error) {
         if (error instanceof ApiError) {
+            console.error('ApiError:', error);
             return res.status(error.statusCode).json({
                 message: error.message,
             });
@@ -229,6 +234,7 @@ router.post('/', authMiddleware, createPartnerValidator, async (req, res) => {
         });
     } catch (error) {
         if(error instanceof ApiError) {
+            console.error('ApiError:', error);
             return res.status(error.statusCode).json({
                 message:error.message,
             })
@@ -276,6 +282,7 @@ router.put('/:id', authMiddleware, createPartnerValidator, async (req, res) => {
         });
     } catch (error) {
         if(error instanceof ApiError) {
+            console.error('ApiError:', error);
             return res.status(error.statusCode).json({
                 message:error.message,
             })
@@ -306,6 +313,7 @@ router.delete('/:id', authMiddleware, async (req, res) => {
         });
     } catch (error) {
         if(error instanceof ApiError) {
+            console.error('ApiError:', error);
             return res.status(error.statusCode).json({
                 message:error.message,
             })

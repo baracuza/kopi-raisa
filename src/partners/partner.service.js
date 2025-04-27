@@ -10,6 +10,9 @@ const {
 
 const getAllPartners = async () => {
     const partners = await findPartner();
+    if (!partners) {
+        throw new ApiError('Gagal mendapatkan data partner!', 500);
+    }
     return partners;
 };
 
@@ -46,7 +49,9 @@ const removePartner = async (id) => {
         throw new ApiError('Partner tidak ditemukan!', 404);
     }
     const partnerData = await deletePartner(id);
-
+    if (!partnerData) {
+        throw new ApiError('Gagal menghapus partner!', 500);
+    }
     return partnerData;
 };
 
