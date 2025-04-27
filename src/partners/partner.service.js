@@ -8,9 +8,8 @@ const {
     editPartner
 } = require("./partner.repository");
 
-const getPartner = async () => {
+const getAllPartners = async () => {
     const partners = await findPartner();
-
     return partners;
 };
 
@@ -51,4 +50,4 @@ const removePartner = async (id) => {
     return partnerData;
 };
 
-module.exports = { getPartner, getPartnerById, createPartner, updatePartner, removePartner };
+module.exports = { getAllPartners, getPartnerById, createPartner, updatePartner, removePartner };

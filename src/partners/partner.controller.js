@@ -1,9 +1,9 @@
 const express = require('express');
 const prisma = require('../db');
 
-const { getPartner, getPartnerById, createPartner, updatePartner, removePartner } = require('./partner.service');
+const { getAllPartners, getPartnerById, createPartner, updatePartner, removePartner } = require('./partner.service');
 const { authMiddleware } = require('../middleware/middleware');
-const { createPartnerValidator } = require('../validation/partner.validation');
+const { createPartnerValidator } = require('../validation/user.validation');
 
 const router = express.Router();
 
@@ -149,7 +149,10 @@ const router = express.Router();
 
 router.get('/', authMiddleware, async (req, res) => {
     try {
-        const partners = await getPartner();
+        if (!req.user.admin) {
+            return res.status(403).json({ message: 'Akses ditolak! Hanya admin yang bisa mengakses.' });
+        }
+        const partners = await getAllPartners();
 
         res.status(200).json({
             message: 'Data partner berhasil didapatkan!',
