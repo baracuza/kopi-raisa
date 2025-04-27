@@ -33,13 +33,8 @@ const editPartner = async (id, editedPartnerData) => {
         where: {
             id: parseInt(id),
         },
-        data: {
-            name: editedPartnerData.name,
-            description: editedPartnerData.description,
-            image_url: editedPartnerData.image_url || null,
-        },
+        data:editedPartnerData,
     });
-
     return partner;
 };
 

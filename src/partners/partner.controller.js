@@ -159,6 +159,7 @@ router.get('/', authMiddleware, async (req, res) => {
             data: partners,
         });
     } catch (error) {
+        console.error('Error getting partners:', error);
         return res.status(500).json({
             message: 'Gagal mendapatkan data partner!',
             error: error.message,
@@ -182,6 +183,7 @@ router.get('/:id', authMiddleware, async (req, res) => {
             data: partner,
         });
     } catch (error) {
+        console.error('Error getting partner:', error);
         return res.status(500).json({
             message: 'Gagal mendapatkan data partner!',
             error: error.message,
@@ -217,16 +219,18 @@ router.put('/:id', authMiddleware, async (req, res) => {
         const editedPartnerData = req.body;
 
         if (!req.user.admin) {
-            return res.status(403).json({ message: 'Akses ditolak! Hanya admin yang bisa memperbarui partner.' });
+            return res.status(403).json({ message: 'Akses ditolak! Hanya admin yang bisa mengakses.' });
         }
 
         const updatedPartner = await updatePartner(id, editedPartnerData);
 
+        console.log(updatedPartner);
         res.status(200).json({
             message: 'Partner berhasil diperbarui!',
             data: updatedPartner,
         });
     } catch (error) {
+        console.error('Error updating partner:', error);
         return res.status(500).json({
             message: 'Gagal memperbarui partner!',
             error: error.message,
