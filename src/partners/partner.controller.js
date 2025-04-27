@@ -5,6 +5,7 @@ const { getAllPartners, getPartnerById, createPartner, updatePartner, removePart
 const { authMiddleware } = require('../middleware/middleware');
 const { createPartnerValidator } = require('../validation/user.validation');
 const ApiError = require('../utils/apiError');
+const { validationResult } = require('express-validator');
 
 const router = express.Router();
 
@@ -167,7 +168,7 @@ router.get('/', authMiddleware, async (req, res) => {
                 message:error.message,
             })
         }
-        
+
         console.error('Error getting partners:', error);
         return res.status(500).json({
             message: 'Terjadi kesalahan di server!',
@@ -242,7 +243,7 @@ router.post('/', authMiddleware, createPartnerValidator, async (req, res) => {
 
         console.error('Error adding partner:', error);
         return res.status(500).json({
-            message: 'Gagal menambahkan partner!',
+            message: 'Terjadi kesalahan di server!',
             error: error.message,
         });
     }
