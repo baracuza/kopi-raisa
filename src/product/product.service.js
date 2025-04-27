@@ -3,6 +3,7 @@
 const ApiError = require('../utils/apiError');
 
 const { findAllProducts, createNewProduct, createInventory } = require('./product.repository');
+const { findPartnerById } = require('../partners/partner.repository');
 
 const getAllProducts = async () => {
     const products = await findAllProducts();
@@ -14,7 +15,18 @@ const getAllProducts = async () => {
 
 const createProduct = async (newProductData) => {
     try {
-        const productNewData = await createNewProduct(newProductData);
+        const cleanProductData = {
+            ...newProductData,
+            price: Number(newProductData.price),
+            stock: Number(newProductData.stock),
+            partner_id: Number(newProductData.partner_id),
+        };
+        const partnerExists = await findPartnerById(cleanProductData.partner_id);
+        if (!partnerExists) {
+            throw new ApiError(404, 'Partner tidak ditemukan!');
+        }
+
+        const productNewData = await createNewProduct(cleanProductData);
         if (!productNewData) {
             throw new ApiError(500, 'Gagal menambahkan produk!');
         }

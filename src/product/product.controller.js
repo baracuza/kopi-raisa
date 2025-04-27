@@ -6,7 +6,7 @@ const upload = require('../middleware/multer');
 const { getAllProducts, getProductById, createProduct, updateProduct, removeProduct } = require('./product.service');
 const { authMiddleware, multerErrorHandler, validateProductMedia } = require('../middleware/middleware');
 const { productValidator } = require('../validation/validation');
-const validationResult = require('express-validator');
+const {validationResult} = require('express-validator');
 const handleValidationResult = require('../middleware/handleValidationResult');
 const handleValidationResultFinal = require('../middleware/handleValidationResultFinal');
 const { uploadToCloudinary } = require('../services/cloudinaryUpload.service');
@@ -67,7 +67,7 @@ router.get('/:id', async (req, res) => {
     }
 });
 
-router.post('/', authMiddleware, productValidator, async (req, res) => {
+router.post('/', authMiddleware, productValidator, handleValidationResult, handleValidationResultFinal, async (req, res) => {
     try {
         const errors = validationResult(req);
         if (!errors.isEmpty()) {
