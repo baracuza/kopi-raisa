@@ -12,13 +12,14 @@ router.get('/', async (req, res) => {
     try {
         const products = await getProducts();
 
+        console.log(products);
         res.status(200).json({
             message: 'Data produk berhasil didapatkan!',
             data: products,
         });
     } catch (error) {
         return res.status(500).json({
-            message: 'Gagal mendapatkan data produk!',
+            message: 'Terjadi kesalahan di server!',
             error: error.message,
         });
     }
@@ -29,19 +30,22 @@ router.get('/:id', async (req, res) => {
         const { id } = req.params;
         const product = await getProductById(id);
 
-        if (!product) {
-            return res.status(404).json({
-                message: 'Data produk tidak ditemukan!',
-            });
-        }
-
+        console.log(product);
         res.status(200).json({
             message: 'Data produk berhasil didapatkan!',
             data: product,
         });
     } catch (error) {
+        if (error instanceof ApiError) {
+            console.error('ApiError:', error);
+            return res.status(error.statusCode).json({
+                message: error.message,
+            });
+        }
+
+        console.error('Error getting product:', error);
         return res.status(500).json({
-            message: 'Gagal mendapatkan data produk!',
+            message: 'Terjadi kesalahan di server!',
             error: error.message,
         });
     }
@@ -57,12 +61,24 @@ router.post('/', authMiddleware, async (req, res) => {
 
         const product = await createNews(newsProduct, user_id);
 
+        console.log(product);
         res.status(201).json({
             message: 'Berita berhasil ditambahkan!',
             data: product,
         });
     } catch (error) {
-        return res.status(500).json({message: 'Gagal menambahkan product!', error: error.message});
+        if (error instanceof ApiError) {
+            console.error('ApiError:', error);
+            return res.status(error.statusCode).json({
+                message: error.message,
+            });
+        }
+
+        console.error('Error creating product:', error);
+        return res.status(500).json({
+            message: 'Terjadi kesalahan di server!',
+            error: error.message
+        });
     }
 });
 
@@ -77,13 +93,22 @@ router.put('/:id', authMiddleware, async (req, res) => {
 
         const product = await updateProduct(id, editedProductData);
 
+        console.log(product);
         res.status(200).json({
             message: 'Data produk berhasil diubah!',
             data: product,
         });
     } catch (error) {
+        if (error instanceof ApiError) {
+            console.error('ApiError:', error);
+            return res.status(error.statusCode).json({
+                message: error.message,
+            });
+        }
+
+        console.error('Error updating product:', error);
         return res.status(500).json({
-            message: 'Gagal mengubah data produk!',
+            message: 'Terjadi kesalahan di server!',
             error: error.message,
         });
     }
@@ -99,13 +124,22 @@ router.delete('/:id', authMiddleware, async (req, res) => {
 
         const product = await removeProduct(id);
 
+        console.log(product);
         res.status(200).json({
             message: 'Data produk berhasil dihapus!',
             data: product,
         });
     } catch (error) {
+        if (error instanceof ApiError) {
+            console.error('ApiError:', error);
+            return res.status(error.statusCode).json({
+                message: error.message,
+            });
+        }
+
+        console.error('Error deleting product:', error);
         return res.status(500).json({
-            message: 'Gagal menghapus data produk!',
+            message: 'Terjadi kesalahan di server!',
             error: error.message,
         });
     }

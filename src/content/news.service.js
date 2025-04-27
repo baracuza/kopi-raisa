@@ -11,7 +11,9 @@ const {
     getNewsByIdData,
     insertNews,
     addNewsMedia,
+    deleteNewsMediaByUrls,
     deleteNews,
+    deleteThumbnailNewsMedia,
     deleteNewsMediaByNewsId
 } = require("./news.repository");
 
@@ -193,7 +195,7 @@ const updateNews = async (id, editedNewsData) => {
         throw new Error("*Berita tidak ditemukan!");
     }
 
-    const { title, content, mediaFiles, thumbnailFile } = editedNewsData;
+    const { title, content, mediaFiles, thumbnailFile, retainedMedia } = editedNewsData;
 
     // Update data berita
     const updatedNews = await updateNewsData(id, {
@@ -204,6 +206,7 @@ const updateNews = async (id, editedNewsData) => {
     // Hapus thumbnail lama dari Cloudinary jika ada dan update thumbnail jika ada file baru
     if (thumbnailFile) {
         await deleteFromCloudinaryByUrl(existingNews.thumbnail_url);  // Hapus thumbnail lama
+        await deleteThumbnailNewsMedia(id) // Hapus thumbnail dari DB
         const thumbnailUrl = await uploadToCloudinary(thumbnailFile.buffer, thumbnailFile.originalname);
         await updateNewsData(id, { thumbnail_url: thumbnailUrl });  // Update thumbnail di DB
     }
@@ -212,12 +215,14 @@ const updateNews = async (id, editedNewsData) => {
 
     if (mediaFiles && mediaFiles.length > 0) {
         // Hapus media lama dari Cloudinary dan DB
-        const deleteMediaPromises = existingNews.newsMedia.map(media => deleteFromCloudinaryByUrl(media.media_url));
-        await Promise.all(deleteMediaPromises);  
-        await deleteNewsMediaByNewsId(id);  
+        const mediaToDelete = existingNews.newsMedia.filter(
+            (media) => !retainedMedia.includes(media.media_url)
+        );
+        const deleteMediaPromises = mediaToDelete.map(media => deleteFromCloudinaryByUrl(media.media_url));
+        await Promise.all(deleteMediaPromises);
+        await deleteNewsMediaByUrls(mediaToDelete.map(m => m.media_url));
 
         console.log("Upload file ke Cloudinary dimulai");
-        console.log("Jumlah file yang diupload:", mediaFiles.length);
 
         // Upload media baru ke Cloudinary secara paralel
         const uploadPromises = mediaFiles.map(file =>
@@ -235,9 +240,14 @@ const updateNews = async (id, editedNewsData) => {
 
         console.log("File berhasil diupload:", uploadedUrl);
 
+        const finalMedia = [
+            ...existingNews.newsMedia.filter(m => retainedMedia.includes(m.media_url)),
+            ...uploadedUrl
+        ];
+
         return {
             ...updatedNews,
-            newsMedia: uploadedUrl
+            newsMedia: finalMedia
         };
     } else {
         // Tidak ada media baru, kembalikan data berita dengan media lama

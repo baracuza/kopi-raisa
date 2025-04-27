@@ -33,7 +33,7 @@ const validateRegister = [
                 throw new Error('*Nomor telepon harus berupa angka');
             }
             if (value.length < 10 || value.length > 15) {
-                throw new Error('*Nomor telepon kurang dari 11 digit');
+                throw new Error('*Panjang karakter Nomor telepon tidak valid');
             }
             return true;
         }),
@@ -82,7 +82,6 @@ const validateLogin = [
 ];
 
 const createNewsValidator = [
-
     // Title wajib, tidak boleh kosong, dan maksimal 255 karakter
     body("title")
         .trim()
@@ -121,37 +120,38 @@ const updateNewsValidator = [
             }
             return true;
         }),
-
-    // Jika title dan/atau content diisi, cek total kata gabungan
-    // body("content").custom((_, { req }) => {
-    //     const title = req.body.title || "";
-    //     const content = req.body.content || "";
-
-    //     // Kalau keduanya tidak diisi, validasi tetap lolos (karena PUT bisa parsial)
-    //     if (!title && !content) return true;
-
-    //     const text = `${title} ${content}`
-    //         .replace(/<[^>]+>/g, "")
-    //         .replace(/\s+/g, " ")
-    //         .trim();
-
-    //     const charCount = text.length;
-
-    //     if (charCount > 2200) {
-    //         throw new Error("*Jumlah total karakter tidak boleh lebih dari 2200");
-    //     }
-
-    //     return true;
-    // }),
-
-    //postToFacebook & Instagram boolean opsional
-    // body("postToFacebook")
-    //     .optional()
-    //     .isBoolean().withMessage("postToFacebook harus berupa boolean"),
-
-    // body("postToInstagram")
-    //     .optional()
-    //     .isBoolean().withMessage("postToInstagram harus berupa boolean"),
 ];
 
-module.exports = { validateRegister, validateLogin, createNewsValidator, updateNewsValidator, validateUpdateProfile };
+const createPartnerValidator = [
+    body('name')
+        .trim()
+        .notEmpty().withMessage('*Nama wajib diisi')
+        .isLength({ min: 3, max: 50 }).withMessage('*Nama harus lebih dari 3 karakter'),
+
+    body('owner_name')
+        .trim()
+        .notEmpty().withMessage('*Nama pemilik wajib diisi')
+        .isLength({ min: 3, max: 50 }).withMessage('*Nama pemilik harus lebih dari 3 karakter'),
+
+    body('phone_number')
+        .trim()
+        .notEmpty().withMessage('*Nomor telepon wajib diisi')
+        .custom((value) => {
+            if (!validator.isMobilePhone(value, 'id-ID')) {
+                throw new Error('*Format nomor telepon tidak valid');
+            }
+            if (!validator.isNumeric(value)) {
+                throw new Error('*Nomor telepon harus berupa angka');
+            }
+            if (value.length < 10 || value.length > 15) {
+                throw new Error('*Panjang karakter Nomor telepon tidak valid');
+            }
+            return true;
+        }),
+
+    body('address')
+        .optional()
+        .isLength({ max: 255 }).withMessage('*Alamat maksimal 255 karakter'),
+];
+
+module.exports = { validateRegister, validateLogin, createNewsValidator, updateNewsValidator, validateUpdateProfile, createPartnerValidator  };
