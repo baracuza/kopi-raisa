@@ -3,7 +3,7 @@ const prisma = require('../db');
 const {
     findPartner,
     findPartnerById,
-    insertPartner,
+    insertNewPartner,
     deletePartner,
     editPartner
 } = require("./partner.repository");
@@ -23,10 +23,10 @@ const getPartnerById = async (partnerId) => {
     return partner;
 };
 
-const createPartner = async (newPartnerData, user_id) => {
-    const partnerData = await insertPartner(newPartnerData, user_id);
+const createPartner = async (newPartnerData) => {
+    const partnerNewData = await insertNewPartner(newPartnerData);
 
-    return partnerData;
+    return partnerNewData;
 };
 
 const updatePartner = async (id, editedPartnerData) => {

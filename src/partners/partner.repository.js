@@ -27,7 +27,7 @@ const findPartnerById = async (partnerId) => {
     return partner;
 };
 
-const insertPartner = async (newPartnerData, user_id) => {
+const insertNewPartner = async (newPartnerData) => {
     const partner = await prisma.Partner.create({
         data: {
             name: newPartnerData.name,
@@ -69,7 +69,7 @@ const deletePartner = async (id) => {
 module.exports = {
     findPartner,
     findPartnerById,
-    insertPartner,
+    insertNewPartner,
     deletePartner,
     editPartner,
 };
