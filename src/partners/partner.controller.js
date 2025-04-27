@@ -243,16 +243,18 @@ router.delete('/:id', authMiddleware, async (req, res) => {
         const { id } = req.params;
 
         if (!req.user.admin) {
-            return res.status(403).json({ message: 'Akses ditolak! Hanya admin yang bisa menghapus partner.' });
+            return res.status(403).json({ message: 'Akses ditolak! Hanya admin yang bisa mengakses.' });
         }
 
         const deletePartner = await removePartner(id);
 
+        console.log(deletePartner);
         res.status(200).json({
             message: 'Partner berhasil dihapus!',
             data: deletePartner,
         });
     } catch (error) {
+        console.error('Error deleting partner:', error);
         return res.status(500).json({
             message: 'Gagal menghapus partner!',
             error: error.message,

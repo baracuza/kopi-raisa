@@ -41,10 +41,9 @@ const editPartner = async (id, editedPartnerData) => {
 const deletePartner = async (id) => {
     const partner = await prisma.Partner.delete({
         where: {
-            id: id,
+            id: parseInt(id),
         },
     });
-
     return partner;
 };
 
