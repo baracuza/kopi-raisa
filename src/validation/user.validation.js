@@ -33,7 +33,7 @@ const validateRegister = [
                 throw new Error('*Nomor telepon harus berupa angka');
             }
             if (value.length < 10 || value.length > 15) {
-                throw new Error('*Nomor telepon kurang dari 11 digit');
+                throw new Error('*Panjang karakter Nomor telepon tidak valid');
             }
             return true;
         }),
@@ -144,7 +144,7 @@ const createPartnerValidator = [
                 throw new Error('*Nomor telepon harus berupa angka');
             }
             if (value.length < 10 || value.length > 15) {
-                throw new Error('*Nomor telepon kurang dari 11 digit');
+                throw new Error('*Panjang karakter Nomor telepon tidak valid');
             }
             return true;
         }),
