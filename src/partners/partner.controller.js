@@ -191,8 +191,25 @@ router.get('/:id', authMiddleware, async (req, res) => {
     }
 });
 
-router.post('/', authMiddleware, createPartnerValidator ,async (req, res) => {
+router.post('/', authMiddleware, createPartnerValidator, async (req, res) => {
     try {
+        console.log('BODY CLIENT:', req.body);
+        const errors = validationResult(req);
+        if (!errors.isEmpty()) {
+            const errorObject = errors.array().reduce((acc, curr) => {
+                const key = curr.path && curr.path !== '' ? curr.path : 'global';
+                if (!acc[key]) {
+                    acc[key] = curr.msg;
+                }
+                return acc;
+            }, {});
+
+            return res.status(400).json({
+                message: "Validasi gagal!",
+                errors: errorObject
+            });
+        }
+
         if (!req.user.admin) {
             return res.status(403).json({ message: 'Akses ditolak! Hanya admin yang bisa mengakses.' });
         }
@@ -213,8 +230,24 @@ router.post('/', authMiddleware, createPartnerValidator ,async (req, res) => {
     }
 });
 
-router.put('/:id', authMiddleware, async (req, res) => {
+router.put('/:id', authMiddleware, createPartnerValidator, async (req, res) => {
     try {
+        console.log('BODY CLIENT:', req.body);
+        const errors = validationResult(req);
+        if (!errors.isEmpty()) {
+            const errorObject = errors.array().reduce((acc, curr) => {
+                const key = curr.path && curr.path !== '' ? curr.path : 'global';
+                if (!acc[key]) {
+                    acc[key] = curr.msg;
+                }
+                return acc;
+            }, {});
+
+            return res.status(400).json({
+                message: "Validasi gagal!",
+                errors: errorObject
+            });
+        }
         const { id } = req.params;
         const editedPartnerData = req.body;
 
