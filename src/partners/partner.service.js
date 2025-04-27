@@ -1,4 +1,4 @@
-const prisma = require('../db');
+const ApiError = require("../utils/apiError");
 
 const {
     findPartner,
@@ -16,7 +16,7 @@ const getAllPartners = async () => {
 const getPartnerById = async (partnerId) => {
     const partner = await findPartnerById(partnerId);
     if (!partner) {
-        throw new Error("Partner tidak ditemukan!");
+        throw new ApiError('Partner tidak ditemukan!', 404);
     }
 
     return partner;
@@ -31,7 +31,7 @@ const createPartner = async (newPartnerData) => {
 const updatePartner = async (id, editedPartnerData) => {
     const existingPartner = await findPartnerById(id);
     if (!existingPartner) {
-        throw new Error("Partner tidak ditemukan!");
+        throw new ApiError('Partner tidak ditemukan!', 404);
     }
 
     const partnerData = await editPartner(id, editedPartnerData);
@@ -43,7 +43,7 @@ const removePartner = async (id) => {
     const existingPartner = await findPartnerById(id);
     
     if (!existingPartner) {
-        throw new Error("Partner tidak ditemukan!");
+        throw new ApiError('Partner tidak ditemukan!', 404);
     }
     const partnerData = await deletePartner(id);
 

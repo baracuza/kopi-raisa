@@ -4,6 +4,7 @@ const prisma = require('../db');
 const { getAllPartners, getPartnerById, createPartner, updatePartner, removePartner } = require('./partner.service');
 const { authMiddleware } = require('../middleware/middleware');
 const { createPartnerValidator } = require('../validation/user.validation');
+const ApiError = require('../utils/apiError');
 
 const router = express.Router();
 
@@ -159,9 +160,14 @@ router.get('/', authMiddleware, async (req, res) => {
             data: partners,
         });
     } catch (error) {
+        if (error instanceof ApiError) {
+            return res.status(error.statusCode).json({
+                message: error.message,
+            });
+        }
         console.error('Error getting partners:', error);
         return res.status(500).json({
-            message: 'Gagal mendapatkan data partner!',
+            message: 'Terjadi kesalahan di server!',
             error: error.message,
         });
     }
@@ -172,20 +178,20 @@ router.get('/:id', authMiddleware, async (req, res) => {
         const { id } = req.params;
         const partner = await getPartnerById(id);
 
-        if (!partner) {
-            return res.status(404).json({
-                message: 'Data partner tidak ditemukan!',
-            });
-        }
-
         res.status(200).json({
             message: 'Data partner berhasil didapatkan!',
             data: partner,
         });
     } catch (error) {
+        if (error instanceof ApiError) {
+            return res.status(error.statusCode).json({
+                message: error.message,
+            });
+        }
+
         console.error('Error getting partner:', error);
         return res.status(500).json({
-            message: 'Gagal mendapatkan data partner!',
+            message: 'Terjadi kesalahan di server!',
             error: error.message,
         });
     }
@@ -222,6 +228,12 @@ router.post('/', authMiddleware, createPartnerValidator, async (req, res) => {
             data: newPartner,
         });
     } catch (error) {
+        if(error instanceof ApiError) {
+            return res.status(error.statusCode).json({
+                message:error.message,
+            })
+        }
+
         console.error('Error adding partner:', error);
         return res.status(500).json({
             message: 'Gagal menambahkan partner!',
@@ -263,9 +275,15 @@ router.put('/:id', authMiddleware, createPartnerValidator, async (req, res) => {
             data: updatedPartner,
         });
     } catch (error) {
+        if(error instanceof ApiError) {
+            return res.status(error.statusCode).json({
+                message:error.message,
+            })
+        }
+
         console.error('Error updating partner:', error);
         return res.status(500).json({
-            message: 'Gagal memperbarui partner!',
+            message: 'Terjadi kesalahan di server!',
             error: error.message,
         });
     }
@@ -287,9 +305,15 @@ router.delete('/:id', authMiddleware, async (req, res) => {
             data: deletePartner,
         });
     } catch (error) {
+        if(error instanceof ApiError) {
+            return res.status(error.statusCode).json({
+                message:error.message,
+            })
+        }
+
         console.error('Error deleting partner:', error);
         return res.status(500).json({
-            message: 'Gagal menghapus partner!',
+            message: 'Terjadi kesalahan di server!',
             error: error.message,
         });
     }
