@@ -11,7 +11,7 @@ const {
 const getAllPartners = async () => {
     const partners = await findPartner();
     if (!partners) {
-        throw new ApiError('Gagal mendapatkan data partner!', 500);
+        throw new ApiError(500,'Gagal mendapatkan data partner!');
     }
     return partners;
 };
@@ -19,7 +19,7 @@ const getAllPartners = async () => {
 const getPartnerById = async (partnerId) => {
     const partner = await findPartnerById(partnerId);
     if (!partner) {
-        throw new ApiError('Partner tidak ditemukan!', 404);
+        throw new ApiError(404,'Partner tidak ditemukan!');
     }
 
     return partner;
@@ -34,7 +34,7 @@ const createPartner = async (newPartnerData) => {
 const updatePartner = async (id, editedPartnerData) => {
     const existingPartner = await findPartnerById(id);
     if (!existingPartner) {
-        throw new ApiError('Partner tidak ditemukan!', 404);
+        throw new ApiError(404,'Partner tidak ditemukan!');
     }
 
     const partnerData = await editPartner(id, editedPartnerData);
@@ -46,10 +46,13 @@ const removePartner = async (id) => {
     const existingPartner = await findPartnerById(id);
     
     if (!existingPartner) {
-        throw new ApiError('Partner tidak ditemukan!', 404);
+        throw new ApiError(404,'Partner tidak ditemukan!');
     }
     const partnerData = await deletePartner(id);
-
+    
+    if (!partnerData) {
+        throw new ApiError(500,'Gagal menghapus partner!');
+    }
     return partnerData;
 };
 
