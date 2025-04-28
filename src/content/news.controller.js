@@ -177,14 +177,12 @@ router.post('/post', authMiddleware, upload.fields([{ name: 'media', maxCount: 4
                     title,
                     content: cleanHtml,
                     mediaInfos,
-                    thumbnailUrl,
                 });
                 // Simpan ke DB
                 news = await createNewsWithMedia({
                     title,
                     content: cleanHtml,
-                    mediaInfos,
-                    thumbnailUrl,
+                    mediaInfos
                 }, user_id);
 
             } catch (dbError) {
