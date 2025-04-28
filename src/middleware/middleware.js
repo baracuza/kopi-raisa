@@ -234,6 +234,13 @@ const multerErrorHandler = (err, req, res, next) => {
                         [field]: '*terlalu banyak yang diunggah, Maksimal 4 file yang diperbolehkan'
                     }
                 });
+            case 'ALLOWED_FILE_TYPES':
+                return res.status(400).json({
+                    message: 'Validasi gagal!',
+                    errors: {
+                        [field]: '*Hanya file gambar (jpg, jpeg, png, webp) yang diperbolehkan'
+                    }
+                });
             default:
                 return res.status(400).json({
                     message: 'Upload gagal',

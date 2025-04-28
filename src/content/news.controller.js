@@ -290,7 +290,7 @@ router.put('/:id', authMiddleware, upload.fields([{ name: 'media', maxCount: 4 }
             }
 
             if (!req.user.admin) {
-                return res.status(403).json({ message: 'Akses ditolak! Hanya admin yang bisa mengedit berita.' });
+                return res.status(403).json({ message: 'Akses ditolak! Hanya admin memiliki akses!.' });
             }
             const { id } = req.params;
             const { title, content, retainedMedia } = req.body;
