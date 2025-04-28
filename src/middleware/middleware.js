@@ -131,7 +131,7 @@ const validateUpdateNewsMedia = (options = {}) => {
         const noThumbnail = !thumbnailFile;
         const noMedia = mediaFiles.length === 0;
         if (skipIfNoFile && noThumbnail && noMedia) {
-            return next(); // tidak validasi apapun
+            return next();
         }
 
         // Validasi thumbnail
