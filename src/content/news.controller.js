@@ -121,7 +121,7 @@ router.post('/post', authMiddleware, upload.fields([{ name: 'media', maxCount: 4
             const mediaFiles = req.files['media'] || [];
             const thumbnailFile = req.files['thumbnail']?.[0] || null;
 
-            let thumbnailUrl = null;
+
             let uploadedResults = [];
             if (thumbnailFile) {
                 try {
@@ -162,7 +162,7 @@ router.post('/post', authMiddleware, upload.fields([{ name: 'media', maxCount: 4
                 mimetype: file.mimetype,
                 isThumbnail: false,
             }));
-            if (thumbnailFile && thumbnailUrl) {
+            if (thumbnailFile) {
                 mediaInfos.unshift({
                     url: thumbnailUrl,
                     public_id: extractPublicId(thumbnailUrl),

@@ -9,6 +9,7 @@ const {
     updateNewsData,
     getAllNews,
     getNewsByIdData,
+    getNewsMediaByNewsId,
     insertNews,
     addNewsMedia,
     deleteNewsMediaByUrls,
@@ -190,8 +191,10 @@ const postVideoToFacebook = async ({ pageId, pageAccessToken, videoUrl, caption 
 
 
 const updateNews = async (id, editedNewsData) => {
-    const existingNews = await getNewsByIdData(id);
-    if (!existingNews) {
+    const existingNews = await getNewsMediaByNewsId(id);
+    const existingNewsThumbnail = existingNews.find(media => media.isThumbnail);
+
+    if (!existingNewsThumbnail) {
         throw new Error("*Berita tidak ditemukan!");
     }
 
@@ -204,11 +207,13 @@ const updateNews = async (id, editedNewsData) => {
     });
 
     // Hapus thumbnail lama dari Cloudinary jika ada dan update thumbnail jika ada file baru
-    if (thumbnailFile) {
-        await deleteFromCloudinaryByUrl(existingNews.thumbnail_url);  // Hapus thumbnail lama
+    if (existingNewsThumbnail){
+        await deleteFromCloudinaryByUrl(existingNewsThumbnail.media_url);  // Hapus thumbnail lama
         await deleteThumbnailNewsMedia(id) // Hapus thumbnail dari DB
-        const thumbnailUrl = await uploadToCloudinary(thumbnailFile.buffer, thumbnailFile.originalname);
-        await updateNewsData(id, { thumbnail_url: thumbnailUrl });  // Update thumbnail di DB
+        if(thumbnailFile) {
+            await uploadToCloudinary(thumbnailFile.buffer, thumbnailFile.originalname);
+            await addNewsMedia(id, thumbnailUrl, 'image', true);
+        }
     }
 
     let uploadedUrl = [];
