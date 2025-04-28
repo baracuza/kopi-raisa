@@ -1,7 +1,7 @@
 const express = require('express');
 const prisma = require('../db');
 
-const { getAllOrders, getOrdersById, createOrders, updateOrders, removeOrders, getOrdersByPartnerId, getOrdersByUserId, getOrdersByStatus } = require('./orders.service');
+const { getAllOrders, getOrdersById, createOrders, updateOrders, removeOrders, getOrdersByPartnerId, getOrdersByUserId, getOrdersByStatus, notifyPartnerForOrder } = require('./orders.service');
 const { authMiddleware } = require('../middleware/middleware');
 
 const router = express.Router();
@@ -189,6 +189,34 @@ router.delete('/:id', authMiddleware, async (req, res) => {
         }
 
         console.error('Error deleting order:', error);
+        return res.status(500).json({
+            message: 'Terjadi kesalahan di server!',
+            error: error.message,
+        });
+    }
+});
+
+router.post('/notify-partner', authMiddleware, async (req, res) => {
+    try {
+        const { orderId } = req.body;
+        const partnerId = req.user.partnerId; // Assuming partnerId is derived from the authenticated user
+
+        // Call the service function to handle partner notification
+        const notificationResult = await notifyPartnerForOrder(orderId, partnerId);
+
+        res.status(200).json({
+            message: 'Partner berhasil diberitahu tentang pembelian!',
+            data: notificationResult,
+        });
+    } catch (error) {
+        if (error instanceof ApiError) {
+            console.error('ApiError:', error);
+            return res.status(error.statusCode).json({
+                message: error.message,
+            });
+        }
+
+        console.error('Error notifying partner:', error);
         return res.status(500).json({
             message: 'Terjadi kesalahan di server!',
             error: error.message,

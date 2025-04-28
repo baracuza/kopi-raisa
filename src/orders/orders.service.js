@@ -1,4 +1,5 @@
 const ApiError = require('../utils/apiError');
+const { notifyPartner } = require('../utils/notify');
 
 const {
     findOrders,
@@ -83,6 +84,25 @@ const getOrdersByStatus = async (status) => {
     return orders;
 };
 
+const notifyPartnerForOrder = async (orderId, message) => {
+    const order = await findOrdersById(orderId);
+    if (!order) {
+        throw new ApiError(404, 'Order tidak ditemukan!');
+    }
+
+    const partnerId = order.partnerId;
+    if (!partnerId) {
+        throw new ApiError(400, 'Partner ID tidak ditemukan pada order!');
+    }
+
+    const notificationResult = await notifyPartner(partnerId, message);
+    if (!notificationResult) {
+        throw new ApiError(500, 'Gagal mengirim notifikasi ke partner!');
+    }
+
+    return notificationResult;
+};
+
 module.exports = {
     getAllOrders,
     getOrdersById,
@@ -92,5 +112,6 @@ module.exports = {
     getOrdersByPartnerId,
     getOrdersByUserId,
     getOrdersByStatus,
+    notifyPartnerForOrder,
 };
 
