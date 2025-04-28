@@ -9,7 +9,7 @@ const upload = require('../middleware/multer');
 
 
 const { createUser, loginUser, updateUser, sendResetPasswordEmail, resetPassword } = require('./user.service');
-const { validateRegister, validateLogin, validateUpdateProfile } = require('../validation/user.validation');
+const { validateRegister, validateLogin, validateUpdateProfile } = require('../validation/validation');
 const { authMiddleware, multerErrorHandler, validateProfilMedia } = require('../middleware/middleware');
 const ApiError = require('../utils/apiError');
 

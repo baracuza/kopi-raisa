@@ -3,7 +3,7 @@ const prisma = require('../db');
 
 const { getAllPartners, getPartnerById, createPartner, updatePartner, removePartner } = require('./partner.service');
 const { authMiddleware } = require('../middleware/middleware');
-const { createPartnerValidator } = require('../validation/user.validation');
+const { partnerValidator } = require('../validation/validation');
 const ApiError = require('../utils/apiError');
 const { validationResult } = require('express-validator');
 
@@ -63,7 +63,7 @@ router.get('/:id', authMiddleware, async (req, res) => {
     }
 });
 
-router.post('/', authMiddleware, createPartnerValidator, async (req, res) => {
+router.post('/', authMiddleware, partnerValidator, async (req, res) => {
     try {
         console.log('BODY CLIENT:', req.body);
         const errors = validationResult(req);
@@ -109,7 +109,7 @@ router.post('/', authMiddleware, createPartnerValidator, async (req, res) => {
     }
 });
 
-router.put('/:id', authMiddleware, createPartnerValidator, async (req, res) => {
+router.put('/:id', authMiddleware, partnerValidator, async (req, res) => {
     try {
         console.log('BODY CLIENT:', req.body);
         const errors = validationResult(req);

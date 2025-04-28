@@ -122,7 +122,7 @@ const updateNewsValidator = [
         }),
 ];
 
-const createPartnerValidator = [
+const partnerValidator = [
     body('name')
         .trim()
         .notEmpty().withMessage('*Nama wajib diisi')
@@ -154,4 +154,26 @@ const createPartnerValidator = [
         .isLength({ max: 255 }).withMessage('*Alamat maksimal 255 karakter'),
 ];
 
-module.exports = { validateRegister, validateLogin, createNewsValidator, updateNewsValidator, validateUpdateProfile, createPartnerValidator  };
+const productValidator = [
+    body('name')
+        .trim()
+        .notEmpty().withMessage('*Nama produk wajib diisi')
+        .isLength({ min: 3, max: 50 }).withMessage('*Nama produk harus lebih dari 3 karakter'),
+
+    body('description')
+        .trim()
+        .notEmpty().withMessage('*Deskripsi produk wajib diisi')
+        .isLength({ min: 10, max: 255 }).withMessage('*Deskripsi produk harus lebih dari 10 karakter'),
+
+    body('price')
+        .trim()
+        .notEmpty().withMessage('*Harga produk wajib diisi')
+        .isNumeric().withMessage('*Harga produk harus berupa angka'),
+
+    body('stock')
+        .trim()
+        .notEmpty().withMessage('*Stok produk wajib diisi')
+        .isNumeric().withMessage('*Stok produk harus berupa angka'),
+];
+
+module.exports = { validateRegister, validateLogin, createNewsValidator, updateNewsValidator, validateUpdateProfile, partnerValidator, productValidator };
