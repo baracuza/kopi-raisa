@@ -5,6 +5,7 @@ const createDOMPurify = require('isomorphic-dompurify');
 const { JSDOM } = require('jsdom');
 const window = new JSDOM('').window;
 const DOMPurify = createDOMPurify(window);
+const ApiError = require('../utils/apiError');
 
 
 
@@ -320,13 +321,25 @@ router.put('/:id', authMiddleware, upload.fields([{ name: 'media', maxCount: 4 }
 
             console.log("Mulai update berita");
             const updatedNews = await updateNews(parseInt(id), editedData);
+
             console.log("Selesai update berita, mengirim response...");
+            console.log("Data berhasil updated:", updatedNews);
 
             res.status(200).json({
                 message: 'Berita berhasil diupdate!',
                 data: updatedNews,
             });
         } catch (error) {
+            if (error instanceof ApiError) {
+                console.error(error);
+                console.error('ApiError:', error.message);
+                return res.status(error.statusCode).json({
+                    message: error.message,
+                    errors: error.errors,
+                });
+            }
+
+            console.error('Gagal mengupdate berita:', error.message);
             return res.status(500).json({
                 message: 'Gagal mengupdate berita!',
                 error: error.message,

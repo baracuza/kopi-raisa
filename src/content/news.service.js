@@ -1,5 +1,6 @@
 const prisma = require('../db');
 const axios = require('axios');
+const ApiError = require('../utils/apiError');
 
 const { deleteFromCloudinaryByUrl, extractPublicId } = require('../utils/cloudinary');
 const { uploadToCloudinary } = require('../services/cloudinaryUpload.service');
@@ -26,7 +27,7 @@ const getNews = async () => {
 const getNewsById = async (newsId) => {
     const news = await getNewsByIdData(newsId);
     if (!news) {
-        throw new Error("*Berita tidak ditemukan!");
+        throw new ApiError(404,"*Berita tidak ditemukan!");
     }
     return news;
 };
@@ -195,7 +196,7 @@ const updateNews = async (id, editedNewsData) => {
     const existingNewsThumbnail = existingNews.find(media => media.isThumbnail);
 
     if (!existingNewsThumbnail) {
-        throw new Error("*Berita tidak ditemukan!");
+        throw new ApiError(404,"*Berita tidak ditemukan!");
     }
 
     const { title, content, mediaFiles, thumbnailFile, retainedMedia } = editedNewsData;
@@ -261,7 +262,7 @@ const updateNews = async (id, editedNewsData) => {
         // Tidak ada media baru, kembalikan data berita dengan media lama
         return {
             ...updatedNews,
-            newsMedia: existingNews.newsMedia
+            newsMedia: existingNews
         };
     }
 };
