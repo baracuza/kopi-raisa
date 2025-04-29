@@ -16,6 +16,7 @@ const {validationResult} = require('express-validator');
 const { createNewsValidator, updateNewsValidator } = require('../validation/validation');
 const handleValidationResult = require('../middleware/handleValidationResult');
 const handleValidationResultFinal = require('../middleware/handleValidationResultFinal');
+const parseRetainedMedia = require('../utils/media');
 
 const { getNews,
     getNewsById,
@@ -320,9 +321,10 @@ router.put('/:id', authMiddleware, upload.fields([{ name: 'media', maxCount: 4 }
                 content: cleanHtml,
                 mediaFiles: req.files['media'],
                 thumbnailFile: req.files['thumbnail']?.[0] || null,
-                retainedMedia: retainedMedia ? JSON.parse(retainedMedia) : []
+                retainedMedia: parseRetainedMedia(req.body.retainedMedia)
             };
 
+            console.log("BAHAN editedData:", editedData);
             console.log("Mulai update berita");
             const updatedNews = await updateNews(parseInt(id), editedData);
 
