@@ -14,6 +14,7 @@ const {
     insertNews,
     addNewsMedia,
     deleteNewsMediaByIds,
+    deleteNewsMediaByUrls,
     deleteNews,
     deleteThumbnailNewsMedia,
     deleteNewsMediaByNewsId
@@ -239,7 +240,7 @@ const updateNews = async (id, editedNewsData) => {
                 await Promise.all(deleteMediaPromises);
 
                 // Delete from DB
-                const deleted = await deleteNewsMediaByIds(mediaToDelete.map(m => m.id));
+                const deleted = await deleteNewsMediaByUrls(mediaToDelete.map(m => m.media_url));
                 console.log("Jumlah media yang berhasil dihapus dari DB:", deleted.count);
 
             } catch (error) {
