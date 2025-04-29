@@ -228,7 +228,7 @@ const updateNews = async (id, editedNewsData) => {
 
     if (mediaFiles && mediaFiles.length > 0) {
         // Hapus media lama dari Cloudinary dan DB
-        const mediaToDelete = existingMedia.filter(media =>
+        const mediaToDelete = existingNews.filter(media =>
             !media.isThumbnail && !retainedMedia.includes(media.media_url)
         );
         if (mediaToDelete.length > 0) {
