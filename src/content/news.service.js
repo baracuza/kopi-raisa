@@ -13,7 +13,7 @@ const {
     getNewsMediaByNewsId,
     insertNews,
     addNewsMedia,
-    deleteNewsMediaByUrls,
+    deleteNewsMediaByIds,
     deleteNews,
     deleteThumbnailNewsMedia,
     deleteNewsMediaByNewsId
@@ -232,11 +232,12 @@ const updateNews = async (id, editedNewsData) => {
             !media.isThumbnail && !retainedMedia.includes(media.media_url)
         );
         if (mediaToDelete.length > 0) {
-            console.log("Menghapus media lama dari Cloudinary:", mediaToDelete.map(m => m.media_url));
+            console.log("Akan menghapus media dengan ID:", mediaToDelete.map(m => m.id));
             try {
                 const deleteMediaPromises = mediaToDelete.map(media => deleteFromCloudinaryByUrl(media.media_url));
                 await Promise.all(deleteMediaPromises);
-                await deleteNewsMediaByUrls(mediaToDelete.map(m => m.media_url));
+                const deleted = await deleteNewsMediaByIds(mediaToDelete.map(m => m.id));
+                console.log("Jumlah media yang berhasil dihapus dari DB:", deleted.count);
 
             } catch (error) {
                 console.error("Gagal menghapus media lama:", error.message);

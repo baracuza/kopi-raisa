@@ -43,9 +43,9 @@ const addNewsMedia = async (newsId, url, mimetype, isThumbnail) => {
     });
 };
 
-const deleteNewsMediaByUrls = async (urls) => {
+const deleteNewsMediaByIds = async (ids) => {
     return prisma.newsMedia.deleteMany({
-        where: { media_url: { in: urls } }
+        where: { id: { in: ids } }
     });
 };
 
@@ -89,4 +89,4 @@ const deleteNews = async (id) => {
     return await prisma.news.delete({ where: { id: parseInt(id) } });
 };
 
-module.exports = { getNewsByIdData, insertNews, addNewsMedia, deleteNewsMediaByUrls, deleteThumbnailNewsMedia, addMultipleNewsMedia, deleteNews, deleteNewsMediaByNewsId, updateNewsData, getAllNews, getNewsMediaByNewsId };
+module.exports = { getNewsByIdData, insertNews, addNewsMedia, deleteNewsMediaByIds, deleteThumbnailNewsMedia, addMultipleNewsMedia, deleteNews, deleteNewsMediaByNewsId, updateNewsData, getAllNews, getNewsMediaByNewsId };
