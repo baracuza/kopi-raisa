@@ -136,8 +136,6 @@ const validateUpdateNewsMedia = (options = {}) => {
 
         // Validasi thumbnail
         if (!thumbnailFile) {
-            req.mediaValidationErrors.thumbnail = '*Sampul wajib diunggah';
-        } else {
             if (!allowedTypes.includes(thumbnailFile.mimetype)) {
                 req.mediaValidationErrors.thumbnail = '*Sampul hanya boleh berupa gambar (jpg, jpeg, png, webp)';
             } else if (thumbnailFile.size > maxSizeBytes) {
