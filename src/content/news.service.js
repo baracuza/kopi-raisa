@@ -231,9 +231,9 @@ const updateNews = async (id, editedNewsData) => {
         const mediaToDelete = existingNews.filter(media =>
             !media.isThumbnail && !retainedMedia.includes(media.media_url)
         );
+        console.log("Akan menghapus media dengan ID:", mediaToDelete.map(m => m.media_url));
 
         if (mediaToDelete.length > 0) {
-            console.log("Akan menghapus media dengan ID:", mediaToDelete.map(m => m.id));
             try {
                 // Delete from Cloudinary
                 const deleteMediaPromises = mediaToDelete.map(media => deleteFromCloudinaryByUrl(media.media_url));
