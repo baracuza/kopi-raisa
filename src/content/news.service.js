@@ -220,7 +220,6 @@ const updateNews = async (id, editedNewsData) => {
         } catch (error) {
             console.error("Gagal mengupdate thumbnail:", error.message);
             throw new ApiError(500, "Gagal mengupdate thumbnail berita!");
-
         }
     }
 
@@ -231,11 +230,15 @@ const updateNews = async (id, editedNewsData) => {
         const mediaToDelete = existingNews.filter(media =>
             !media.isThumbnail && !retainedMedia.includes(media.media_url)
         );
+
         if (mediaToDelete.length > 0) {
             console.log("Akan menghapus media dengan ID:", mediaToDelete.map(m => m.id));
             try {
+                // Delete from Cloudinary
                 const deleteMediaPromises = mediaToDelete.map(media => deleteFromCloudinaryByUrl(media.media_url));
                 await Promise.all(deleteMediaPromises);
+
+                // Delete from DB
                 const deleted = await deleteNewsMediaByIds(mediaToDelete.map(m => m.id));
                 console.log("Jumlah media yang berhasil dihapus dari DB:", deleted.count);
 
@@ -267,7 +270,6 @@ const updateNews = async (id, editedNewsData) => {
             throw new ApiError(500, "Gagal upload atau menyimpan media baru!");
         }
 
-
         const finalMedia = [
             ...existingNews.filter(m => m.isThumbnail || retainedMedia.includes(m.media_url)),
             ...uploadedUrl
@@ -286,6 +288,7 @@ const updateNews = async (id, editedNewsData) => {
         };
     }
 };
+
 
 
 const removeNews = async (id) => {
