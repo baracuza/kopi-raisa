@@ -150,7 +150,8 @@ const partnerValidator = [
         }),
 
     body('address')
-        .optional()
+        .trim()
+        .notEmpty().withMessage('*Alamat wajib diisi')
         .isLength({ max: 255 }).withMessage('*Alamat maksimal 255 karakter'),
 ];
 
