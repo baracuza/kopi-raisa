@@ -5,13 +5,14 @@ const createDOMPurify = require('isomorphic-dompurify');
 const { JSDOM } = require('jsdom');
 const window = new JSDOM('').window;
 const DOMPurify = createDOMPurify(window);
+const ApiError = require('../utils/apiError');
 
 
 
 const { uploadToCloudinary } = require('../services/cloudinaryUpload.service');
 const { deleteFromCloudinaryByUrl, extractPublicId } = require('../utils/cloudinary');
 const { authMiddleware, validateUpdateNewsMedia, validateInsertNewsMedia, multerErrorHandler } = require('../middleware/middleware');
-const validationResult = require('express-validator');
+const {validationResult} = require('express-validator');
 const { createNewsValidator, updateNewsValidator } = require('../validation/validation');
 const handleValidationResult = require('../middleware/handleValidationResult');
 const handleValidationResultFinal = require('../middleware/handleValidationResultFinal');
@@ -121,7 +122,7 @@ router.post('/post', authMiddleware, upload.fields([{ name: 'media', maxCount: 4
             const mediaFiles = req.files['media'] || [];
             const thumbnailFile = req.files['thumbnail']?.[0] || null;
 
-            let thumbnailUrl = null;
+
             let uploadedResults = [];
             if (thumbnailFile) {
                 try {
@@ -162,7 +163,7 @@ router.post('/post', authMiddleware, upload.fields([{ name: 'media', maxCount: 4
                 mimetype: file.mimetype,
                 isThumbnail: false,
             }));
-            if (thumbnailFile && thumbnailUrl) {
+            if (thumbnailFile) {
                 mediaInfos.unshift({
                     url: thumbnailUrl,
                     public_id: extractPublicId(thumbnailUrl),
@@ -177,14 +178,12 @@ router.post('/post', authMiddleware, upload.fields([{ name: 'media', maxCount: 4
                     title,
                     content: cleanHtml,
                     mediaInfos,
-                    thumbnailUrl,
                 });
                 // Simpan ke DB
                 news = await createNewsWithMedia({
                     title,
                     content: cleanHtml,
-                    mediaInfos,
-                    thumbnailUrl,
+                    mediaInfos
                 }, user_id);
 
             } catch (dbError) {
@@ -283,6 +282,7 @@ router.put('/:id', authMiddleware, upload.fields([{ name: 'media', maxCount: 4 }
                     }
                     return acc;
                 }, {});
+                console.log("ERROR VALIDASI:", errorObject);
                 return res.status(400).json({
                     message: "Validasi gagal!",
                     errors: errorObject
@@ -290,7 +290,7 @@ router.put('/:id', authMiddleware, upload.fields([{ name: 'media', maxCount: 4 }
             }
 
             if (!req.user.admin) {
-                return res.status(403).json({ message: 'Akses ditolak! Hanya admin yang bisa mengedit berita.' });
+                return res.status(403).json({ message: 'Akses ditolak! Hanya admin memiliki akses!.' });
             }
             const { id } = req.params;
             const { title, content, retainedMedia } = req.body;
@@ -321,13 +321,25 @@ router.put('/:id', authMiddleware, upload.fields([{ name: 'media', maxCount: 4 }
 
             console.log("Mulai update berita");
             const updatedNews = await updateNews(parseInt(id), editedData);
+
             console.log("Selesai update berita, mengirim response...");
+            console.log("Data berhasil updated:", updatedNews);
 
             res.status(200).json({
                 message: 'Berita berhasil diupdate!',
                 data: updatedNews,
             });
         } catch (error) {
+            if (error instanceof ApiError) {
+                console.error(error);
+                console.error('ApiError:', error.message);
+                return res.status(error.statusCode).json({
+                    message: error.message,
+                    errors: error.errors,
+                });
+            }
+
+            console.error('Gagal mengupdate berita:', error.message);
             return res.status(500).json({
                 message: 'Gagal mengupdate berita!',
                 error: error.message,

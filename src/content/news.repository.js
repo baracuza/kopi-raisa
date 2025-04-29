@@ -20,12 +20,11 @@ const getNewsMediaByNewsId = async (newsId) => {
     });
 };
 
-const insertNews = async ({ title, content, thumbnailUrl, user_id }) => {
+const insertNews = async ({ title, content, user_id }) => {
     const news = await prisma.news.create({
         data: {
             title,
             content,
-            thumbnail_url: thumbnailUrl,
             user: { connect: { id: user_id } },
         },
     });
@@ -71,7 +70,6 @@ const updateNewsData = async (id, data) => {
 };
 
 const deleteThumbnailNewsMedia = async (newsId) => {
-
     return await prisma.newsMedia.deleteMany({
         where: {
             news_id: parseInt(newsId),
@@ -91,4 +89,4 @@ const deleteNews = async (id) => {
     return await prisma.news.delete({ where: { id: parseInt(id) } });
 };
 
-module.exports = { getNewsByIdData, insertNews, addNewsMedia, deleteNewsMediaByUrls, deleteThumbnailNewsMedia, addMultipleNewsMedia, deleteNews, deleteNewsMediaByNewsId, updateNewsData, getAllNews };
+module.exports = { getNewsByIdData, insertNews, addNewsMedia, deleteNewsMediaByUrls, deleteThumbnailNewsMedia, addMultipleNewsMedia, deleteNews, deleteNewsMediaByNewsId, updateNewsData, getAllNews, getNewsMediaByNewsId };
