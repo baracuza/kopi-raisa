@@ -26,6 +26,8 @@ const removeProductById = async (id) => {
         throw new ApiError(404, 'Produk tidak ditemukan!');
     }
 
+    await deleteInventoryByProductId(id);
+
     const productData = await deleteProductById(id);
     if (!productData) {
         throw new ApiError(500, 'Gagal menghapus produk!');
