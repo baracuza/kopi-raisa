@@ -8,6 +8,24 @@ const findAllProducts = async () => {
     return products;
 };
 
+const deleteProductById = async (id) => {
+    const product = await prisma.product.delete({
+        where: {
+            id: parseInt(id),
+        },
+    });
+    return product;
+}
+
+const deleteInventoryByProductId = async (productId) => {
+    return await prisma.inventory.delete({
+        where: {
+            products_id: parseInt(productId),
+        },
+    });
+};
+
+
 const createNewProduct = async (newProductData) => {
     const productNewData = await prisma.product.create({
         data: {
@@ -79,4 +97,4 @@ const updateInventoryStock = async (inventoryData) => {
     });
     return updatedInventory;
 }
-module.exports = { findAllProducts, createNewProduct, createInventory, findProductById, updateDataProduct, updateInventoryStock };
+module.exports = { findAllProducts, createNewProduct, createInventory, findProductById, updateDataProduct, updateInventoryStock, deleteProductById, deleteInventoryByProductId };

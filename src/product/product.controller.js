@@ -3,7 +3,7 @@ const prisma = require('../db');
 const ApiError = require('../utils/apiError');
 const upload = require('../middleware/multer');
 
-const { getAllProducts, getProductById, createProduct, updateProduct, removeProduct } = require('./product.service');
+const { getAllProducts, getProductById, createProduct, updateProduct, removeProductById } = require('./product.service');
 const { authMiddleware, multerErrorHandler, validateProductMedia } = require('../middleware/middleware');
 const { productValidator } = require('../validation/validation');
 const { validationResult } = require('express-validator');
@@ -132,7 +132,7 @@ router.put('/:id', authMiddleware, productValidator, handleValidationResult, han
         if (!req.user.admin) {
             return res.status(403).json({ message: 'Akses ditolak! Hanya admin yang bisa mengedit produk.' });
         }
-        
+
         const { id } = req.params;
         const editedProductData = req.body;
 
@@ -168,7 +168,7 @@ router.delete('/:id', authMiddleware, async (req, res) => {
             return res.status(403).json({ message: 'Akses ditolak! Hanya admin yang bisa menghapus produk.' });
         }
 
-        const product = await removeProduct(id);
+        const product = await removeProductById(id);
 
         console.log(product);
         res.status(200).json({

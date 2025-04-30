@@ -2,7 +2,7 @@
 
 const ApiError = require('../utils/apiError');
 
-const { findAllProducts, createNewProduct, createInventory, findProductById, updateDataProduct, updateInventoryStock } = require('./product.repository');
+const { findAllProducts, createNewProduct, createInventory, findProductById, updateDataProduct, updateInventoryStock, deleteProductById, deleteInventoryByProductId } = require('./product.repository');
 const { findPartnerById } = require('../partners/partner.repository');
 
 const getAllProducts = async () => {
@@ -11,6 +11,26 @@ const getAllProducts = async () => {
         throw new ApiError(404, 'Produk tidak tidak ada!');
     }
     return products;
+}
+
+const getProductById = async (productId) => {
+    const product = await findProductById(productId);
+    if (!product) {
+        throw new ApiError(404, 'Produk tidak ditemukan!');
+    }
+}
+
+const removeProductById = async (id) => {
+    const existingProduct = await findProductById(id);
+    if (!existingProduct) {
+        throw new ApiError(404, 'Produk tidak ditemukan!');
+    }
+
+    const productData = await deleteProductById(id);
+    if (!productData) {
+        throw new ApiError(500, 'Gagal menghapus produk!');
+    }
+    return productData;
 }
 
 const createProduct = async (newProductData) => {
@@ -84,4 +104,4 @@ const updateProduct = async (id, updatedProductData) => {
     }
 }
 
-module.exports = { getAllProducts, createProduct, updateProduct };
+module.exports = { getAllProducts, createProduct, updateProduct, getProductById, removeProductById };
