@@ -9,7 +9,7 @@ const findAllProducts = async () => {
 };
 
 const createNewProduct = async (newProductData) => {
-    const productNewData = await prisma.Product.create({
+    const productNewData = await prisma.product.create({
         data: newProductData,
     });
     return productNewData;
