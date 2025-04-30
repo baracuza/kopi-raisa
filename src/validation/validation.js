@@ -169,12 +169,12 @@ const productValidator = [
     body('price')
         .trim()
         .notEmpty().withMessage('*Harga produk wajib diisi')
-        .isNumeric().withMessage('*Harga produk harus berupa angka'),
+        .isInt({ min:0 }).withMessage('*Harga produk harus berupa angka'),
 
     body('stock')
         .trim()
         .notEmpty().withMessage('*Stok produk wajib diisi')
-        .isNumeric().withMessage('*Stok produk harus berupa angka'),
+        .isInt({ min:0 }).withMessage('*Stok produk harus berupa angka'),
 ];
 
 module.exports = { validateRegister, validateLogin, createNewsValidator, updateNewsValidator, validateUpdateProfile, partnerValidator, productValidator };

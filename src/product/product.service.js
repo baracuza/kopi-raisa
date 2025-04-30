@@ -17,10 +17,12 @@ const createProduct = async (newProductData) => {
     try {
         const cleanProductData = {
             ...newProductData,
-            price: Number(newProductData.price),
-            stock: Number(newProductData.stock),
-            partner_id: Number(newProductData.partner_id),
+            price: parseInt(newProductData.price),
+            partner_id: parseInt(newProductData.partner_id),
         };
+
+        const stock = parseInt(newProductData.stock)
+
         const partnerExists = await findPartnerById(cleanProductData.partner_id);
         if (!partnerExists) {
             throw new ApiError(404, 'Partner tidak ditemukan!');
@@ -33,7 +35,7 @@ const createProduct = async (newProductData) => {
 
         const inventoryData = {
             products_id: productNewData.id,
-            stock: productNewData.stock
+            stock: stock
         };
 
         await createInventory(inventoryData);

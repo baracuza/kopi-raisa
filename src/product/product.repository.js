@@ -25,8 +25,15 @@ const createNewProduct = async (newProductData) => {
 };
 
 const createInventory = async (inventoryProduct) => {
-    const inventoryData = await prisma.Inventory.create({
-        data:inventoryProduct,
+    const inventoryData = await prisma.inventory.create({
+        data:{
+            stock: inventoryProduct.stock,
+            products:{
+                connect:{
+                    id: inventoryProduct.products_id,
+                },
+            },
+        }
     });
     return inventoryData;
 };
