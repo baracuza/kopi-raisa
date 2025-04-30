@@ -48,17 +48,21 @@ const findProductById = async (id) => {
 };
 
 const updateDataProduct = async (id, updatedProductData) => {
+    const { partner_id, ...restData } = updatedProductData;
+
     const updatedProduct = await prisma.product.update({
         where: {
             id: parseInt(id),
         },
         data: {
-            ...updatedProductData,
-            partner: updatedProductData.partner_id ? {
-                connect: {
-                    id: updatedProductData.partner_id,
+            ...restData,
+            ...(partner_id && {
+                partner: {
+                    connect: {
+                        id: partner_id,
+                    },
                 },
-            } : undefined,
+            }),
         },
     });
     return updatedProduct;
