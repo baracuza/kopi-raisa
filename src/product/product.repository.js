@@ -10,7 +10,16 @@ const findAllProducts = async () => {
 
 const createNewProduct = async (newProductData) => {
     const productNewData = await prisma.product.create({
-        data: newProductData,
+        data:{
+            name: newProductData.name,
+            price: newProductData.price,
+            description: newProductData.description,
+            partner:{
+                connect: {
+                    id: newProductData.partner_id,
+                },
+            },
+        }
     });
     return productNewData;
 };
