@@ -58,6 +58,7 @@ const updateProduct = async (id, updatedProductData) => {
             price: updatedProductData.price !== undefined ? parseInt(updatedProductData.price) : undefined,
             partner_id: updatedProductData.partner_id !== undefined ? parseInt(updatedProductData.partner_id) : undefined,
         };
+        delete cleanProductData.stock;
 
         if (cleanProductData.partner_id) {
             const partnerExists = await findPartnerById(cleanProductData.partner_id);
@@ -75,7 +76,7 @@ const updateProduct = async (id, updatedProductData) => {
                 stock: stock,
             });
         }
-        
+
         return updatedProduct;
     } catch (error) {
         console.error('Error in updateProduct:', error);
