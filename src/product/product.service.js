@@ -2,7 +2,7 @@
 
 const ApiError = require('../utils/apiError');
 
-const { findAllProducts, createNewProduct, createInventory } = require('./product.repository');
+const { findAllProducts, createNewProduct, createInventory, findProductById, updateDataProduct, updateInventoryStock } = require('./product.repository');
 const { findPartnerById } = require('../partners/partner.repository');
 
 const getAllProducts = async () => {
@@ -46,4 +46,41 @@ const createProduct = async (newProductData) => {
     }
 }
 
-module.exports = { getAllProducts, createProduct };
+const updateProduct = async (id, updatedProductData) => {
+    try {
+        const product = await findProductById(id);
+        if (!product) {
+            throw new ApiError(404, 'Produk tidak ditemukan!');
+        }
+
+        const cleanProductData = {
+            ...updatedProductData,
+            price: updatedProductData.price !== undefined ? parseInt(updatedProductData.price) : undefined,
+            partner_id: updatedProductData.partner_id !== undefined ? parseInt(updatedProductData.partner_id) : undefined,
+        };
+
+        if (cleanProductData.partner_id) {
+            const partnerExists = await findPartnerById(cleanProductData.partner_id);
+            if (!partnerExists) {
+                throw new ApiError(404, 'Partner tidak ditemukan!');
+            }
+        }
+
+        const updatedProduct = await updateDataProduct(id, cleanProductData);
+
+        if (updatedProductData.stock !== undefined) {
+            const stock = parseInt(updatedProductData.stock);
+            await updateInventoryStock({
+                products_id: updatedProduct.id,
+                stock: stock,
+            });
+        }
+        
+        return updatedProduct;
+    } catch (error) {
+        console.error('Error in updateProduct:', error);
+        throw new ApiError(500, 'Terjadi kesalahan saat memperbarui produk.' + (error.message || error));
+    }
+}
+
+module.exports = { getAllProducts, createProduct, updateProduct };

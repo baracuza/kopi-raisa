@@ -10,11 +10,11 @@ const findAllProducts = async () => {
 
 const createNewProduct = async (newProductData) => {
     const productNewData = await prisma.product.create({
-        data:{
+        data: {
             name: newProductData.name,
             price: newProductData.price,
             description: newProductData.description,
-            partner:{
+            partner: {
                 connect: {
                     id: newProductData.partner_id,
                 },
@@ -26,10 +26,10 @@ const createNewProduct = async (newProductData) => {
 
 const createInventory = async (inventoryProduct) => {
     const inventoryData = await prisma.inventory.create({
-        data:{
+        data: {
             stock: inventoryProduct.stock,
-            product:{
-                connect:{
+            product: {
+                connect: {
                     id: inventoryProduct.products_id,
                 },
             },
@@ -37,4 +37,42 @@ const createInventory = async (inventoryProduct) => {
     });
     return inventoryData;
 };
-module.exports = {findAllProducts, createNewProduct, createInventory};
+
+const findProductById = async (id) => {
+    const product = await prisma.product.findUnique({
+        where: {
+            id: parseInt(id),
+        },
+    });
+    return product;
+};
+
+const updateDataProduct = async (id, updatedProductData) => {
+    const updatedProduct = await prisma.product.update({
+        where: {
+            id: parseInt(id),
+        },
+        data: {
+            ...updatedProductData,
+            partner: updatedProductData.partner_id ? {
+                connect: {
+                    id: updatedProductData.partner_id,
+                },
+            } : undefined,
+        },
+    });
+    return updatedProduct;
+};
+
+const updateInventoryStock = async (inventoryData) => {
+    const updatedInventory = await prisma.inventory.update({
+        where: {
+            products_id: inventoryData.products_id,
+        },
+        data: {
+            stock: inventoryData.stock,
+        },
+    });
+    return updatedInventory;
+}
+module.exports = { findAllProducts, createNewProduct, createInventory, findProductById, updateDataProduct, updateInventoryStock };
