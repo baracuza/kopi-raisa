@@ -68,7 +68,7 @@ router.get('/:id', async (req, res) => {
     }
 });
 
-router.post('/post', authMiddleware, upload.fields([{ name: 'media', maxCount: 4 }, { name: 'thumbnail', maxCount: 1 }]),
+router.post('/', authMiddleware, upload.fields([{ name: 'media', maxCount: 4 }, { name: 'thumbnail', maxCount: 1 }]),
     multerErrorHandler, validateInsertNewsMedia, createNewsValidator, handleValidationResult, handleValidationResultFinal, async (req, res) => {
         console.log("DEBUG req.body keys:", Object.keys(req.body));
         console.log("DEBUG req.body.title:", req.body.title);
