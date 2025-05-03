@@ -98,7 +98,7 @@ model Product {
 
 model Inventory {
   id         Int      @id @default(autoincrement())
-  product    Product  @relation(fields: [products_id], references: [id])
+  product    Product  @relation(fields: [products_id], references: [id], onDelete: Cascade)
   products_id Int     @unique
   stock      Int
   created_at DateTime @default(now())

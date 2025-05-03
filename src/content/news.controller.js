@@ -16,6 +16,7 @@ const {validationResult} = require('express-validator');
 const { createNewsValidator, updateNewsValidator } = require('../validation/validation');
 const handleValidationResult = require('../middleware/handleValidationResult');
 const handleValidationResultFinal = require('../middleware/handleValidationResultFinal');
+const parseRetainedMedia = require('../utils/media');
 
 const { getNews,
     getNewsById,
@@ -67,7 +68,7 @@ router.get('/:id', async (req, res) => {
     }
 });
 
-router.post('/post', authMiddleware, upload.fields([{ name: 'media', maxCount: 4 }, { name: 'thumbnail', maxCount: 1 }]),
+router.post('/', authMiddleware, upload.fields([{ name: 'media', maxCount: 4 }, { name: 'thumbnail', maxCount: 1 }]),
     multerErrorHandler, validateInsertNewsMedia, createNewsValidator, handleValidationResult, handleValidationResultFinal, async (req, res) => {
         console.log("DEBUG req.body keys:", Object.keys(req.body));
         console.log("DEBUG req.body.title:", req.body.title);
@@ -272,6 +273,7 @@ router.post('/post', authMiddleware, upload.fields([{ name: 'media', maxCount: 4
 router.put('/:id', authMiddleware, upload.fields([{ name: 'media', maxCount: 4 }, { name: 'thumbnail', maxCount: 1 }]),
     updateNewsValidator, validateUpdateNewsMedia({ skipIfNoFile: true }), handleValidationResult, handleValidationResultFinal, async (req, res) => {
         try {
+            
             // Cek validasi input dari express-validator
             const errors = validationResult(req);
             if (!errors.isEmpty()) {
@@ -310,15 +312,19 @@ router.put('/:id', authMiddleware, upload.fields([{ name: 'media', maxCount: 4 }
                     errors: { content: "*Konten/Deskripsi Tidak Boleh Kosong" }
                 });
             }
+            console.log("Req Files [media]:", req.files['media']);
+            console.log("Req Files [thumbnail]:", req.files['thumbnail']);
+            console.log("Retained Media:", retainedMedia);
 
             const editedData = {
                 title,
                 content: cleanHtml,
                 mediaFiles: req.files['media'],
                 thumbnailFile: req.files['thumbnail']?.[0] || null,
-                retainedMedia: retainedMedia ? JSON.parse(retainedMedia) : []
+                retainedMedia: parseRetainedMedia(req.body.retainedMedia)
             };
 
+            console.log("BAHAN editedData:", editedData);
             console.log("Mulai update berita");
             const updatedNews = await updateNews(parseInt(id), editedData);
 

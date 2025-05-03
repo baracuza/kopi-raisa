@@ -3,10 +3,10 @@ const prisma = require('../db');
 const ApiError = require('../utils/apiError');
 const upload = require('../middleware/multer');
 
-const { getAllProducts, getProductById, createProduct, updateProduct, removeProduct } = require('./product.service');
+const { getAllProducts, getProductById, createProduct, updateProduct, removeProductById } = require('./product.service');
 const { authMiddleware, multerErrorHandler, validateProductMedia } = require('../middleware/middleware');
 const { productValidator } = require('../validation/validation');
-const {validationResult} = require('express-validator');
+const { validationResult } = require('express-validator');
 const handleValidationResult = require('../middleware/handleValidationResult');
 const handleValidationResultFinal = require('../middleware/handleValidationResultFinal');
 const { uploadToCloudinary } = require('../services/cloudinaryUpload.service');
@@ -87,9 +87,9 @@ router.post('/', authMiddleware, productValidator, handleValidationResult, handl
         if (!req.user.admin) {
             return res.status(403).json({ message: 'Akses ditolak! Hanya admin yang bisa mengakses.' });
         }
-        const {name, price, stock, description, partner_id } = req.body;
+        const { name, price, stock, description, partner_id } = req.body;
 
-        const product = await createProduct({name,price,stock,description,partner_id});
+        const product = await createProduct({ name, price, stock, description, partner_id });
 
         console.log('data:', product);
         res.status(201).json({
@@ -112,14 +112,30 @@ router.post('/', authMiddleware, productValidator, handleValidationResult, handl
     }
 });
 
-router.put('/:id', authMiddleware, async (req, res) => {
+router.put('/:id', authMiddleware, productValidator, handleValidationResult, handleValidationResultFinal, async (req, res) => {
     try {
-        const { id } = req.params;
-        const editedProductData = req.body;
+        const errors = validationResult(req);
+        if (!errors.isEmpty()) {
+            const errorObject = errors.array().reduce((acc, curr) => {
+                const key = curr.path && curr.path !== '' ? curr.path : 'global';
+                if (!acc[key]) {
+                    acc[key] = curr.msg;
+                }
+                return acc;
+            }, {});
 
+            return res.status(400).json({
+                message: "Validasi gagal!",
+                errors: errorObject
+            });
+        }
         if (!req.user.admin) {
             return res.status(403).json({ message: 'Akses ditolak! Hanya admin yang bisa mengedit produk.' });
         }
+
+        const { id } = req.params;
+        const editedProductData = req.body;
+
 
         const product = await updateProduct(id, editedProductData);
 
@@ -152,7 +168,7 @@ router.delete('/:id', authMiddleware, async (req, res) => {
             return res.status(403).json({ message: 'Akses ditolak! Hanya admin yang bisa menghapus produk.' });
         }
 
-        const product = await removeProduct(id);
+        const product = await removeProductById(id);
 
         console.log(product);
         res.status(200).json({

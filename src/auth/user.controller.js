@@ -246,7 +246,7 @@ router.post('/facebook/link',
             passport.authenticate('facebook-token', { session: false }, async (err, profile, info) => {
                 if (err) return next(err);
                 if (!profile) {
-                    return res.status(401).json({ message: 'Gagal autentikasi Facebook.' });
+                    return res.status(401).json({ message: 'Gagal autentikasi Facebook.', detail: info || null  });
                 }
 
                 const currentUserToken = req.cookies.token || req.headers.authorization?.split(' ')[1];
