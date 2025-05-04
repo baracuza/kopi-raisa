@@ -35,7 +35,7 @@ const removeProductById = async (id) => {
         } catch (error) {
             console.error('Error deleting image from Cloudinary:', error);
             throw new ApiError(500, 'Gagal menghapus gambar produk dari Cloudinary!', " " + (error.message || error));
-            
+
         }
     }
 
@@ -48,7 +48,7 @@ const removeProductById = async (id) => {
 
 const createProduct = async (newProductData) => {
     try {
-        const{image,stock,partner_id,...rest}=newProductData
+        const { image, stock, partner_id, ...rest } = newProductData
 
         if (
             partner_id === null ||
@@ -71,17 +71,22 @@ const createProduct = async (newProductData) => {
         }
 
         let imageUrl = null;
-        if(image){
+        if (image) {
             try {
                 imageUrl = await uploadToCloudinary(image.buffer, image.originalname);
+                console.log('Image URL:', imageUrl);
             } catch (error) {
                 console.error('Error uploading image to Cloudinary:', error);
-                throw new ApiError(500, 'Gagal mengunggah gambar produk!'," "+ (error.message || error));
-                
+                throw new ApiError(500, 'Gagal mengunggah gambar produk!', " " + (error.message || error));
+
             }
         }
 
-        const productNewData = await createNewProduct(cleanProductData, imageUrl);
+        const productNewData = await createNewProduct(
+            {
+                ...cleanProductData,
+                image: imageUrl
+            });
         if (!productNewData) {
             throw new ApiError(500, 'Gagal menambahkan produk!');
         }
@@ -93,7 +98,7 @@ const createProduct = async (newProductData) => {
         return productNewData;
     } catch (error) {
         console.error('Error in createProduct:', error);
-        throw new ApiError(500,(error.message || error));
+        throw new ApiError(500, (error.message || error));
     }
 }
 
@@ -104,7 +109,7 @@ const updateProduct = async (id, updatedProductData) => {
             throw new ApiError(404, 'Produk tidak ditemukan!');
         }
 
-        const {productFile, stock, ...rest} = updatedProductData
+        const { productFile, stock, ...rest } = updatedProductData
 
         const cleanProductData = {
             ...rest,
@@ -119,7 +124,7 @@ const updateProduct = async (id, updatedProductData) => {
             }
         }
 
-        if(productFile) {
+        if (productFile) {
             if (product.image) {
                 try {
                     await deleteFromCloudinaryByUrl(product.image);
@@ -134,7 +139,7 @@ const updateProduct = async (id, updatedProductData) => {
             } catch (error) {
                 console.error('Error uploading image to Cloudinary:', error);
                 throw new ApiError(500, 'Gagal mengunggah gambar produk!', " " + (error.message || error));
-                
+
             }
         } else {
             cleanProductData.image = product.image;

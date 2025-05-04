@@ -121,14 +121,14 @@ router.post('/', authMiddleware, upload.single('productFile'), multerErrorHandle
             image: file
         });
 
-        console.log('data:', product);
+        console.log('data product:', product);
         res.status(201).json({
             message: 'Produk berhasil ditambahkan!',
             data: product,
         });
     } catch (error) {
         if (error instanceof ApiError) {
-            console.error('ApiError:', error);
+            // console.error('ApiError:', error);
             return res.status(error.statusCode).json({
                 message: error.message,
             });
