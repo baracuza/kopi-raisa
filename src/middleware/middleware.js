@@ -62,7 +62,6 @@ const validateProfilMedia = (req, res, next) => {
     next();
 };
 
-
 const validateInsertNewsMedia = (req, res, next) => {
     const maxFiles = 5;
     const maxSizeMB = 5;
@@ -112,7 +111,6 @@ const validateInsertNewsMedia = (req, res, next) => {
     next();
 };
 
-
 const validateUpdateNewsMedia = (options = {}) => {
     return (req, res, next) => {
         const { skipIfNoFile = false } = options;
@@ -161,7 +159,6 @@ const validateUpdateNewsMedia = (options = {}) => {
         next(); // lanjut ke handleValidationResult + handleValidationResultFinal
     };
 };
-
 const validateProductMedia = (req, res, next) => {
     const maxSizeMB = 5;
     const maxSizeBytes = maxSizeMB * 1024 * 1024;
@@ -185,6 +182,32 @@ const validateProductMedia = (req, res, next) => {
 
     }
     next();
+}
+const validateProductUpdate = (options = {}) => {
+    return (req, res, next) => {
+        const { skipIfNoFile = false } = options;
+
+        const maxSizeMB = 5;
+        const maxSizeBytes = maxSizeMB * 1024 * 1024;
+        const allowedTypes = ['image/jpeg', 'image/png', 'image/webp', 'image/jpg'];
+
+        req.mediaValidationErrors = {};
+        const mediaFile = req.file;
+
+        const noMedia = !mediaFile;
+        if (skipIfNoFile && noMedia) {
+            return next();
+        }
+
+        if (mediaFile) {
+            if (!allowedTypes.includes(mediaFile.mimetype)) {
+                req.mediaValidationErrors.productFile = '*Gambar produk hanya boleh berupa gambar (jpg, jpeg, png, webp)';
+            } else if (mediaFile.size > maxSizeBytes) {
+                req.mediaValidationErrors.productFile = `*Ukuran gambar produk maksimal ${maxSizeMB}MB`;
+            }
+        } 
+        next();
+    }
 }
 
 const multerErrorHandler = (err, req, res, next) => {
@@ -254,4 +277,4 @@ const multerErrorHandler = (err, req, res, next) => {
 
 
 
-module.exports = { authMiddleware, validateUpdateNewsMedia, validateInsertNewsMedia, multerErrorHandler, validateProfilMedia, validateProductMedia };
+module.exports = { authMiddleware, validateUpdateNewsMedia, validateInsertNewsMedia, multerErrorHandler, validateProfilMedia, validateProductMedia, validateProductUpdate };

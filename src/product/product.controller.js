@@ -4,7 +4,7 @@ const ApiError = require('../utils/apiError');
 const upload = require('../middleware/multer');
 
 const { getAllProducts, getProductById, createProduct, updateProduct, removeProductById } = require('./product.service');
-const { authMiddleware, multerErrorHandler, validateProductMedia } = require('../middleware/middleware');
+const { authMiddleware, multerErrorHandler, validateProductMedia, validateProductUpdate } = require('../middleware/middleware');
 const { productValidator } = require('../validation/validation');
 const { validationResult } = require('express-validator');
 const handleValidationResult = require('../middleware/handleValidationResult');
@@ -141,7 +141,7 @@ router.post('/', authMiddleware, upload.single('productFile'), multerErrorHandle
     }
 });
 
-router.put('/:id', authMiddleware, productValidator, handleValidationResult, handleValidationResultFinal, async (req, res) => {
+router.put('/:id', authMiddleware, upload.single('productFile'), multerErrorHandler, validateProductUpdate, productValidator, handleValidationResult, handleValidationResultFinal, async (req, res) => {
     try {
         const errors = validationResult(req);
         if (!errors.isEmpty()) {
@@ -163,10 +163,15 @@ router.put('/:id', authMiddleware, productValidator, handleValidationResult, han
         }
 
         const { id } = req.params;
-        const editedProductData = req.body;
+        const dataProduct = req.body;
 
 
-        const product = await updateProduct(id, editedProductData);
+        const editedProductData = {
+            dataProduct,
+            productFile: req.file['productFile'] || null,
+        };
+
+        const product = await updateProduct(parseInt(id), editedProductData);
 
         console.log(product);
         res.status(200).json({

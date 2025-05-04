@@ -29,7 +29,15 @@ const removeProductById = async (id) => {
         throw new ApiError(404, 'Produk tidak ditemukan!');
     }
 
-    // await deleteInventoryByProductId(id);
+    if (existingProduct) {
+        try {
+            await deleteFromCloudinaryByUrl(existingProduct.image);
+        } catch (error) {
+            console.error('Error deleting image from Cloudinary:', error);
+            throw new ApiError(500, 'Gagal menghapus gambar produk dari Cloudinary!', " " + (error.message || error));
+            
+        }
+    }
 
     const productData = await deleteProductById(id);
     if (!productData) {
@@ -40,11 +48,20 @@ const removeProductById = async (id) => {
 
 const createProduct = async (newProductData) => {
     try {
-        const{image,stock,...rest}=newProductData
+        const{image,stock,partner_id,...rest}=newProductData
+
+        if (
+            partner_id === null ||
+            partner_id === undefined ||
+            isNaN(parseInt(partner_id))
+        ) {
+            throw new ApiError(400, 'Partner ID tidak valid atau tidak boleh kosong!');
+        }
+
         const cleanProductData = {
             ...rest,
             price: parseInt(rest.price),
-            partner_id: parseInt(rest.partner_id),
+            partner_id: parseInt(partner_id),
         };
         const stockProduct = parseInt(stock)
 
@@ -76,7 +93,7 @@ const createProduct = async (newProductData) => {
         return productNewData;
     } catch (error) {
         console.error('Error in createProduct:', error);
-        throw new ApiError(500, 'Terjadi kesalahan saat menambahkan produk.' + (error.message || error));
+        throw new ApiError(500,(error.message || error));
     }
 }
 
@@ -87,12 +104,13 @@ const updateProduct = async (id, updatedProductData) => {
             throw new ApiError(404, 'Produk tidak ditemukan!');
         }
 
+        const {productFile, stock, ...rest} = updatedProductData
+
         const cleanProductData = {
-            ...updatedProductData,
-            price: updatedProductData.price !== undefined ? parseInt(updatedProductData.price) : undefined,
-            partner_id: updatedProductData.partner_id !== undefined ? parseInt(updatedProductData.partner_id) : undefined,
+            ...rest,
+            price: parseInt(rest.price),
+            partner_id: parseInt(rest.partner_id),
         };
-        delete cleanProductData.stock;
 
         if (cleanProductData.partner_id) {
             const partnerExists = await findPartnerById(cleanProductData.partner_id);
@@ -101,13 +119,34 @@ const updateProduct = async (id, updatedProductData) => {
             }
         }
 
+        if(productFile) {
+            if (product.image) {
+                try {
+                    await deleteFromCloudinaryByUrl(product.image);
+                } catch (error) {
+                    console.error('Error deleting image from Cloudinary:', error);
+                    throw new ApiError(500, 'Gagal menghapus gambar produk dari Cloudinary!', " " + (error.message || error));
+                }
+            }
+            try {
+                const imageUrl = await uploadToCloudinary(productFile.buffer, productFile.originalname);
+                cleanProductData.image = imageUrl;
+            } catch (error) {
+                console.error('Error uploading image to Cloudinary:', error);
+                throw new ApiError(500, 'Gagal mengunggah gambar produk!', " " + (error.message || error));
+                
+            }
+        } else {
+            cleanProductData.image = product.image;
+        }
+
         const updatedProduct = await updateDataProduct(id, cleanProductData);
 
-        if (updatedProductData.stock !== undefined) {
-            const stock = parseInt(updatedProductData.stock);
+        if (stock !== undefined) {
+            const parsedStock = parseInt(stock);
             await updateInventoryStock({
                 products_id: updatedProduct.id,
-                stock: stock,
+                stock: parsedStock,
             });
         }
 
