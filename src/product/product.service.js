@@ -4,6 +4,8 @@ const ApiError = require('../utils/apiError');
 
 const { findAllProducts, createNewProduct, createInventory, findProductById, updateDataProduct, updateInventoryStock, deleteProductById, deleteInventoryByProductId } = require('./product.repository');
 const { findPartnerById } = require('../partners/partner.repository');
+const { uploadToCloudinary } = require('../services/cloudinaryUpload.service');
+const { deleteFromCloudinaryByUrl, extractPublicId } = require('../utils/cloudinary');
 
 const getAllProducts = async () => {
     const products = await findAllProducts();
@@ -37,29 +39,38 @@ const removeProductById = async (id) => {
 
 const createProduct = async (newProductData) => {
     try {
+        const{image,stock,...rest}=newProductData
         const cleanProductData = {
-            ...newProductData,
-            price: parseInt(newProductData.price),
-            partner_id: parseInt(newProductData.partner_id),
+            ...rest,
+            price: parseInt(rest.price),
+            partner_id: parseInt(rest.partner_id),
         };
-
-        const stock = parseInt(newProductData.stock)
+        const stockProduct = parseInt(stock)
 
         const partnerExists = await findPartnerById(cleanProductData.partner_id);
         if (!partnerExists) {
             throw new ApiError(404, 'Partner tidak ditemukan!');
         }
 
-        const productNewData = await createNewProduct(cleanProductData);
+        let imageUrl = null;
+        if(image){
+            try {
+                imageUrl = await uploadToCloudinary(image.buffer, image.originalname);
+            } catch (error) {
+                console.error('Error uploading image to Cloudinary:', error);
+                throw new ApiError(500, 'Gagal mengunggah gambar produk!'," "+ (error.message || error));
+                
+            }
+        }
+
+        const productNewData = await createNewProduct(cleanProductData, imageUrl);
         if (!productNewData) {
             throw new ApiError(500, 'Gagal menambahkan produk!');
         }
-
         const inventoryData = {
             products_id: productNewData.id,
-            stock: stock
+            stock: stockProduct
         };
-
         await createInventory(inventoryData);
         return productNewData;
     } catch (error) {

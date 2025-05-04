@@ -103,9 +103,9 @@ const validateInsertNewsMedia = (req, res, next) => {
         }
 
         const totalSize = mediaFiles.reduce((acc, file) => acc + file.size, 0);
-        const maxTotalSize = 20 * 1024 * 1024; // 20MB
+        const maxTotalSize = 27 * 1024 * 1024; // 20MB
         if (totalSize > maxTotalSize) {
-            req.mediaValidationErrors.media = '*Total ukuran file tidak boleh lebih dari 20MB';
+            req.mediaValidationErrors.media = '*Total ukuran file tidak boleh lebih dari 25MB';
         }
     }
 
@@ -163,7 +163,6 @@ const validateUpdateNewsMedia = (options = {}) => {
 };
 
 const validateProductMedia = (req, res, next) => {
-    const maxFiles = 5;
     const maxSizeMB = 5;
     const maxSizeBytes = maxSizeMB * 1024 * 1024;
     const allowedTypes = ['image/jpeg', 'image/png', 'image/webp', 'image/jpg'];
@@ -173,26 +172,14 @@ const validateProductMedia = (req, res, next) => {
 
 
     // Validasi 'media'
-    const mediaFiles = req.files['media'] || [];
-    if (mediaFiles.length > 0) {
-        if (mediaFiles.length > maxFiles) {
-            req.mediaValidationErrors.media = `*Maksimal hanya ${maxFiles} file yang diperbolehkan`;
-        }
-
-        const invalidFiles = mediaFiles.filter(file => !allowedTypes.includes(file.mimetype));
-        if (invalidFiles.length > 0) {
-            req.mediaValidationErrors.media = '*Hanya file gambar (jpg, jpeg, png, webp) yang diperbolehkan';
-        }
-
-        const oversizedFiles = mediaFiles.filter(file => file.size > maxSizeBytes);
-        if (oversizedFiles.length > 0) {
-            req.mediaValidationErrors.media = `*Ukuran setiap file maksimal ${maxSizeMB}MB`;
-        }
-
-        const totalSize = mediaFiles.reduce((acc, file) => acc + file.size, 0);
-        const maxTotalSize = 20 * 1024 * 1024; // 20MB
-        if (totalSize > maxTotalSize) {
-            req.mediaValidationErrors.media = '*Total ukuran file tidak boleh lebih dari 20MB';
+    const mediaFile = req.files['productFile'] || [];
+    if (!mediaFile) {
+        req.mediaValidationErrors.media = '*Gambar produk wajib diunggah';
+    } else {
+        if (!allowedTypes.includes(mediaFile.mimetype)) {
+            req.mediaValidationErrors.media = '*Gambar produk hanya boleh berupa gambar (jpg, jpeg, png, webp)';
+        } else if (mediaFile.size > maxSizeBytes) {
+            req.mediaValidationErrors.media = `*Ukuran gambar produk maksimal ${maxSizeMB}MB`;
         }
     }
 

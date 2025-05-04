@@ -32,6 +32,7 @@ const createNewProduct = async (newProductData) => {
             name: newProductData.name,
             price: newProductData.price,
             description: newProductData.description,
+            image: newProductData.image|| null,
             partner: {
                 connect: {
                     id: newProductData.partner_id,

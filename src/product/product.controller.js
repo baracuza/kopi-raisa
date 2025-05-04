@@ -9,8 +9,7 @@ const { productValidator } = require('../validation/validation');
 const { validationResult } = require('express-validator');
 const handleValidationResult = require('../middleware/handleValidationResult');
 const handleValidationResultFinal = require('../middleware/handleValidationResultFinal');
-const { uploadToCloudinary } = require('../services/cloudinaryUpload.service');
-const { deleteFromCloudinaryByUrl, extractPublicId } = require('../utils/cloudinary');
+
 
 const router = express.Router();
 
@@ -67,7 +66,7 @@ router.get('/:id', async (req, res) => {
     }
 });
 
-router.post('/', authMiddleware, productValidator, handleValidationResult, handleValidationResultFinal, async (req, res) => {
+router.post('/', authMiddleware, upload.single("productFile"), multerErrorHandler, validateProductMedia, productValidator, handleValidationResult, handleValidationResultFinal, async (req, res) => {
     try {
         const errors = validationResult(req);
         if (!errors.isEmpty()) {
@@ -88,12 +87,36 @@ router.post('/', authMiddleware, productValidator, handleValidationResult, handl
             return res.status(403).json({ message: 'Akses ditolak! Hanya admin yang bisa mengakses.' });
         }
         const { name, price, stock, description, partner_id } = req.body;
+        const file = req.file;
 
-        const product = await createProduct({ name, price, stock, description, partner_id });
+        // Sanitize HTML untuk disimpan
+        const cleanHtml = DOMPurify.sanitize(description || "");
+
+        // Bersihkan konten dari tag HTML
+        const plainDescription = description
+        .replace(/<[^>]+>/g, "")
+        .replace(/\s+/g, " ")
+        .trim();
+
+    if (!plainDescription) {
+        return res.status(400).json({
+            message: "Validasi gagal!",
+            errors: { description: "*Deskripsi Tidak Boleh Kosong" }
+        });
+    }
+
+        const product = await createProduct({
+            name,
+            price,
+            stock,
+            description: cleanHtml,
+            partner_id,
+            image: file
+        });
 
         console.log('data:', product);
         res.status(201).json({
-            message: 'Berita berhasil ditambahkan!',
+            message: 'Produk berhasil ditambahkan!',
             data: product,
         });
     } catch (error) {
@@ -103,7 +126,6 @@ router.post('/', authMiddleware, productValidator, handleValidationResult, handl
                 message: error.message,
             });
         }
-
         console.error('Error creating product:', error);
         return res.status(500).json({
             message: 'Terjadi kesalahan di server!',
