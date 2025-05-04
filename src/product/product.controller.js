@@ -66,7 +66,7 @@ router.get('/:id', async (req, res) => {
     }
 });
 
-router.post('/', authMiddleware, upload.single("productFile"), multerErrorHandler, validateProductMedia, productValidator, handleValidationResult, handleValidationResultFinal, async (req, res) => {
+router.post('/', authMiddleware, upload.single('productFile'), multerErrorHandler, validateProductMedia, productValidator, handleValidationResult, handleValidationResultFinal, async (req, res) => {
     try {
         const errors = validationResult(req);
         if (!errors.isEmpty()) {
@@ -83,6 +83,13 @@ router.post('/', authMiddleware, upload.single("productFile"), multerErrorHandle
                 errors: errorObject
             });
         }
+        if (req.mediaValidationErrors && Object.keys(req.mediaValidationErrors).length > 0) {
+            return res.status(400).json({
+                message: "Validasi gagal!",
+                errors: req.mediaValidationErrors
+            });
+        }
+
         if (!req.user.admin) {
             return res.status(403).json({ message: 'Akses ditolak! Hanya admin yang bisa mengakses.' });
         }
@@ -94,16 +101,16 @@ router.post('/', authMiddleware, upload.single("productFile"), multerErrorHandle
 
         // Bersihkan konten dari tag HTML
         const plainDescription = description
-        .replace(/<[^>]+>/g, "")
-        .replace(/\s+/g, " ")
-        .trim();
+            .replace(/<[^>]+>/g, "")
+            .replace(/\s+/g, " ")
+            .trim();
 
-    if (!plainDescription) {
-        return res.status(400).json({
-            message: "Validasi gagal!",
-            errors: { description: "*Deskripsi Tidak Boleh Kosong" }
-        });
-    }
+        if (!plainDescription) {
+            return res.status(400).json({
+                message: "Validasi gagal!",
+                errors: { description: "*Deskripsi Tidak Boleh Kosong" }
+            });
+        }
 
         const product = await createProduct({
             name,

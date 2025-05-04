@@ -20,6 +20,7 @@ const getProductById = async (productId) => {
     if (!product) {
         throw new ApiError(404, 'Produk tidak ditemukan!');
     }
+    return product;
 }
 
 const removeProductById = async (id) => {
