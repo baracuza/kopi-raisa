@@ -104,7 +104,6 @@ const createProduct = async (newProductData) => {
 }
 
 const updateProduct = async (id, updatedProductData) => {
-    console.log('productFile:', productFile);
     try {
         if (isNaN(parseInt(id))) {
             throw new ApiError(400, 'ID produk tidak valid!');
@@ -116,6 +115,7 @@ const updateProduct = async (id, updatedProductData) => {
         }
 
         const { productFile, stock, ...rest } = updatedProductData
+        console.log('productFile:', productFile);
 
         const cleanProductData = {
             ...rest,
