@@ -3,10 +3,28 @@ const prisma = require('../db');
 
 
 const findAllProducts = async () => {
-    const products = await prisma.Product.findMany();
+    const products = await prisma.product.findMany({
+        include: {
+            inventory: {
+                select: {
+                    stock: true,
+                }
+            },
+            partner: {
+                select: {
+                    id: true,
+                    name: true,
+                    owner_name: true,
+                    phone_number: true,
+                    address: true
+                }
+            }
+        }
+    });
 
     return products;
 };
+
 
 const deleteProductById = async (id) => {
     const product = await prisma.product.delete({
@@ -32,7 +50,7 @@ const createNewProduct = async (newProductData) => {
             name: newProductData.name,
             price: newProductData.price,
             description: newProductData.description,
-            image: newProductData.image|| null,
+            image: newProductData.image || null,
             partner: {
                 connect: {
                     id: newProductData.partner_id,
@@ -62,6 +80,23 @@ const findProductById = async (id) => {
         where: {
             id: parseInt(id),
         },
+        include:{
+            partner: {
+                select: {
+                    name: true,
+                    owner_name: true,
+                    phone_number: true,
+                    address: true
+                }
+            },
+            inventory: {
+                select: {
+                    stock: true
+                }
+            }
+            
+        }
+
     });
     return product;
 };

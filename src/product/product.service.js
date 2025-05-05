@@ -105,6 +105,10 @@ const createProduct = async (newProductData) => {
 
 const updateProduct = async (id, updatedProductData) => {
     try {
+        if (isNaN(parseInt(id))) {
+            throw new ApiError(400, 'ID produk tidak valid!');
+        }
+        
         const product = await findProductById(id);
         if (!product) {
             throw new ApiError(404, 'Produk tidak ditemukan!');
@@ -114,8 +118,8 @@ const updateProduct = async (id, updatedProductData) => {
 
         const cleanProductData = {
             ...rest,
-            price: parseInt(rest.price),
-            partner_id: parseInt(rest.partner_id),
+            ...(rest.price !== undefined && {price: parseInt(rest.price)}),
+            ...(rest.partner_id !== undefined && {partner_id: parseInt(rest.partner_id)}),
         };
 
         if (cleanProductData.partner_id) {

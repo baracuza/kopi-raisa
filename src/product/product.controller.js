@@ -168,7 +168,7 @@ router.put('/:id', authMiddleware, upload.single('productFile'), multerErrorHand
 
         const editedProductData = {
             dataProduct,
-            productFile: req.file['productFile'] || null,
+            productFile: req.file || null,
         };
 
         console.log('editedProductData:', editedProductData);
