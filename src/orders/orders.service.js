@@ -1,5 +1,5 @@
 const ApiError = require('../utils/apiError');
-const { notifyPartner } = require('../utils/notify');
+const { notifyPartnerOnPurchase } = require('../utils/whatsapp');
 
 const {
     findOrders,
@@ -95,7 +95,10 @@ const notifyPartnerForOrder = async (orderId, message) => {
         throw new ApiError(400, 'Partner ID tidak ditemukan pada order!');
     }
 
-    const notificationResult = await notifyPartner(partnerId, message);
+    const notificationResult = await notifyPartnerOnPurchase(
+        partnerId,
+        message
+    );
     if (!notificationResult) {
         throw new ApiError(500, 'Gagal mengirim notifikasi ke partner!');
     }

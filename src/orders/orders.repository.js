@@ -1,19 +1,18 @@
-const prisma = require('../prisma');
-const ApiError = require('../utils/apiError');
+const prisma = require('../db');
 
 const findOrders = async () => {
-    const orders = await prisma.Orders.findMany({
-        include: {
-            OrderItem: true,
-            User: true,
-            Partner: true,
-        },
+    const orders = await prisma.Order.findMany({
+        // include: {
+        //     OrderItem: true,
+        //     User: true,
+        //     Partner: true,
+        // },
     });
     return orders;
 }
 
 const findOrdersById = async (orderId) => {
-    const order = await prisma.Orders.findUnique({
+    const order = await prisma.Order.findUnique({
         where: {
             id: parseInt(orderId),
         },
@@ -27,14 +26,18 @@ const findOrdersById = async (orderId) => {
 };
 
 const insertNewOrders = async (newOrdersData) => {
-    const orders = await prisma.Orders.create({
+    const orders = await prisma.Order.create({
         data: {
             user_id: newOrdersData.user_id,
             partner_id: newOrdersData.partner_id,
-            total_price: newOrdersData.total_price,
             status: newOrdersData.status,
-            OrderItem: {
-                create: newOrdersData.OrderItem,
+            orderItems: {
+                create: newOrdersData.orderItems.map((item) => ({
+                    product_id: item.product_id,
+                    quantity: item.quantity,
+                    price: item.price,
+                    custome_note: item.custom_note,
+                })),
             },
         },
         include: {
@@ -47,7 +50,7 @@ const insertNewOrders = async (newOrdersData) => {
 };
 
 const editOrders = async (id, editedOrdersData) => {
-    const orders = await prisma.Orders.update({
+    const orders = await prisma.Order.update({
         where: {
             id: parseInt(id),
         },
@@ -62,7 +65,7 @@ const editOrders = async (id, editedOrdersData) => {
 };
 
 const deleteOrders = async (id) => {
-    const orders = await prisma.Orders.delete({
+    const orders = await prisma.Order.delete({
         where: {
             id: parseInt(id),
         },
@@ -71,7 +74,7 @@ const deleteOrders = async (id) => {
 };
 
 const findOrdersByUserId = async (userId) => {
-    const orders = await prisma.Orders.findMany({
+    const orders = await prisma.Order.findMany({
         where: {
             user_id: parseInt(userId),
         },
@@ -85,7 +88,7 @@ const findOrdersByUserId = async (userId) => {
 };
 
 const findOrdersByPartnerId = async (partnerId) => {
-    const orders = await prisma.Orders.findMany({
+    const orders = await prisma.Order.findMany({
         where: {
             partner_id: parseInt(partnerId),
         },
@@ -99,7 +102,7 @@ const findOrdersByPartnerId = async (partnerId) => {
 };
 
 const findOrdersByStatus = async (status) => {
-    const orders = await prisma.Orders.findMany({
+    const orders = await prisma.Order.findMany({
         where: {
             status: status,
         },

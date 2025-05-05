@@ -177,4 +177,6 @@ const productValidator = [
         .isInt({ min:0 }).withMessage('*Stok produk harus berupa angka'),
 ];
 
+const orderValidator = [
+
 module.exports = { validateRegister, validateLogin, createNewsValidator, updateNewsValidator, validateUpdateProfile, partnerValidator, productValidator };

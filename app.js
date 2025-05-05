@@ -94,11 +94,13 @@ const newsController = require('./src/content/news.controller');
 const authRoutes = require('./src/auth/user.controller');
 const partnerRoutes = require('./src/partners/partner.controller');
 const productRoutes = require('./src/product/product.controller');
+const orderRoutes = require('./src/orders/orders.controller');
 
 app.use("/api/v1/news", newsController);
 app.use("/api/v1/auth", authRoutes);
 app.use("/api/v1/partner", partnerRoutes);
 app.use("/api/v1/product", productRoutes);
+app.use("/api/v1/orders", orderRoutes);
 
 app.listen(port, () => {
     console.log(`Server is running on... http://localhost:${port}`);

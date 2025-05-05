@@ -3,6 +3,8 @@ const prisma = require('../db');
 
 const { getAllOrders, getOrdersById, createOrders, updateOrders, removeOrders, getOrdersByPartnerId, getOrdersByUserId, getOrdersByStatus, notifyPartnerForOrder } = require('./orders.service');
 const { authMiddleware } = require('../middleware/middleware');
+const ApiError = require('../utils/apiError');
+const { validationResult } = require('express-validator');
 
 const router = express.Router();
 
@@ -14,6 +16,14 @@ router.get('/', authMiddleware, async (req, res) => {
             data: orders,
         });
     } catch (error) {
+        if (error instanceof ApiError) {
+            console.error('ApiError:', error);
+            return res.status(error.statusCode).json({
+                message: error.message,
+            });
+        }
+
+        console.error('Error getting orders:', error);
         return res.status(500).json({
             message: 'Terjadi kesalahan di server!',
             error: error.message,
@@ -120,13 +130,11 @@ router.get('/status/:status', authMiddleware, async (req, res) => {
 router.post('/', authMiddleware, async (req, res) => {
     try {
         const newOrders = req.body;
-        const user_id = req.user.id;
-
-        const order = await createOrders(newOrders, user_id);
+        const orders = await createOrders(newOrders);
 
         res.status(201).json({
-            message: 'Order berhasil ditambahkan!',
-            data: order,
+            message: 'Order berhasil dibuat!',
+            data: orders,
         });
     } catch (error) {
         if (error instanceof ApiError) {
