@@ -4,13 +4,12 @@ const ApiError = require('../utils/apiError');
 const upload = require('../middleware/multer');
 
 const { getAllProducts, getProductById, createProduct, updateProduct, removeProductById } = require('./product.service');
-const { authMiddleware, multerErrorHandler, validateProductMedia } = require('../middleware/middleware');
+const { authMiddleware, multerErrorHandler, validateProductMedia, validateProductUpdate } = require('../middleware/middleware');
 const { productValidator } = require('../validation/validation');
 const { validationResult } = require('express-validator');
 const handleValidationResult = require('../middleware/handleValidationResult');
 const handleValidationResultFinal = require('../middleware/handleValidationResultFinal');
-const { uploadToCloudinary } = require('../services/cloudinaryUpload.service');
-const { deleteFromCloudinaryByUrl, extractPublicId } = require('../utils/cloudinary');
+
 
 const router = express.Router();
 
@@ -67,7 +66,7 @@ router.get('/:id', async (req, res) => {
     }
 });
 
-router.post('/', authMiddleware, productValidator, handleValidationResult, handleValidationResultFinal, async (req, res) => {
+router.post('/', authMiddleware, upload.single('productFile'), multerErrorHandler, validateProductMedia, productValidator, handleValidationResult, handleValidationResultFinal, async (req, res) => {
     try {
         const errors = validationResult(req);
         if (!errors.isEmpty()) {
@@ -84,26 +83,56 @@ router.post('/', authMiddleware, productValidator, handleValidationResult, handl
                 errors: errorObject
             });
         }
+        if (req.mediaValidationErrors && Object.keys(req.mediaValidationErrors).length > 0) {
+            return res.status(400).json({
+                message: "Validasi gagal!",
+                errors: req.mediaValidationErrors
+            });
+        }
+
         if (!req.user.admin) {
             return res.status(403).json({ message: 'Akses ditolak! Hanya admin yang bisa mengakses.' });
         }
         const { name, price, stock, description, partner_id } = req.body;
+        const file = req.file;
 
-        const product = await createProduct({ name, price, stock, description, partner_id });
+        // Sanitize HTML untuk disimpan
+        const cleanHtml = DOMPurify.sanitize(description || "");
 
-        console.log('data:', product);
+        // Bersihkan konten dari tag HTML
+        const plainDescription = description
+            .replace(/<[^>]+>/g, "")
+            .replace(/\s+/g, " ")
+            .trim();
+
+        if (!plainDescription) {
+            return res.status(400).json({
+                message: "Validasi gagal!",
+                errors: { description: "*Deskripsi Tidak Boleh Kosong" }
+            });
+        }
+
+        const product = await createProduct({
+            name,
+            price,
+            stock,
+            description: cleanHtml,
+            partner_id,
+            image: file
+        });
+
+        console.log('data product:', product);
         res.status(201).json({
-            message: 'Berita berhasil ditambahkan!',
+            message: 'Produk berhasil ditambahkan!',
             data: product,
         });
     } catch (error) {
         if (error instanceof ApiError) {
-            console.error('ApiError:', error);
+            // console.error('ApiError:', error);
             return res.status(error.statusCode).json({
                 message: error.message,
             });
         }
-
         console.error('Error creating product:', error);
         return res.status(500).json({
             message: 'Terjadi kesalahan di server!',
@@ -112,7 +141,7 @@ router.post('/', authMiddleware, productValidator, handleValidationResult, handl
     }
 });
 
-router.put('/:id', authMiddleware, productValidator, handleValidationResult, handleValidationResultFinal, async (req, res) => {
+router.put('/:id', authMiddleware, upload.single('productFile'), multerErrorHandler, validateProductUpdate, productValidator, handleValidationResult, handleValidationResultFinal, async (req, res) => {
     try {
         const errors = validationResult(req);
         if (!errors.isEmpty()) {
@@ -134,10 +163,15 @@ router.put('/:id', authMiddleware, productValidator, handleValidationResult, han
         }
 
         const { id } = req.params;
-        const editedProductData = req.body;
+        const dataProduct = req.body;
 
 
-        const product = await updateProduct(id, editedProductData);
+        const editedProductData = {
+            dataProduct,
+            productFile: req.file['productFile'] || null,
+        };
+
+        const product = await updateProduct(parseInt(id), editedProductData);
 
         console.log(product);
         res.status(200).json({

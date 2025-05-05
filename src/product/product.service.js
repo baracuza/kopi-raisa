@@ -4,6 +4,8 @@ const ApiError = require('../utils/apiError');
 
 const { findAllProducts, createNewProduct, createInventory, findProductById, updateDataProduct, updateInventoryStock, deleteProductById, deleteInventoryByProductId } = require('./product.repository');
 const { findPartnerById } = require('../partners/partner.repository');
+const { uploadToCloudinary } = require('../services/cloudinaryUpload.service');
+const { deleteFromCloudinaryByUrl, extractPublicId } = require('../utils/cloudinary');
 
 const getAllProducts = async () => {
     const products = await findAllProducts();
@@ -18,6 +20,7 @@ const getProductById = async (productId) => {
     if (!product) {
         throw new ApiError(404, 'Produk tidak ditemukan!');
     }
+    return product;
 }
 
 const removeProductById = async (id) => {
@@ -26,7 +29,15 @@ const removeProductById = async (id) => {
         throw new ApiError(404, 'Produk tidak ditemukan!');
     }
 
-    // await deleteInventoryByProductId(id);
+    if (existingProduct) {
+        try {
+            await deleteFromCloudinaryByUrl(existingProduct.image);
+        } catch (error) {
+            console.error('Error deleting image from Cloudinary:', error);
+            throw new ApiError(500, 'Gagal menghapus gambar produk dari Cloudinary!', " " + (error.message || error));
+
+        }
+    }
 
     const productData = await deleteProductById(id);
     if (!productData) {
@@ -37,34 +48,57 @@ const removeProductById = async (id) => {
 
 const createProduct = async (newProductData) => {
     try {
-        const cleanProductData = {
-            ...newProductData,
-            price: parseInt(newProductData.price),
-            partner_id: parseInt(newProductData.partner_id),
-        };
+        const { image, stock, partner_id, ...rest } = newProductData
 
-        const stock = parseInt(newProductData.stock)
+        if (
+            partner_id === null ||
+            partner_id === undefined ||
+            isNaN(parseInt(partner_id))
+        ) {
+            throw new ApiError(400, 'Partner ID tidak valid atau tidak boleh kosong!');
+        }
+
+        const cleanProductData = {
+            ...rest,
+            price: parseInt(rest.price),
+            partner_id: parseInt(partner_id),
+        };
+        const stockProduct = parseInt(stock)
 
         const partnerExists = await findPartnerById(cleanProductData.partner_id);
         if (!partnerExists) {
             throw new ApiError(404, 'Partner tidak ditemukan!');
         }
 
-        const productNewData = await createNewProduct(cleanProductData);
+        let imageUrl = null;
+        if (image) {
+            try {
+                imageUrl = await uploadToCloudinary(image.buffer, image.originalname);
+                console.log('Image URL:', imageUrl);
+            } catch (error) {
+                console.error('Error uploading image to Cloudinary:', error);
+                throw new ApiError(500, 'Gagal mengunggah gambar produk!', " " + (error.message || error));
+
+            }
+        }
+
+        const productNewData = await createNewProduct(
+            {
+                ...cleanProductData,
+                image: imageUrl
+            });
         if (!productNewData) {
             throw new ApiError(500, 'Gagal menambahkan produk!');
         }
-
         const inventoryData = {
             products_id: productNewData.id,
-            stock: stock
+            stock: stockProduct
         };
-
         await createInventory(inventoryData);
         return productNewData;
     } catch (error) {
         console.error('Error in createProduct:', error);
-        throw new ApiError(500, 'Terjadi kesalahan saat menambahkan produk.' + (error.message || error));
+        throw new ApiError(500, (error.message || error));
     }
 }
 
@@ -75,12 +109,13 @@ const updateProduct = async (id, updatedProductData) => {
             throw new ApiError(404, 'Produk tidak ditemukan!');
         }
 
+        const { productFile, stock, ...rest } = updatedProductData
+
         const cleanProductData = {
-            ...updatedProductData,
-            price: updatedProductData.price !== undefined ? parseInt(updatedProductData.price) : undefined,
-            partner_id: updatedProductData.partner_id !== undefined ? parseInt(updatedProductData.partner_id) : undefined,
+            ...rest,
+            price: parseInt(rest.price),
+            partner_id: parseInt(rest.partner_id),
         };
-        delete cleanProductData.stock;
 
         if (cleanProductData.partner_id) {
             const partnerExists = await findPartnerById(cleanProductData.partner_id);
@@ -89,13 +124,34 @@ const updateProduct = async (id, updatedProductData) => {
             }
         }
 
+        if (productFile) {
+            if (product.image) {
+                try {
+                    await deleteFromCloudinaryByUrl(product.image);
+                } catch (error) {
+                    console.error('Error deleting image from Cloudinary:', error);
+                    throw new ApiError(500, 'Gagal menghapus gambar produk dari Cloudinary!', " " + (error.message || error));
+                }
+            }
+            try {
+                const imageUrl = await uploadToCloudinary(productFile.buffer, productFile.originalname);
+                cleanProductData.image = imageUrl;
+            } catch (error) {
+                console.error('Error uploading image to Cloudinary:', error);
+                throw new ApiError(500, 'Gagal mengunggah gambar produk!', " " + (error.message || error));
+
+            }
+        } else {
+            cleanProductData.image = product.image;
+        }
+
         const updatedProduct = await updateDataProduct(id, cleanProductData);
 
-        if (updatedProductData.stock !== undefined) {
-            const stock = parseInt(updatedProductData.stock);
+        if (stock !== undefined) {
+            const parsedStock = parseInt(stock);
             await updateInventoryStock({
                 products_id: updatedProduct.id,
-                stock: stock,
+                stock: parsedStock,
             });
         }
 

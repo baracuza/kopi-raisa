@@ -12,7 +12,7 @@ const authMiddleware = async (req, res, next) => {
         console.log('Cookies:', req.cookies); // <--- ini penting
 
         if (!authHeader) {
-            return res.status(401).json({ message: '*Access Denied / Tidak ada token' });
+            return res.status(401).json({ message: '*Access Denied / Tidak dapat mengakses' });
         }
 
         const verify = jwt.verify(authHeader, process.env.JWT_SECRET);
@@ -62,7 +62,6 @@ const validateProfilMedia = (req, res, next) => {
     next();
 };
 
-
 const validateInsertNewsMedia = (req, res, next) => {
     const maxFiles = 5;
     const maxSizeMB = 5;
@@ -103,15 +102,14 @@ const validateInsertNewsMedia = (req, res, next) => {
         }
 
         const totalSize = mediaFiles.reduce((acc, file) => acc + file.size, 0);
-        const maxTotalSize = 20 * 1024 * 1024; // 20MB
+        const maxTotalSize = 27 * 1024 * 1024; // 20MB
         if (totalSize > maxTotalSize) {
-            req.mediaValidationErrors.media = '*Total ukuran file tidak boleh lebih dari 20MB';
+            req.mediaValidationErrors.media = '*Total ukuran file tidak boleh lebih dari 25MB';
         }
     }
 
     next();
 };
-
 
 const validateUpdateNewsMedia = (options = {}) => {
     return (req, res, next) => {
@@ -161,103 +159,115 @@ const validateUpdateNewsMedia = (options = {}) => {
         next(); // lanjut ke handleValidationResult + handleValidationResultFinal
     };
 };
-
 const validateProductMedia = (req, res, next) => {
-    const maxFiles = 5;
     const maxSizeMB = 5;
     const maxSizeBytes = maxSizeMB * 1024 * 1024;
     const allowedTypes = ['image/jpeg', 'image/png', 'image/webp', 'image/jpg'];
 
-    req.files = req.files || {};
-    req.mediaValidationErrors = {}; // Inisialisasi error object
+    req.mediaValidationErrors = {};
 
 
     // Validasi 'media'
-    const mediaFiles = req.files['media'] || [];
-    if (mediaFiles.length > 0) {
-        if (mediaFiles.length > maxFiles) {
-            req.mediaValidationErrors.media = `*Maksimal hanya ${maxFiles} file yang diperbolehkan`;
+    const mediaFile = req.file;
+    // console.log('mediaFile', mediaFile);
+    if (!mediaFile || mediaFile === undefined) {
+        req.mediaValidationErrors.productFile = '*Gambar produk wajib diunggah';
+    } else {
+        if (!allowedTypes.includes(mediaFile.mimetype)) {
+            req.mediaValidationErrors.productFile = '*Gambar produk hanya boleh berupa gambar (jpg, jpeg, png, webp)';
+        }
+        else if (mediaFile.size > maxSizeBytes) {
+            req.mediaValidationErrors.productFile = `*Ukuran gambar produk maksimal ${maxSizeMB}MB`;
         }
 
-        const invalidFiles = mediaFiles.filter(file => !allowedTypes.includes(file.mimetype));
-        if (invalidFiles.length > 0) {
-            req.mediaValidationErrors.media = '*Hanya file gambar (jpg, jpeg, png, webp) yang diperbolehkan';
-        }
-
-        const oversizedFiles = mediaFiles.filter(file => file.size > maxSizeBytes);
-        if (oversizedFiles.length > 0) {
-            req.mediaValidationErrors.media = `*Ukuran setiap file maksimal ${maxSizeMB}MB`;
-        }
-
-        const totalSize = mediaFiles.reduce((acc, file) => acc + file.size, 0);
-        const maxTotalSize = 20 * 1024 * 1024; // 20MB
-        if (totalSize > maxTotalSize) {
-            req.mediaValidationErrors.media = '*Total ukuran file tidak boleh lebih dari 20MB';
-        }
     }
-
     next();
+}
+const validateProductUpdate = (options = {}) => {
+    return (req, res, next) => {
+        const { skipIfNoFile = false } = options;
+
+        const maxSizeMB = 5;
+        const maxSizeBytes = maxSizeMB * 1024 * 1024;
+        const allowedTypes = ['image/jpeg', 'image/png', 'image/webp', 'image/jpg'];
+
+        req.mediaValidationErrors = {};
+        const mediaFile = req.file;
+
+        const noMedia = !mediaFile;
+        if (skipIfNoFile && noMedia) {
+            return next();
+        }
+
+        if (mediaFile) {
+            if (!allowedTypes.includes(mediaFile.mimetype)) {
+                req.mediaValidationErrors.productFile = '*Gambar produk hanya boleh berupa gambar (jpg, jpeg, png, webp)';
+            } else if (mediaFile.size > maxSizeBytes) {
+                req.mediaValidationErrors.productFile = `*Ukuran gambar produk maksimal ${maxSizeMB}MB`;
+            }
+        } 
+        next();
+    }
 }
 
 const multerErrorHandler = (err, req, res, next) => {
     console.error('Multer Error:', err);
-    if (err instanceof multer.MulterError) {
-        let field = err.field || 'media'; // Ambil nama field dari error
-        switch (err.code) {
-            case 'LIMIT_FILE_COUNT':
-                return res.status(400).json({
-                    message: 'Validasi gagal!',
-                    errors: {
-                        [field]: '*Jumlah file yang diunggah melebihi batas'
-                    }
-                });
-            case 'LIMIT_FILE_SIZE':
-                return res.status(400).json({
-                    message: 'Validasi gagal!',
-                    errors: {
-                        [field]: '*Ukuran per file maksimal 5MB'
-                    }
-                });
-            case 'LIMIT_UNEXPECTED_FILE':
-                return res.status(400).json({
-                    message: 'Validasi gagal!',
-                    errors: {
-                        [field]: '*terlalu banyak file yang diunggah'
-                    }
-                });
-            case 'LIMIT_FILE_COUNT':
-                return res.status(400).json({
-                    message: 'Validasi gagal!',
-                    errors: {
-                        [field]: '*terlalu banyak yang diunggah, Maksimal 4 file yang diperbolehkan'
-                    }
-                });
-            case 'ALLOWED_FILE_TYPES':
-                return res.status(400).json({
-                    message: 'Validasi gagal!',
-                    errors: {
-                        [field]: '*Hanya file gambar (jpg, jpeg, png, webp) yang diperbolehkan'
-                    }
-                });
-            default:
-                return res.status(400).json({
-                    message: 'Upload gagal',
-                    error: err.message
-                });
-        }
-    }
 
-    // Tangani juga error umum lain dari multer
-    if (err.message === 'Unexpected field') {
+    // Tangani error kustom dari fileFilter
+    if (err instanceof Error && err.message.startsWith('File type not allowed for field:')) {
+        // Ekstrak field dan nama file dari pesan error
+        const match = err.message.match(/field: (\w+), File: (.+)$/);
+        const field = match?.[1] || 'file';
+        const filename = match?.[2] || '';
+
         return res.status(400).json({
-            message: 'Upload gagal',
+            message: 'Validasi gagal!',
             errors: {
-                media: '*Hanya boleh mengunggah file pada field yang sesuai'
+                [field]: `*Tipe file tidak diizinkan: ${filename}`
             }
         });
     }
 
-    // Kalau bukan error dari multer, lanjut ke global error handler
+    // Tangani error bawaan dari Multer
+    if (err instanceof multer.MulterError) {
+        let errorMessage = '';
+        let field = err.field || 'file';
+
+        switch (err.code) {
+            case 'LIMIT_FILE_COUNT':
+                errorMessage = '*Jumlah file yang diunggah melebihi batas';
+                break;
+            case 'LIMIT_FILE_SIZE':
+                errorMessage = '*Ukuran per file maksimal 5MB';
+                break;
+            case 'LIMIT_UNEXPECTED_FILE':
+                errorMessage = '*Terlalu banyak file yang diunggah';
+                break;
+            default:
+                errorMessage = '*Terjadi kesalahan dalam pengunggahan file';
+        }
+
+        return res.status(400).json({
+            message: 'Validasi gagal!',
+            errors: {
+                [field]: errorMessage
+            }
+        });
+    }
+
+    // Jika tidak ada file dan file wajib diunggah
+    if (!req.file && !req.files && (req.baseUrl.includes('product') || req.baseUrl.includes('news'))) {
+        const fallbackField = req.baseUrl.includes('news') ? 'media' :
+            req.baseUrl.includes('product') ? 'productFile' : 'file';
+        return res.status(400).json({
+            message: 'Validasi gagal!',
+            errors: {
+                [fallbackField]: '*File wajib diunggah'
+            }
+        });
+    }
+
+    // Jika bukan error multer, teruskan ke error handler berikutnya
     next(err);
 };
 
@@ -267,5 +277,4 @@ const multerErrorHandler = (err, req, res, next) => {
 
 
 
-
-module.exports = { authMiddleware, validateUpdateNewsMedia, validateInsertNewsMedia, multerErrorHandler, validateProfilMedia, validateProductMedia };
+module.exports = { authMiddleware, validateUpdateNewsMedia, validateInsertNewsMedia, multerErrorHandler, validateProfilMedia, validateProductMedia, validateProductUpdate };

@@ -6,7 +6,7 @@ const findPartner = async () => {
 };
 
 const findPartnerById = async (partnerId) => {
-    const partner = await prisma.Partner.findUnique({
+    const partner = await prisma.partner.findUnique({
         where: {
             id: parseInt(partnerId)
         }
