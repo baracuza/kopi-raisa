@@ -171,6 +171,7 @@ router.put('/:id', authMiddleware, upload.single('productFile'), multerErrorHand
             productFile: req.file['productFile'] || null,
         };
 
+        console.log('editedProductData:', editedProductData);
         const product = await updateProduct(parseInt(id), editedProductData);
 
         console.log(product);

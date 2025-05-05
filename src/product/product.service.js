@@ -25,17 +25,18 @@ const getProductById = async (productId) => {
 
 const removeProductById = async (id) => {
     const existingProduct = await findProductById(id);
+    console.log("produk yang dicari: ", existingProduct)
+
     if (!existingProduct) {
         throw new ApiError(404, 'Produk tidak ditemukan!');
     }
 
-    if (existingProduct) {
+    if (existingProduct.image) {
         try {
             await deleteFromCloudinaryByUrl(existingProduct.image);
         } catch (error) {
             console.error('Error deleting image from Cloudinary:', error);
-            throw new ApiError(500, 'Gagal menghapus gambar produk dari Cloudinary!', " " + (error.message || error));
-
+            throw new ApiError(500, 'Gagal menghapus gambar produk dari Cloudinary!');
         }
     }
 
