@@ -104,6 +104,7 @@ const createProduct = async (newProductData) => {
 }
 
 const updateProduct = async (id, updatedProductData) => {
+    console.log('productFile:', productFile);
     try {
         if (isNaN(parseInt(id))) {
             throw new ApiError(400, 'ID produk tidak valid!');
@@ -129,7 +130,7 @@ const updateProduct = async (id, updatedProductData) => {
             }
         }
 
-        if (productFile) {
+        if (productFile && productFile.buffer && productFile.originalname) {
             if (product.image) {
                 try {
                     await deleteFromCloudinaryByUrl(product.image);
