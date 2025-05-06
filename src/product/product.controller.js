@@ -141,8 +141,11 @@ router.post('/', authMiddleware, upload.single('productFile'), multerErrorHandle
     }
 });
 
-router.put('/:id', authMiddleware, upload.single('productFile'), multerErrorHandler, validateProductUpdate, productValidator, handleValidationResult, handleValidationResultFinal, async (req, res) => {
+router.put('/:id', authMiddleware, upload.single('productFile'), multerErrorHandler, productValidator, validateProductUpdate({ skipIfNoFile: true }), handleValidationResult, handleValidationResultFinal, async (req, res) => {
+    console.log('req.body:', req.body);
+    console.log('req.file:', req.file);
     try {
+        
         const errors = validationResult(req);
         if (!errors.isEmpty()) {
             const errorObject = errors.array().reduce((acc, curr) => {
@@ -167,10 +170,11 @@ router.put('/:id', authMiddleware, upload.single('productFile'), multerErrorHand
 
 
         const editedProductData = {
-            dataProduct,
-            productFile: req.file['productFile'] || null,
+            ...dataProduct,
+            productFile: req.file || null,
         };
 
+        console.log('editedProductData:', editedProductData);
         const product = await updateProduct(parseInt(id), editedProductData);
 
         console.log(product);

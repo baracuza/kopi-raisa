@@ -25,17 +25,18 @@ const getProductById = async (productId) => {
 
 const removeProductById = async (id) => {
     const existingProduct = await findProductById(id);
+    console.log("produk yang dicari: ", existingProduct)
+
     if (!existingProduct) {
         throw new ApiError(404, 'Produk tidak ditemukan!');
     }
 
-    if (existingProduct) {
+    if (existingProduct.image) {
         try {
             await deleteFromCloudinaryByUrl(existingProduct.image);
         } catch (error) {
             console.error('Error deleting image from Cloudinary:', error);
-            throw new ApiError(500, 'Gagal menghapus gambar produk dari Cloudinary!', " " + (error.message || error));
-
+            throw new ApiError(500, 'Gagal menghapus gambar produk dari Cloudinary!');
         }
     }
 
@@ -104,17 +105,22 @@ const createProduct = async (newProductData) => {
 
 const updateProduct = async (id, updatedProductData) => {
     try {
+        if (isNaN(parseInt(id))) {
+            throw new ApiError(400, 'ID produk tidak valid!');
+        }
+        
         const product = await findProductById(id);
         if (!product) {
             throw new ApiError(404, 'Produk tidak ditemukan!');
         }
 
         const { productFile, stock, ...rest } = updatedProductData
+        console.log('productFile:', productFile);
 
         const cleanProductData = {
             ...rest,
-            price: parseInt(rest.price),
-            partner_id: parseInt(rest.partner_id),
+            ...(rest.price !== undefined && {price: parseInt(rest.price)}),
+            ...(rest.partner_id !== undefined && {partner_id: parseInt(rest.partner_id)}),
         };
 
         if (cleanProductData.partner_id) {
@@ -124,7 +130,7 @@ const updateProduct = async (id, updatedProductData) => {
             }
         }
 
-        if (productFile) {
+        if (productFile && productFile.buffer && productFile.originalname) {
             if (product.image) {
                 try {
                     await deleteFromCloudinaryByUrl(product.image);
