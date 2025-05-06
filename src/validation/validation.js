@@ -177,6 +177,26 @@ const productValidator = [
         .isInt({ min:0 }).withMessage('*Stok produk harus berupa angka'),
 ];
 
-const orderValidator = [
+// const orderValidator = [
+//     body('partner_id')
+//         .trim()
+//         .notEmpty().withMessage('*ID partner wajib diisi')
+//         .isInt({ min: 1 }).withMessage('*ID partner harus berupa angka'),
+
+//     body('user_id')
+//         .trim()
+//         .notEmpty().withMessage('*ID user wajib diisi')
+//         .isInt({ min: 1 }).withMessage('*ID user harus berupa angka'),
+
+//     body('order_items')
+//         .isArray({ min: 1 }).withMessage('*Order items tidak boleh kosong')
+//         .custom((value) => {
+//             if (!Array.isArray(value)) {
+//                 throw new Error('*Order items harus berupa array');
+//             }
+//             return true;
+//         }),
+// ];
+
 
 module.exports = { validateRegister, validateLogin, createNewsValidator, updateNewsValidator, validateUpdateProfile, partnerValidator, productValidator };

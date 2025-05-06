@@ -2,7 +2,8 @@ const ApiError = require('../utils/apiError');
 const { notifyPartnerOnPurchase } = require('../utils/whatsapp');
 
 const {
-    findOrders,
+    findAllOrders,
+    findOrdersByUser,
     findOrdersById,
     insertNewOrders,
     editOrders,
@@ -13,12 +14,20 @@ const {
 } = require('./orders.repository');
 
 const getAllOrders = async () => {
-    const orders = await findOrders();
+    const orders = await findAllOrders();
     if (!orders) {
         throw new ApiError(500, 'Gagal mendapatkan data order!');
     }
     return orders;
 };
+
+const getOrdersByUser = async (userId, status) => {
+    const orders = await findOrdersByUser(userId, status);
+    if (!orders) {
+        throw new ApiError(404, 'Order tidak ditemukan!');
+    }
+    return orders;
+}
 
 const getOrdersById = async (orderId) => {
     const order = await findOrdersById(orderId);
@@ -108,6 +117,7 @@ const notifyPartnerForOrder = async (orderId, message) => {
 
 module.exports = {
     getAllOrders,
+    getOrdersByUser,
     getOrdersById,
     createOrders,
     updateOrders,
