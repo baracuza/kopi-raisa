@@ -1,17 +1,22 @@
+const { order } = require('../db');
 const ApiError = require('../utils/apiError');
 const { notifyPartnerOnPurchase } = require('../utils/whatsapp');
 
 const {
     findAllOrders,
     findOrdersByUser,
-    findOrdersById,
+    // findOrdersById,
     insertNewOrders,
-    editOrders,
-    deleteOrders,
-    findOrdersByPartnerId,
-    findOrdersByUserId,
-    findOrdersByStatus,
+    // editOrders,
+    // deleteOrders,
+    // findOrdersByPartnerId,
+    // findOrdersByUserId,
+    // findOrdersByStatus,
 } = require('./orders.repository');
+
+const {
+    getProductsByIds
+} = require('../product/product.repository');
 
 const getAllOrders = async () => {
     const orders = await findAllOrders();
@@ -29,102 +34,147 @@ const getOrdersByUser = async (userId, status) => {
     return orders;
 }
 
-const getOrdersById = async (orderId) => {
-    const order = await findOrdersById(orderId);
-    if (!order) {
-        throw new ApiError(404, 'Order tidak ditemukan!');
+const createOrders = async (userId, orderData) => {
+    const { partner_id, items, address, paymentMethod } = orderData;
+
+    if (!items || items.length === 0)
+        throw new Error("Pesanan tidak boleh kosong");
+    if (!address || !paymentMethod)
+        throw new Error("Alamat dan metode pembayaran wajib diisi");
+
+    // Ambil semua produk dari DB
+    const productIds = items.map((item) => item.products_id);
+    const products = await getProductsByIds(productIds);
+
+    if (products.length !== items.length) {
+        throw new Error("Beberapa produk tidak ditemukan di database");
     }
 
-    return order;
+    // Hitung price per item & totalAmount
+    let totalAmount = 0;
+    const itemsWithPrice = items.map((item) => {
+        const product = products.find((p) => p.id === item.products_id);
+        if (!product)
+            throw new Error(
+                `Produk dengan ID ${item.products_id} tidak ditemukan`
+            );
+        const price = product.price * item.quantity;
+        totalAmount += price;
+
+        return {
+            products_id: item.products_id,
+            quantity: item.quantity,
+            price,
+            custom_note: item.custom_note || null,
+        };
+    });
+
+    return await insertNewOrders(userId, {
+        partner_id: parseInt(partner_id, 10),
+        items: itemsWithPrice,
+        address,
+        paymentMethod,
+        totalAmount: parseInt(totalAmount, 10),
+    });
 };
 
-const createOrders = async (newOrdersData) => {
-    const ordersNewData = await insertNewOrders(newOrdersData);
 
-    return ordersNewData;
-};
+// const getOrdersById = async (orderId) => {
+//     const order = await findOrdersById(orderId);
+//     if (!order) {
+//         throw new ApiError(404, 'Order tidak ditemukan!');
+//     }
 
-const updateOrders = async (id, editedOrdersData) => {
-    const existingOrders = await findOrdersById(id);
-    if (!existingOrders) {
-        throw new ApiError(404, 'Order tidak ditemukan!');
-    }
+//     return order;
+// };
 
-    const ordersData = await editOrders(id, editedOrdersData);
+// const createOrders = async (newOrdersData) => {
+//     const ordersNewData = await insertNewOrders(newOrdersData);
 
-    return ordersData;
-};
+//     return ordersNewData;
+// };
 
-const removeOrders = async (id) => {
-    const existingOrders = await findOrdersById(id);
+// const updateOrders = async (id, editedOrdersData) => {
+//     const existingOrders = await findOrdersById(id);
+//     if (!existingOrders) {
+//         throw new ApiError(404, 'Order tidak ditemukan!');
+//     }
 
-    if (!existingOrders) {
-        throw new ApiError(404, 'Order tidak ditemukan!');
-    }
-    const ordersData = await deleteOrders(id);
+//     const ordersData = await editOrders(id, editedOrdersData);
 
-    if (!ordersData) {
-        throw new ApiError(500, 'Gagal menghapus order!');
-    }
-    return ordersData;
-};
+//     return ordersData;
+// };
 
-const getOrdersByPartnerId = async (partnerId) => {
-    const orders = await findOrdersByPartnerId(partnerId);
-    if (!orders) {
-        throw new ApiError(404, 'Order tidak ditemukan!');
-    }
-    return orders;
-};
+// const removeOrders = async (id) => {
+//     const existingOrders = await findOrdersById(id);
 
-const getOrdersByUserId = async (userId) => {
-    const orders = await findOrdersByUserId(userId);
-    if (!orders) {
-        throw new ApiError(404, 'Order tidak ditemukan!');
-    }
-    return orders;
-};
+//     if (!existingOrders) {
+//         throw new ApiError(404, 'Order tidak ditemukan!');
+//     }
+//     const ordersData = await deleteOrders(id);
 
-const getOrdersByStatus = async (status) => {
-    const orders = await findOrdersByStatus(status);
-    if (!orders) {
-        throw new ApiError(404, 'Order tidak ditemukan!');
-    }
-    return orders;
-};
+//     if (!ordersData) {
+//         throw new ApiError(500, 'Gagal menghapus order!');
+//     }
+//     return ordersData;
+// };
 
-const notifyPartnerForOrder = async (orderId, message) => {
-    const order = await findOrdersById(orderId);
-    if (!order) {
-        throw new ApiError(404, 'Order tidak ditemukan!');
-    }
+// const getOrdersByPartnerId = async (partnerId) => {
+//     const orders = await findOrdersByPartnerId(partnerId);
+//     if (!orders) {
+//         throw new ApiError(404, 'Order tidak ditemukan!');
+//     }
+//     return orders;
+// };
 
-    const partnerId = order.partnerId;
-    if (!partnerId) {
-        throw new ApiError(400, 'Partner ID tidak ditemukan pada order!');
-    }
+// const getOrdersByUserId = async (userId) => {
+//     const orders = await findOrdersByUserId(userId);
+//     if (!orders) {
+//         throw new ApiError(404, 'Order tidak ditemukan!');
+//     }
+//     return orders;
+// };
 
-    const notificationResult = await notifyPartnerOnPurchase(
-        partnerId,
-        message
-    );
-    if (!notificationResult) {
-        throw new ApiError(500, 'Gagal mengirim notifikasi ke partner!');
-    }
+// const getOrdersByStatus = async (status) => {
+//     const orders = await findOrdersByStatus(status);
+//     if (!orders) {
+//         throw new ApiError(404, 'Order tidak ditemukan!');
+//     }
+//     return orders;
+// };
 
-    return notificationResult;
-};
+// const notifyPartnerForOrder = async (orderId, message) => {
+//     const order = await findOrdersById(orderId);
+//     if (!order) {
+//         throw new ApiError(404, 'Order tidak ditemukan!');
+//     }
+
+//     const partnerId = order.partnerId;
+//     if (!partnerId) {
+//         throw new ApiError(400, 'Partner ID tidak ditemukan pada order!');
+//     }
+
+//     const notificationResult = await notifyPartnerOnPurchase(
+//         partnerId,
+//         message
+//     );
+//     if (!notificationResult) {
+//         throw new ApiError(500, 'Gagal mengirim notifikasi ke partner!');
+//     }
+
+//     return notificationResult;
+// };
 
 module.exports = {
     getAllOrders,
     getOrdersByUser,
-    getOrdersById,
+    // getOrdersById,
     createOrders,
-    updateOrders,
-    removeOrders,
-    getOrdersByPartnerId,
-    getOrdersByUserId,
-    getOrdersByStatus,
-    notifyPartnerForOrder,
+    // updateOrders,
+    // removeOrders,
+    // getOrdersByPartnerId,
+    // getOrdersByUserId,
+    // getOrdersByStatus,
+    // notifyPartnerForOrder,
 };
 

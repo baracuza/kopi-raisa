@@ -146,9 +146,9 @@ const findAllOrders = async () => {
 const findOrdersByUser = async (userId, status) => {
     let statusFilter = {};
     if (status === "diproses") {
-        statusFilter = { status: { in: ["PENDING", "PROCESSING", "SHIPPED"] } };
+        statusFilter = { status: { in: ["PENDING", "DIKIRIM", "DIBATALKAN"] } };
     } else if (status === "selesai") {
-        statusFilter = { status: "DELIVERED" };
+        statusFilter = { status: "SELESAI" };
     }
 
     return await prisma.order.findMany({
@@ -170,7 +170,43 @@ const findOrdersByUser = async (userId, status) => {
     });
 };
 
+const insertNewOrders = async (userId, {partner_id, items, address, paymentMethod, totalAmount }) => {
+    return await prisma.order.create({
+        data: {
+            user: { connect: { id: userId } },
+            partner: { connect: { id: partner_id } },
+            status: 'PENDING',
+            orderItems: {
+                create: items.map(item => ({
+                    product: { connect: { id: item.products_id } },
+                    quantity: item.quantity,
+                    price: item.price,
+                    custom_note: item.custom_note || null,
+                })),
+            },
+            shippingAddress: {
+                create: {
+                    address: address,
+                },
+            },
+            payment: {
+                create: {
+                    amount: totalAmount,
+                    method: paymentMethod,
+                    status: 'PENDING',
+                },
+            },
+        },
+        include: {
+            orderItems: true,
+            shippingAddress: true,
+            payment: true,
+        },
+    });
+};
+
 module.exports = {
     findAllOrders,
     findOrdersByUser,
+    insertNewOrders,
 };
