@@ -1,11 +1,11 @@
 const express = require("express");
-const prisma = require("../db");
+// const prisma = require("../db");
 
 const {
     getAllOrders,
     getOrdersByUser,
-    // getOrdersById,
     createOrders,
+    updateStatus,
     // updateOrders,
     // removeOrders,
     // getOrdersByPartnerId,
@@ -18,6 +18,7 @@ const { authMiddleware } = require("../middleware/middleware");
 const ApiError = require("../utils/apiError");
 const { validationResult } = require("express-validator");
 const { orderValidator } = require("../validation/validation");
+const { parse } = require("dotenv");
 
 const router = express.Router();
 
@@ -47,8 +48,8 @@ router.get("/", authMiddleware, async (req, res) => {
 router.get("/my-order", authMiddleware, async (req, res) => {
     try {
         // ambil id user dari token yang sudah di verifikasi
-        console.log("User ID:", req.user.id); // <-- ini penting
-        console.log("token:", req.cookies.token); // <-- ini penting
+        // console.log("User ID:", req.user.id); // <-- ini penting
+        // console.log("token:", req.cookies.token); // <-- ini penting
         const userId = req.user.id;        
         const { status } = req.query; 
         const orders = await getOrdersByUser(userId, status);
@@ -112,6 +113,49 @@ router.post("/", authMiddleware, orderValidator, async (req, res) => {
             error: error.message,
         });
     };
+});
+
+router.put("/:id/status", authMiddleware, async (req, res, next) => {
+    const errors = validationResult(req);
+    if (!errors.isEmpty()) {
+        const errorObject = errors.array().reduce((acc, curr) => {
+            const key = curr.path && curr.path !== '' ? curr.path : 'global';
+            if (!acc[key]) {
+                acc[key] = curr.msg;
+            }
+            return acc;
+        }, {}, {});
+        return res.status(400).json({
+            message: "Validasi gagal!",
+            errors: errorObject
+        });
+    }
+    try {
+        console.log(req.body)
+        const orderId = parseInt(req.params.id);
+        const { status, reason } = req.body;
+        const user = req.user;
+
+        const result = await updateStatus(orderId, status, user, reason);
+
+        res.status(200).json({
+            message: "Status order berhasil diperbarui!",
+            data: result,
+        });
+    } catch (error) {
+        if (error instanceof ApiError) {
+            console.error("ApiError:", error);
+            return res.status(error.statusCode).json({
+                message: error.message,
+            });
+        }
+
+        console.error("Error updating order status:", error);
+        return res.status(500).json({
+            message: "Terjadi kesalahan di server!",
+            error: error.message,
+        });
+    }
 });
 
 // router.get("/:id", authMiddleware, async (req, res) => {

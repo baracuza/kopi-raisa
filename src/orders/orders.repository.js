@@ -170,14 +170,23 @@ const findOrdersByUser = async (userId, status) => {
     });
 };
 
-const insertNewOrders = async (userId, {partner_id, items, address, paymentMethod, totalAmount }) => {
+const findOrdersById = async (orderId) => {
+    return await prisma.order.findUnique({
+        where: { id: parseInt(orderId) },
+    });
+};
+
+const insertNewOrders = async (
+    userId,
+    { partner_id, items, address, paymentMethod, totalAmount }
+) => {
     return await prisma.order.create({
         data: {
             user: { connect: { id: userId } },
             partner: { connect: { id: partner_id } },
-            status: 'PENDING',
+            status: "PENDING",
             orderItems: {
-                create: items.map(item => ({
+                create: items.map((item) => ({
                     product: { connect: { id: item.products_id } },
                     quantity: item.quantity,
                     price: item.price,
@@ -193,7 +202,7 @@ const insertNewOrders = async (userId, {partner_id, items, address, paymentMetho
                 create: {
                     amount: totalAmount,
                     method: paymentMethod,
-                    status: 'PENDING',
+                    status: "PENDING",
                 },
             },
         },
@@ -205,8 +214,33 @@ const insertNewOrders = async (userId, {partner_id, items, address, paymentMetho
     });
 };
 
+const updateStatusOrders = async (userId, newStatus, reason) => {
+    const updated = await prisma.order.update({
+        where: { id : userId },
+        data: {
+            status : newStatus,
+            updated_at: new Date(),
+        },
+    });
+
+    // Jika ingin log pembatalan dengan alasan, bisa simpan ke tabel notifikasi atau log
+    if (reason) {
+        await prisma.notification.create({
+            data: {
+                name: "Pembatalan Pesanan",
+                description: `Alasan pembatalan: ${reason}`,
+                user_id: updated.user_id,
+            },
+        });
+    }
+
+    return updated;
+};
+
 module.exports = {
     findAllOrders,
     findOrdersByUser,
     insertNewOrders,
+    findOrdersById,
+    updateStatusOrders,
 };

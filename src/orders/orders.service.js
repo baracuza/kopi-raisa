@@ -1,27 +1,27 @@
-const { order } = require('../db');
-const ApiError = require('../utils/apiError');
-const { notifyPartnerOnPurchase } = require('../utils/whatsapp');
+// const { order } = require("../db");
+const ApiError = require("../utils/apiError");
+const { notifyPartnerOnPurchase } = require("../utils/whatsapp");
+const { OrderStatus } = require("@prisma/client");
 
 const {
     findAllOrders,
     findOrdersByUser,
-    // findOrdersById,
+    findOrdersById,
     insertNewOrders,
+    updateStatusOrders,
     // editOrders,
     // deleteOrders,
     // findOrdersByPartnerId,
     // findOrdersByUserId,
     // findOrdersByStatus,
-} = require('./orders.repository');
+} = require("./orders.repository");
 
-const {
-    getProductsByIds
-} = require('../product/product.repository');
+const { getProductsByIds } = require("../product/product.repository");
 
 const getAllOrders = async () => {
     const orders = await findAllOrders();
     if (!orders) {
-        throw new ApiError(500, 'Gagal mendapatkan data order!');
+        throw new ApiError(500, "Gagal mendapatkan data order!");
     }
     return orders;
 };
@@ -29,10 +29,10 @@ const getAllOrders = async () => {
 const getOrdersByUser = async (userId, status) => {
     const orders = await findOrdersByUser(userId, status);
     if (!orders) {
-        throw new ApiError(404, 'Order tidak ditemukan!');
+        throw new ApiError(404, "Order tidak ditemukan!");
     }
     return orders;
-}
+};
 
 const createOrders = async (userId, orderData) => {
     const { partner_id, items, address, paymentMethod } = orderData;
@@ -78,6 +78,62 @@ const createOrders = async (userId, orderData) => {
     });
 };
 
+const updateStatus = async (orderId, newStatus, user, reason) => {
+    const order = await findOrdersById(orderId);
+    if (!order) {
+        throw new ApiError(404, "Pesanan tidak ditemukan!");
+    }
+
+    const isAdmin = user.admin;
+
+    // Validasi role dan perubahan status
+    if (isAdmin) {
+        if (
+            ![
+                OrderStatus.SHIPPED,
+                OrderStatus.DELIVERED,
+                OrderStatus.CANCELED,
+            ].includes(newStatus)
+        ) {
+            throw new Error(
+                "Admin hanya bisa mengubah status ke: SHIPPED, DELIVERED, atau CANCELED"
+            );
+        }
+    } else {
+        // Customer validasi hak milik order
+        if (order.user_id !== user.id)
+            throw new Error("Akses ditolak: bukan pesanan Anda");
+
+        // hanya bisa batalkan dari pending
+        if (
+            newStatus === OrderStatus.CANCELED &&
+            order.status !== OrderStatus.PENDING
+        ) {
+            throw new Error(
+                "Pesanan hanya bisa dibatalkan saat status PENDING"
+            );
+        }
+
+        // hanya bisa tandai selesai dari SHIPPED
+        if (
+            newStatus === OrderStatus.DELIVERED &&
+            order.status !== OrderStatus.SHIPPED
+        ) {
+            throw new Error(
+                "Pesanan hanya bisa ditandai selesai setelah dikirim"
+            );
+        }
+
+        if (
+            ![OrderStatus.CANCELED, OrderStatus.DELIVERED].includes(newStatus)
+        ) {
+            throw new Error(
+                "Customer tidak berhak mengubah ke status tersebut"
+            );
+        }
+    }
+    return await updateStatusOrders(orderId, newStatus, reason);
+};
 
 // const getOrdersById = async (orderId) => {
 //     const order = await findOrdersById(orderId);
@@ -168,8 +224,8 @@ const createOrders = async (userId, orderData) => {
 module.exports = {
     getAllOrders,
     getOrdersByUser,
-    // getOrdersById,
     createOrders,
+    updateStatus,
     // updateOrders,
     // removeOrders,
     // getOrdersByPartnerId,
@@ -177,4 +233,3 @@ module.exports = {
     // getOrdersByStatus,
     // notifyPartnerForOrder,
 };
-
