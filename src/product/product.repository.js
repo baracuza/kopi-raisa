@@ -132,5 +132,12 @@ const updateInventoryStock = async (inventoryData) => {
         },
     });
     return updatedInventory;
-}
-module.exports = { findAllProducts, createNewProduct, createInventory, findProductById, updateDataProduct, updateInventoryStock, deleteProductById, deleteInventoryByProductId };
+};
+
+const getProductsByIds = async (productIds) => {
+    return await prisma.product.findMany({
+        where: { id: { in: productIds } },
+    });
+};
+
+module.exports = { findAllProducts, createNewProduct, createInventory, findProductById, updateDataProduct, updateInventoryStock, deleteProductById, deleteInventoryByProductId, getProductsByIds };

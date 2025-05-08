@@ -177,4 +177,30 @@ const productValidator = [
         .isInt({ min:0 }).withMessage('*Stok produk harus berupa angka'),
 ];
 
-module.exports = { validateRegister, validateLogin, createNewsValidator, updateNewsValidator, validateUpdateProfile, partnerValidator, productValidator };
+const orderValidator = [
+    body('partner_id')
+        .trim()
+        .notEmpty().withMessage('*ID partner wajib diisi')
+        .isInt({ min: 1 }).withMessage('*ID partner harus berupa angka'),
+
+    body('items')
+        .isArray({ min: 1 }).withMessage('*Items tidak boleh kosong')
+        .custom((value) => {
+            for (const item of value) {
+                if (!item.products_id || !item.quantity) {
+                    throw new Error('*Semua item harus memiliki products_id, quantity, dan price');
+                }
+            }
+            return true;
+        }),
+
+    body('address')
+        .trim()
+        .notEmpty().withMessage('*Alamat wajib diisi'),
+
+    body('paymentMethod')
+        .trim()
+        .notEmpty().withMessage('*Metode pembayaran wajib diisi'),
+];
+
+module.exports = { validateRegister, validateLogin, createNewsValidator, updateNewsValidator, validateUpdateProfile, partnerValidator, productValidator, orderValidator };
