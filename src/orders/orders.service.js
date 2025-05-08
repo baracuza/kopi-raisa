@@ -1,6 +1,6 @@
 // const { order } = require("../db");
 const ApiError = require("../utils/apiError");
-const { notifyPartnerOnPurchase } = require("../utils/whatsapp");
+const { generatePartnerOrderNotification } = require("../utils/whatsapp");
 const { OrderStatus } = require("@prisma/client");
 
 const {
@@ -11,11 +11,7 @@ const {
     findUserComplietedOrders,
     insertNewOrders,
     updateStatusOrders,
-    // editOrders,
-    // deleteOrders,
-    // findOrdersByPartnerId,
-    // findOrdersByUserId,
-    // findOrdersByStatus,
+    findOrdersByPartnerId,
 } = require("./orders.repository");
 
 const { getProductsByIds } = require("../product/product.repository");
@@ -44,8 +40,6 @@ const getCompleteOrderByRole = async (userId, role) => {
         return await findUserComplietedOrders(userId);
     }
 };
-
-
 
 const createOrders = async (userId, orderData) => {
     const { partner_id, items, address, paymentMethod } = orderData;
@@ -148,6 +142,17 @@ const updateStatus = async (orderId, newStatus, user, reason) => {
     return await updateStatusOrders(orderId, newStatus, reason);
 };
 
+const contactPartner = async (partnerId) => {
+    const orders = await findOrdersByPartnerId(partnerId);
+
+    if (!orders || orders.length === 0) {
+        throw new Error("Tidak ada pesanan untuk mitra ini.");
+    }
+
+    const partner = orders[0].partner;
+    return generatePartnerOrderNotification(partner, orders);
+};
+
 // const getOrdersById = async (orderId) => {
 //     const order = await findOrdersById(orderId);
 //     if (!order) {
@@ -240,10 +245,5 @@ module.exports = {
     getCompleteOrderByRole,
     createOrders,
     updateStatus,
-    // updateOrders,
-    // removeOrders,
-    // getOrdersByPartnerId,
-    // getOrdersByUserId,
-    // getOrdersByStatus,
-    // notifyPartnerForOrder,
+    contactPartner,
 };

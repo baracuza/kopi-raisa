@@ -176,6 +176,26 @@ const findOrdersById = async (orderId) => {
     });
 };
 
+const findOrdersByPartnerId = async (partnerId) => {
+    return await prisma.order.findMany({
+        where: {
+            partner_id: parseInt(partnerId),
+            status: {
+                not: "CANCELED",
+            },
+        },
+        include: {
+            orderItems: {
+                include: {
+                    product: true,
+                },
+            },
+            partner: true,
+            user: true,
+        },
+    });
+};
+
 const findAllComplietedOrders = async () => {
     return prisma.order.findMany({
         where: {
@@ -222,7 +242,7 @@ const findUserComplietedOrders = async (userId) => {
             created_at: "desc",
         },
     });
-}
+};
 
 const insertNewOrders = async (
     userId,
@@ -291,7 +311,7 @@ module.exports = {
     findOrdersById,
     findAllComplietedOrders,
     findUserComplietedOrders,
+    findOrdersByPartnerId,
     insertNewOrders,
     updateStatusOrders,
-    
 };

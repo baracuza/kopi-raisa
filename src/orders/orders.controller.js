@@ -7,12 +7,7 @@ const {
     getCompleteOrderByRole,
     createOrders,
     updateStatus,
-    // updateOrders,
-    // removeOrders,
-    // getOrdersByPartnerId,
-    // getOrdersByUserId,
-    // getOrdersByStatus,
-    // notifyPartnerForOrder,
+    contactPartner,
 } = require("./orders.service");
 
 const { authMiddleware } = require("../middleware/middleware");
@@ -140,6 +135,35 @@ router.post("/", authMiddleware, orderValidator, async (req, res) => {
         }
 
         console.error("Error creating order:", error);
+        return res.status(500).json({
+            message: "Terjadi kesalahan di server!",
+            error: error.message,
+        });
+    }
+});
+
+router.post("/contact-partner/:partnerId", authMiddleware, async (req, res) => {
+    if (!req.user.admin) {
+        return res.status(403).json({
+            message: "Akses ditolak! Hanya admin yang bisa mengakses.",
+        });
+    }
+    const { partnerId } = req.params;
+    try {
+        const result = await contactPartner(Number(partnerId));
+        res.status(200).json({
+            message: "Link WhatsApp berhasil dibuat.",
+            data: result,
+        });
+    } catch (error) {
+        if (error instanceof ApiError) {
+            console.error("ApiError:", error);
+            return res.status(error.statusCode).json({
+                message: error.message || "Gagal menghubungi mitra.",
+            });
+        }
+
+        console.error("Error sending message to partner:", error);
         return res.status(500).json({
             message: "Terjadi kesalahan di server!",
             error: error.message,

@@ -1,39 +1,58 @@
 /**
- * Fungsi untuk mengirim pesan WhatsApp menggunakan URL WhatsApp
- * @param {string} phoneNumber - Nomor telepon penerima dalam format internasional (contoh: 6281234567890 untuk Indonesia)
- * @param {string} message - Pesan yang akan dikirim
+ * Utility untuk membangun URL WhatsApp dan membuat pesan notifikasi mitra.
  */
-const sendWhatsAppMessage = async (phoneNumber, message) => {
-    try {
-        const encodedMessage = encodeURIComponent(message);
-        const waUrl = `https://wa.me/${phoneNumber}?text=${encodedMessage}`;
-        
-        console.log('URL WhatsApp yang dihasilkan:', waUrl);
 
-        // Membuka URL WhatsApp di tab baru menggunakan metode window.open
-        window.open(waUrl, '_blank');
-    } catch (error) {
-        console.error('Gagal membuat URL WhatsApp:', error.message);
-    }
-};
+/**
+ * Membersihkan nomor telepon menjadi format internasional (62)
+ */
+function cleanPhoneNumber(phone) {
+    return phone.replace(/^(\+|0)/, "62");
+}
 
-// Contoh penggunaan: Panggil fungsi ini ketika sebuah produk dibeli
-const notifyPartnerOnPurchase = async (partnerPhoneNumber, productName, buyerName, fetchCustomMessage) => {
-    try {
-        let customMessage = null;
-        if (typeof fetchCustomMessage === 'function') {
-            customMessage = await fetchCustomMessage(partnerPhoneNumber, productName, buyerName);
-        }
-        const defaultMessage = `Halo, produk Anda "${productName}" telah dibeli oleh ${buyerName}. Silakan cek dashboard Anda untuk detail lebih lanjut.`;
-        const message = customMessage || defaultMessage;
-        await sendWhatsAppMessage(partnerPhoneNumber, message);
-    } catch (error) {
-        console.error('Gagal mengambil custom message atau mengirim pesan:', error.message);
-    }
-};
+/**
+ * Generate URL WhatsApp
+ * @param {string} phoneNumber - nomor mitra
+ * @param {string} message - isi pesan
+ * @returns {string} URL WhatsApp
+ */
+function generateWhatsAppUrl(phoneNumber, message) {
+    const cleaned = cleanPhoneNumber(phoneNumber);
+    const encoded = encodeURIComponent(message);
+    return `https://wa.me/${cleaned}?text=${encoded}`;
+}
+
+/**
+ * Buat pesan WhatsApp rekap order
+ * @param {object} partner - data mitra
+ * @param {Array} orders - daftar order
+ * @returns {object} detail notifikasi
+ */
+function generatePartnerOrderNotification(partner, orders) {
+    let message = `Halo ${partner.owner_name}, berikut adalah rekap pesanan terbaru dari Sekolah Kopi Raisa:\n\n`;
+
+    orders.forEach((order) => {
+        message += `🛒 Pesanan oleh ${order.user.name}:\n`;
+        order.orderItems.forEach((item) => {
+            message += `- ${item.product.name} (${item.quantity} pcs)\n`;
+            if (item.custom_note) {
+                message += `  Catatan: ${item.custom_note}\n`;
+            }
+        });
+        message += `Status: ${order.status}\n\n`;
+    });
+
+    const whatsappUrl = generateWhatsAppUrl(partner.phone_number, message);
+
+    return {
+        partnerId: partner.id,
+        partnerName: partner.owner_name,
+        partnerPhoneNumber: partner.phone_number,
+        message,
+        whatsappUrl,
+    };
+}
 
 module.exports = {
-    sendWhatsAppMessage,
-    notifyPartnerOnPurchase,
+    generateWhatsAppUrl,
+    generatePartnerOrderNotification,
 };
-
