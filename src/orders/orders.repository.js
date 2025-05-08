@@ -176,6 +176,54 @@ const findOrdersById = async (orderId) => {
     });
 };
 
+const findAllComplietedOrders = async () => {
+    return prisma.order.findMany({
+        where: {
+            status: "DELIVERED", // Atau status lain yang dianggap selesai
+        },
+        include: {
+            user: true,
+            orderItems: {
+                include: {
+                    product: {
+                        include: {
+                            partner: true,
+                        },
+                    },
+                },
+            },
+            shippingAddress: true,
+        },
+        orderBy: {
+            created_at: "desc",
+        },
+    });
+};
+
+const findUserComplietedOrders = async (userId) => {
+    return prisma.order.findMany({
+        where: {
+            user_id: userId,
+            status: "DELIVERED",
+        },
+        include: {
+            orderItems: {
+                include: {
+                    product: {
+                        include: {
+                            partner: true,
+                        },
+                    },
+                },
+            },
+            shippingAddress: true,
+        },
+        orderBy: {
+            created_at: "desc",
+        },
+    });
+}
+
 const insertNewOrders = async (
     userId,
     { partner_id, items, address, paymentMethod, totalAmount }
@@ -216,9 +264,9 @@ const insertNewOrders = async (
 
 const updateStatusOrders = async (userId, newStatus, reason) => {
     const updated = await prisma.order.update({
-        where: { id : userId },
+        where: { id: userId },
         data: {
-            status : newStatus,
+            status: newStatus,
             updated_at: new Date(),
         },
     });
@@ -240,7 +288,10 @@ const updateStatusOrders = async (userId, newStatus, reason) => {
 module.exports = {
     findAllOrders,
     findOrdersByUser,
-    insertNewOrders,
     findOrdersById,
+    findAllComplietedOrders,
+    findUserComplietedOrders,
+    insertNewOrders,
     updateStatusOrders,
+    
 };

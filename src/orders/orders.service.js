@@ -7,6 +7,8 @@ const {
     findAllOrders,
     findOrdersByUser,
     findOrdersById,
+    findAllComplietedOrders,
+    findUserComplietedOrders,
     insertNewOrders,
     updateStatusOrders,
     // editOrders,
@@ -17,6 +19,7 @@ const {
 } = require("./orders.repository");
 
 const { getProductsByIds } = require("../product/product.repository");
+const { user } = require("../db");
 
 const getAllOrders = async () => {
     const orders = await findAllOrders();
@@ -33,6 +36,16 @@ const getOrdersByUser = async (userId, status) => {
     }
     return orders;
 };
+
+const getCompleteOrderByRole = async (userId, role) => {
+    if (role === "admin") {
+        return await findAllComplietedOrders();
+    } else {
+        return await findUserComplietedOrders(userId);
+    }
+};
+
+
 
 const createOrders = async (userId, orderData) => {
     const { partner_id, items, address, paymentMethod } = orderData;
@@ -224,6 +237,7 @@ const updateStatus = async (orderId, newStatus, user, reason) => {
 module.exports = {
     getAllOrders,
     getOrdersByUser,
+    getCompleteOrderByRole,
     createOrders,
     updateStatus,
     // updateOrders,
