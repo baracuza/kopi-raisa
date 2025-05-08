@@ -1,7 +1,7 @@
-// const { order } = require("../db");
 const ApiError = require("../utils/apiError");
 const { generatePartnerOrderNotification } = require("../utils/whatsapp");
 const { OrderStatus } = require("@prisma/client");
+const { getProductsByIds } = require("../product/product.repository");
 
 const {
     findAllOrders,
@@ -9,13 +9,12 @@ const {
     findOrdersById,
     findAllComplietedOrders,
     findUserComplietedOrders,
+    findOrdersByPartnerId,
     insertNewOrders,
     updateStatusOrders,
-    findOrdersByPartnerId,
+    updateOrders,
+    deleteOrders,
 } = require("./orders.repository");
-
-const { getProductsByIds } = require("../product/product.repository");
-const { user } = require("../db");
 
 const getAllOrders = async () => {
     const orders = await findAllOrders();
@@ -153,91 +152,30 @@ const contactPartner = async (partnerId) => {
     return generatePartnerOrderNotification(partner, orders);
 };
 
-// const getOrdersById = async (orderId) => {
-//     const order = await findOrdersById(orderId);
-//     if (!order) {
-//         throw new ApiError(404, 'Order tidak ditemukan!');
-//     }
+const updateOrders = async (id, editedOrdersData) => {
+    const existingOrders = await findOrdersById(id);
+    if (!existingOrders) {
+        throw new ApiError(404, "Order tidak ditemukan!");
+    }
 
-//     return order;
-// };
+    const ordersData = await updateOrders(id, editedOrdersData);
 
-// const createOrders = async (newOrdersData) => {
-//     const ordersNewData = await insertNewOrders(newOrdersData);
+    return ordersData;
+};
 
-//     return ordersNewData;
-// };
+const removeOrders = async (id) => {
+    const existingOrders = await findOrdersById(id);
 
-// const updateOrders = async (id, editedOrdersData) => {
-//     const existingOrders = await findOrdersById(id);
-//     if (!existingOrders) {
-//         throw new ApiError(404, 'Order tidak ditemukan!');
-//     }
+    if (!existingOrders) {
+        throw new ApiError(404, "Order tidak ditemukan!");
+    }
+    const ordersData = await deleteOrders(id);
 
-//     const ordersData = await editOrders(id, editedOrdersData);
-
-//     return ordersData;
-// };
-
-// const removeOrders = async (id) => {
-//     const existingOrders = await findOrdersById(id);
-
-//     if (!existingOrders) {
-//         throw new ApiError(404, 'Order tidak ditemukan!');
-//     }
-//     const ordersData = await deleteOrders(id);
-
-//     if (!ordersData) {
-//         throw new ApiError(500, 'Gagal menghapus order!');
-//     }
-//     return ordersData;
-// };
-
-// const getOrdersByPartnerId = async (partnerId) => {
-//     const orders = await findOrdersByPartnerId(partnerId);
-//     if (!orders) {
-//         throw new ApiError(404, 'Order tidak ditemukan!');
-//     }
-//     return orders;
-// };
-
-// const getOrdersByUserId = async (userId) => {
-//     const orders = await findOrdersByUserId(userId);
-//     if (!orders) {
-//         throw new ApiError(404, 'Order tidak ditemukan!');
-//     }
-//     return orders;
-// };
-
-// const getOrdersByStatus = async (status) => {
-//     const orders = await findOrdersByStatus(status);
-//     if (!orders) {
-//         throw new ApiError(404, 'Order tidak ditemukan!');
-//     }
-//     return orders;
-// };
-
-// const notifyPartnerForOrder = async (orderId, message) => {
-//     const order = await findOrdersById(orderId);
-//     if (!order) {
-//         throw new ApiError(404, 'Order tidak ditemukan!');
-//     }
-
-//     const partnerId = order.partnerId;
-//     if (!partnerId) {
-//         throw new ApiError(400, 'Partner ID tidak ditemukan pada order!');
-//     }
-
-//     const notificationResult = await notifyPartnerOnPurchase(
-//         partnerId,
-//         message
-//     );
-//     if (!notificationResult) {
-//         throw new ApiError(500, 'Gagal mengirim notifikasi ke partner!');
-//     }
-
-//     return notificationResult;
-// };
+    if (!ordersData) {
+        throw new ApiError(500, "Gagal menghapus order!");
+    }
+    return ordersData;
+};
 
 module.exports = {
     getAllOrders,
@@ -246,4 +184,6 @@ module.exports = {
     createOrders,
     updateStatus,
     contactPartner,
+    updateOrders,
+    removeOrders,
 };
