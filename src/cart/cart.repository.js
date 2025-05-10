@@ -64,6 +64,7 @@ const findCartItemByProduct = async (cartId, productId) => {
     });
 };
 
+// update quantity
 const updateCartItemQuantity = async (cartItemId, newQuantity) => {
     return await prisma.cartItem.update({
         where: {
