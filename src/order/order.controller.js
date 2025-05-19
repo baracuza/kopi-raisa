@@ -13,6 +13,7 @@ const {
     getOrdersByUser,
     getCompleteOrderByRole,
     createOrders,
+    updateOrders,
     updateStatus,
     contactPartner,
 } = require("./order.service");
