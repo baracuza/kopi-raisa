@@ -119,13 +119,11 @@ const findUserComplietedOrders = async (userId) => {
 };
 
 const insertNewOrders = async (
-    userId,
-    { partner_id, items, address, paymentMethod, totalAmount }
+    userId, { items, address, paymentMethod, totalAmount }
 ) => {
     return await prisma.order.create({
         data: {
             user: { connect: { id: userId } },
-            partner: { connect: { id: partner_id } },
             status: "PENDING",
             orderItems: {
                 create: items.map((item) => ({
@@ -133,6 +131,7 @@ const insertNewOrders = async (
                     quantity: item.quantity,
                     price: item.price,
                     custom_note: item.custom_note || null,
+                    partner: item.partner_id ? { connect: { id: item.partner_id } } : undefined,
                 })),
             },
             shippingAddress: {
@@ -149,10 +148,19 @@ const insertNewOrders = async (
             },
         },
         include: {
-            orderItems: true,
+            orderItems: {
+                include: {
+                    product:{
+                        include: {
+                            partner: true,
+                        },
+                    }
+                },
+            },
             shippingAddress: true,
             payment: true,
         },
+
     });
 };
 

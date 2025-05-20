@@ -1,7 +1,11 @@
 const prisma = require('../db');
 
 const findPartner = async () => {
-    const partners = await prisma.Partner.findMany();
+    const partners = await prisma.Partner.findMany({
+        include: {
+            products:true
+        }
+    });
     return partners;
 };
 
@@ -9,6 +13,17 @@ const findPartnerById = async (partnerId) => {
     const partner = await prisma.partner.findUnique({
         where: {
             id: parseInt(partnerId)
+        },
+        include: {
+            products: {
+                select: {
+                    id: true,
+                    name: true,
+                    price: true,
+                    description: true,
+                    image: true,
+                }
+            }
         }
     });
     return partner;

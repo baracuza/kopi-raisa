@@ -126,9 +126,32 @@ router.post("/", authMiddleware, orderValidator, handleValidationResult, handleV
             const orders = await createOrders(userId, orderData);
 
             res.status(201).json({
-                message: "Order berhasil dibuat!",
-                data: orders,
+                message: "Pesanan kamu berhasil dibuat dan sedang diproses.",
+                order: {
+                    orderId: orders.id,
+                    items: orders.orderItems.map(item => ({
+                        productId: item.products_id,
+                        name: item.product?.name || "-",
+                        quantity: item.quantity,
+                        price: item.price,
+                        subtotal: item.quantity * item.price,
+                        note: item.custom_note,
+                        partner: {
+                            id: item.product?.partner?.id,
+                            name: item.product?.partner?.name || "Mitra"
+                        }
+                    })),
+                    shippingAddress: orders.shippingAddress?.address || "-",
+                    payment: {
+                        method: orders.payment?.method,
+                        status: orders.payment?.status,
+                        amount: orders.payment?.amount,
+                    },
+                    status: orders.status,
+                    createdAt: orders.created_at,
+                }
             });
+
         } catch (error) {
             if (error instanceof ApiError) {
                 console.error("ApiError:", error);

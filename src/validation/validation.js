@@ -181,11 +181,6 @@ const productValidator = [
 ];
 
 const orderValidator = [
-    body('partner_id')
-        .trim()
-        .notEmpty().withMessage('*ID partner wajib diisi')
-        .isInt({ min: 1 }).withMessage('*ID partner harus berupa angka'),
-
     body('items')
         .isArray({ min: 1 }).withMessage('*Items tidak boleh kosong')
         .custom((value) => {

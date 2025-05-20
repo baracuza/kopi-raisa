@@ -80,7 +80,7 @@ const findProductById = async (id) => {
         where: {
             id: parseInt(id),
         },
-        include:{
+        include: {
             partner: {
                 select: {
                     name: true,
@@ -94,7 +94,7 @@ const findProductById = async (id) => {
                     stock: true
                 }
             }
-            
+
         }
 
     });
@@ -133,4 +133,16 @@ const updateInventoryStock = async (inventoryData) => {
     });
     return updatedInventory;
 }
-module.exports = { findAllProducts, createNewProduct, createInventory, findProductById, updateDataProduct, updateInventoryStock, deleteProductById, deleteInventoryByProductId };
+
+const getProductsByIds = async (productIds) => {
+    return await prisma.product.findMany({
+        where: { id: { in: productIds } },
+        include: { partner: true },
+    });
+};
+
+module.exports = {
+    findAllProducts, createNewProduct, createInventory,
+    findProductById, updateDataProduct, updateInventoryStock,
+    deleteProductById, deleteInventoryByProductId, getProductsByIds
+};

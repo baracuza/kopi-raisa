@@ -41,19 +41,19 @@ const getCompleteOrderByRole = async (userId, role) => {
 };
 
 const createOrders = async (userId, orderData) => {
-    const { partner_id, items, address, paymentMethod } = orderData;
+    const { items, address, paymentMethod } = orderData;
 
     if (!items || items.length === 0)
-        throw new Error("Pesanan tidak boleh kosong");
+        throw new ApiError(404, "Pesanan tidak boleh kosong");
     if (!address || !paymentMethod)
-        throw new Error("Alamat dan metode pembayaran wajib diisi");
+        throw new ApiError(404, "Alamat dan metode pembayaran wajib diisi");
 
     // Ambil semua produk dari DB
     const productIds = items.map((item) => item.products_id);
     const products = await getProductsByIds(productIds);
 
     if (products.length !== items.length) {
-        throw new Error("Beberapa produk tidak ditemukan di database");
+        throw new ApiError(404, "Beberapa produk tidak ditemukan di database");
     }
 
     // Hitung price per item & totalAmount
@@ -61,9 +61,15 @@ const createOrders = async (userId, orderData) => {
     const itemsWithPrice = items.map((item) => {
         const product = products.find((p) => p.id === item.products_id);
         if (!product)
-            throw new Error(
-                `Produk dengan ID ${item.products_id} tidak ditemukan`
+            throw new ApiError(
+                404, `Produk dengan ID ${item.products_id} tidak ditemukan`
             );
+
+        if (!product.partner?.id)
+            throw new ApiError(
+                400, `Produk ID ${product.id} belum memiliki partner!`
+            );
+
         const price = product.price * item.quantity;
         totalAmount += price;
 
@@ -72,11 +78,11 @@ const createOrders = async (userId, orderData) => {
             quantity: item.quantity,
             price,
             custom_note: item.custom_note || null,
+            partner_id: product.partner?.id ?? null
         };
     });
 
     return await insertNewOrders(userId, {
-        partner_id: parseInt(partner_id, 10),
         items: itemsWithPrice,
         address,
         paymentMethod,

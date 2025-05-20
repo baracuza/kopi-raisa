@@ -77,7 +77,7 @@ model Partner {
   created_at  DateTime @default(now())
   updated_at  DateTime @updatedAt
   products    Product[]
-  orders      Order[]
+  ordersItems OrderItem[]
 }
 
 model Product {
@@ -139,8 +139,6 @@ model Order {
   id         Int      @id @default(autoincrement())
   user       User     @relation(fields: [user_id], references: [id])
   user_id    Int
-  partner    Partner  @relation(fields: [partner_id], references: [id])
-  partner_id Int
   status     OrderStatus
   created_at DateTime @default(now())
   updated_at DateTime @updatedAt
@@ -156,6 +154,8 @@ model OrderItem {
   order_id    Int
   product     Product  @relation(fields: [products_id], references: [id])
   products_id Int
+  partner     Partner?  @relation(fields: [partner_id], references: [id])
+  partner_id  Int?
   quantity    Int
   price       Int
   custom_note String?
