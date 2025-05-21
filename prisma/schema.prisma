@@ -34,6 +34,7 @@ model User {
   reviews     Review[]
   formEntries  FormEntry[]
   news         News[]
+  orderCancellations OrderCancellation[]
 }
 
 model FacebookAccount {
@@ -136,16 +137,17 @@ model CartItem {
 }
 
 model Order {
-  id         Int      @id @default(autoincrement())
-  user       User     @relation(fields: [user_id], references: [id])
-  user_id    Int
-  status     OrderStatus
-  created_at DateTime @default(now())
-  updated_at DateTime @updatedAt
-  orderItems OrderItem[]
-  shippingAddress ShippingAddress?
-  payment    Payment?
-  reviews    Review[]
+  id                Int      @id @default(autoincrement())
+  user              User     @relation(fields: [user_id], references: [id])
+  user_id           Int
+  status            OrderStatus
+  created_at        DateTime @default(now())
+  updated_at        DateTime @updatedAt
+  orderItems        OrderItem[]
+  shippingAddress   ShippingAddress?
+  payment           Payment?
+  OrderCancellation OrderCancellation?
+  reviews           Review[]
 }
 
 model OrderItem {
@@ -184,6 +186,16 @@ model Payment {
   payment_info    String?
   created_at      DateTime @default(now())
   updated_at      DateTime @updatedAt
+}
+
+model OrderCancellation {
+  id        Int      @id @default(autoincrement())
+  order     Order    @relation(fields: [order_id], references: [id])
+  order_id  Int      @unique
+  user      User     @relation(fields: [user_id], references: [id])
+  user_id   Int
+  reason    String
+  created_at DateTime @default(now())
 }
 
 model FormTemplate {

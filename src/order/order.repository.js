@@ -67,6 +67,23 @@ const findOrdersByUser = async (userId, status) => {
     });
 };
 
+const findOrderDetailById = async (orderId) => {
+    return prisma.order.findUnique({
+        where: { id: parseInt(orderId) },
+        include: {
+            user: true,
+            shippingAddress: true,
+            orderItems: {
+                include: {
+                    product: true,
+                    partner: true,
+                },
+            },
+            payment: true,
+        },
+    });
+};
+
 const findOrdersById = async (orderId) => {
     return await prisma.order.findUnique({
         where: { id: parseInt(orderId) },
@@ -244,27 +261,36 @@ const updateOrderPaymentStatus = async (orderId, { payment_status, payment_metho
     });
 };
 
-const updateStatusOrders = async (userId, newStatus, reason) => {
-    const updated = await prisma.order.update({
-        where: { id: userId },
+
+
+const updateStatusOrders = async (orderId, newStatus) => {
+    return await prisma.order.update({
+        where: { id: orderId },
         data: {
             status: newStatus,
             updated_at: new Date(),
         },
     });
+};
 
-    // Jika ingin log pembatalan dengan alasan, bisa simpan ke tabel notifikasi atau log
-    if (reason) {
-        await prisma.notification.create({
-            data: {
-                name: "Pembatalan Pesanan",
-                description: `Alasan pembatalan: ${reason}`,
-                user_id: updated.user_id,
-            },
-        });
-    }
+const createOrderCancellation = async (orderId, userId, reason) => {
+    return await prisma.orderCancellation.create({
+        data: {
+            order_id: orderId,
+            user_id: userId,
+            reason: reason,
+        },
+    });
+};
 
-    return updated;
+const createNotification = async ({ user_id, name, description }) => {
+    return await prisma.notification.create({
+        data: {
+            user_id,
+            name,
+            description,
+        },
+    });
 };
 
 const updateItemOrders = async (orderId, updatedData) => {
@@ -287,10 +313,13 @@ module.exports = {
     findAllComplietedOrders,
     findUserComplietedOrders,
     findOrdersByPartnerId,
+    findOrderDetailById,
     insertNewOrders,
     updatePaymentSnapToken,
     updateOrderPaymentStatus,
     updateStatusOrders,
     updateItemOrders,
     deleteOrders,
+    createOrderCancellation,
+    createNotification,
 };

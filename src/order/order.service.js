@@ -5,18 +5,22 @@ const { getProductsByIds } = require("../product/product.repository");
 const { createMidtransSnapToken } = require("../utils/midtrans");
 
 const {
+
     findAllOrders,
     findOrdersByUser,
     findOrdersById,
     findAllComplietedOrders,
     findUserComplietedOrders,
     findOrdersByPartnerId,
+    findOrderDetailById,
     insertNewOrders,
     updatePaymentSnapToken,
     updateOrderPaymentStatus,
     updateStatusOrders,
     updateItemOrders,
     deleteOrders,
+    createOrderCancellation,
+    createNotification,
 } = require("./order.repository");
 
 const getAllOrders = async () => {
@@ -157,6 +161,32 @@ const handleMidtransNotification = async (notification) => {
     });
 };
 
+const getOrderDetailById = async (orderId) => {
+    const order = await findOrderDetailById(orderId);
+    if (!order) {
+        throw new ApiError(404, "Order tidak ditemukan");
+    }
+
+    return {
+        orderId: order.id,
+        tanggalTransaksi: order.created_at,
+        namaCustomer: order.user?.name || "-",
+        status: order.status,
+        alamatCustomer: order.shippingAddress?.address || "-",
+        items: order.orderItems.map(item => ({
+            namaProduk: item.product.name,
+            harga: item.price,
+            quantity: item.quantity,
+            catatan: item.custom_note,
+            namaMitra: item.partner?.name || "-",
+        })),
+        totalHarga: order.payment?.amount ?? 0,
+    };
+};
+
+const getOrderStatuses = () => {
+    return Object.values(OrderStatus);
+};
 
 const updateStatus = async (orderId, newStatus, user, reason) => {
     const order = await findOrdersById(orderId);
@@ -170,13 +200,14 @@ const updateStatus = async (orderId, newStatus, user, reason) => {
     if (isAdmin) {
         if (
             ![
+                OrderStatus.PROCESSING,
                 OrderStatus.SHIPPED,
                 OrderStatus.DELIVERED,
                 OrderStatus.CANCELED,
             ].includes(newStatus)
         ) {
             throw new Error(
-                "Admin hanya bisa mengubah status ke: SHIPPED, DELIVERED, atau CANCELED"
+                "Admin hanya bisa mengubah status ke: PROCESSING, SHIPPED, DELIVERED, atau CANCELED"
             );
         }
     } else {
@@ -214,6 +245,98 @@ const updateStatus = async (orderId, newStatus, user, reason) => {
     }
     return await updateStatusOrders(orderId, newStatus, reason);
 };
+
+const updatedOrderStatus = async (orderId, newStatus, user) => {
+    const order = await findOrdersById(orderId);
+    if (!order) {
+        throw new ApiError(404, "Pesanan tidak ditemukan!");
+    }
+
+    const isAdmin = user.admin;
+
+    // Hanya admin yang bisa mengubah status 
+    if (isAdmin) {
+        if (
+            ![
+                OrderStatus.PROCESSING,
+                OrderStatus.SHIPPED,
+                OrderStatus.DELIVERED,
+                OrderStatus.CANCELED,
+            ].includes(newStatus)
+        ) {
+            throw new Error(
+                "Admin hanya bisa mengubah status ke: PROCESSING, SHIPPED, DELIVERED, atau CANCELED"
+            );
+        }
+    } else {
+        // Customer validasi hak milik order
+        if (order.user_id !== user.id)
+            throw new Error("Akses ditolak: bukan pesanan Anda");
+
+        // hanya bisa batalkan dari pending
+        if (
+            newStatus === OrderStatus.CANCELED &&
+            order.status !== OrderStatus.PENDING
+        ) {
+            throw new Error(
+                "Pesanan hanya bisa dibatalkan saat status PENDING"
+            );
+        }
+
+        // hanya bisa tandai selesai dari SHIPPED
+        if (
+            newStatus === OrderStatus.DELIVERED &&
+            order.status !== OrderStatus.SHIPPED
+        ) {
+            throw new Error(
+                "Pesanan hanya bisa ditandai selesai setelah dikirim"
+            );
+        }
+
+        if (
+            ![OrderStatus.CANCELED, OrderStatus.DELIVERED].includes(newStatus)
+        ) {
+            throw new Error(
+                "Customer tidak berhak mengubah ke status tersebut"
+            );
+        }
+    }
+
+    return await updateStatusOrders(orderId, newStatus);
+}
+
+const cancelOrder = async (orderId, user, reason) => {
+    const order = await findOrdersById(orderId);
+    if (!order) {
+        throw new ApiError(404, "Pesanan tidak ditemukan.");
+    }
+
+    // Hanya pemilik pesanan yang bisa membatalkan
+    if (order.user_id !== user.id) {
+        throw new ApiError(403, "Akses ditolak: bukan pesanan Anda.");
+    }
+
+    // Hanya bisa dibatalkan jika masih PENDING
+    if (order.status !== OrderStatus.PENDING) {
+        throw new ApiError(400, "Pesanan hanya bisa dibatalkan saat status masih PENDING.");
+    }
+
+    const statusCancel = await updateStatusOrders(orderId, OrderStatus.CANCELED);
+    if (!statusCancel) {
+        throw new ApiError(500, "Gagal membatalkan pesanan.");
+    }
+
+    // Simpan alasan resmi pembatalan
+    await createOrderCancellation(orderId, user.id, reason);
+
+    // Buat notifikasi ke user
+    await createNotification({
+        user_id: user.id,
+        name: "Pesanan Dibatalkan",
+        description: `Pesanan #${orderId} dibatalkan. Alasan: ${reason}`,
+    });
+};
+
 
 const contactPartner = async (partnerId) => {
     const orders = await findOrdersByPartnerId(partnerId);
@@ -255,10 +378,14 @@ module.exports = {
     getAllOrders,
     getOrdersByUser,
     getCompleteOrderByRole,
+    getOrderDetailById,
+    getOrderStatuses,
     createOrders,
+    contactPartner,
+    cancelOrder,
     handleMidtransNotification,
     updateStatus,
-    contactPartner,
     updateOrders,
+    updatedOrderStatus,
     removeOrders,
 };

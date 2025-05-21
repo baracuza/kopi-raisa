@@ -13,15 +13,21 @@ const {
     getAllOrders,
     getOrdersByUser,
     getCompleteOrderByRole,
+    getOrderDetailById,
+    getOrderStatuses,
     createOrders,
     handleMidtransNotification,
     updateOrders,
     updateStatus,
+    updatedOrderStatus,
     contactPartner,
+    cancelOrder
 } = require("./order.service");
+const { order } = require("../db");
 
 const router = express.Router();
 
+// Get all orders-admin
 router.get("/", authMiddleware, async (req, res) => {
     if (!req.user.admin) {
         return res.status(403).json({
@@ -50,6 +56,32 @@ router.get("/", authMiddleware, async (req, res) => {
     }
 });
 
+// Get order detail user-admin
+router.get("/:id/detail", authMiddleware, async (req, res) => {
+    try {
+        const { id } = req.params;
+        const order = await getOrderDetailById(id);
+        res.status(200).json({
+            message: "Data order berhasil didapatkan!",
+            data: order,
+        });
+    } catch (error) {
+        if (error instanceof ApiError) {
+            console.error("ApiError:", error);
+            return res.status(error.statusCode).json({
+                message: error.message,
+            });
+        }
+
+        console.error("Error getting orders:", error);
+        return res.status(500).json({
+            message: "Terjadi kesalahan di server!",
+            error: error.message,
+        });
+    }
+});
+
+// Get orders by user
 router.get("/my-order", authMiddleware, async (req, res) => {
     try {
         const userId = req.user.id;
@@ -135,6 +167,7 @@ router.get("/completed", authMiddleware, async (req, res) => {
     }
 });
 
+// Create new order-user
 router.post("/", authMiddleware, orderValidator, handleValidationResult, handleValidationResultFinal,
     async (req, res) => {
         const errors = validationResult(req);
@@ -209,6 +242,7 @@ router.post("/", authMiddleware, orderValidator, handleValidationResult, handleV
         }
     });
 
+//notifikasi midtrans setelah transaksi
 router.post("/midtrans/notification", async (req, res) => {
     try {
         await handleMidtransNotification(req.body);
@@ -249,6 +283,24 @@ router.post("/contact-partner/:partnerId", authMiddleware, async (req, res) => {
     }
 });
 
+// status untuk order
+router.get("/statuses", (req, res) => {
+    try {
+        const statuses = getOrderStatuses();
+        res.status(200).json({
+            message: "Daftar status order berhasil diambil",
+            data: statuses,
+        });
+    } catch (error) {
+        console.error("Error getting order statuses:", error);
+        res.status(500).json({
+            message: "Terjadi kesalahan saat mengambil status order",
+            error: error.message,
+        });
+    }
+});
+
+// Update order status - admin & user to cancel
 router.put("/:id/status", authMiddleware, async (req, res, next) => {
     const errors = validationResult(req);
     if (!errors.isEmpty()) {
@@ -296,6 +348,67 @@ router.put("/:id/status", authMiddleware, async (req, res, next) => {
         });
     }
 });
+
+// Cancel order - user
+router.put("/:id/cancel", authMiddleware, async (req, res, next) => {
+    try {
+        const orderId = parseInt(req.params.id);
+        const { reason } = req.body;
+        const user = req.user;
+
+        if (!reason || reason.trim() === "") {
+            return res.status(400).json({
+                message: "Alasan pembatalan harus diisi.",
+            });
+        }
+
+        const result = await cancelOrder(orderId, user, reason);
+
+        res.status(200).json({
+            message: "Pesanan berhasil dibatalkan.",
+            data: result,
+        });
+    } catch (error) {
+        if (error instanceof ApiError) {
+            console.error('ApiError:', error);
+            return res.status(error.statusCode).json({
+                message: error.message,
+            })
+        }
+
+        console.error("Cancel Error:", error);
+        return res.status(error.statusCode || 500).json({
+            message: error.message || "Terjadi kesalahan saat membatalkan pesanan.",
+        });
+    }
+});
+
+router.put("/:id/update-status", authMiddleware, async (req, res) => {
+    try {
+        orderId = req.params.id;
+        const { status } = req.body;
+        const user = req.user;
+        
+        const updatedOrder = await updatedOrderStatus(orderId, status, user);
+        res.status(200).json({
+            message: "Status order berhasil diperbarui!",
+            data: updatedOrder,
+        });
+    } catch (error) {
+        if (error instanceof ApiError) {
+            console.error("ApiError:", error);
+            return res.status(error.statusCode).json({
+                message: error.message,
+            });
+        }
+        console.error("Error updating order status:", error);
+        return res.status(500).json({
+            message: "Terjadi kesalahan di server!",
+            error: error.message,
+        });
+        
+    }
+})
 
 router.put("/:id", authMiddleware, async (req, res) => {
     if (!req.user.admin) {
