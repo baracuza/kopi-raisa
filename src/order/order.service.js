@@ -2,6 +2,7 @@ const ApiError = require("../utils/apiError");
 const { generatePartnerOrderNotification } = require("../utils/whatsapp");
 const { OrderStatus } = require("@prisma/client");
 const { getProductsByIds } = require("../product/product.repository");
+const { createMidtransSnapToken } = require("../utils/midtrans");
 
 const {
     findAllOrders,
@@ -11,6 +12,8 @@ const {
     findUserComplietedOrders,
     findOrdersByPartnerId,
     insertNewOrders,
+    updatePaymentSnapToken,
+    updateOrderPaymentStatus,
     updateStatusOrders,
     updateItemOrders,
     deleteOrders,
@@ -48,7 +51,6 @@ const createOrders = async (userId, orderData) => {
     if (!address || !paymentMethod)
         throw new ApiError(404, "Alamat dan metode pembayaran wajib diisi");
 
-    // Ambil semua produk dari DB
     const productIds = items.map((item) => item.products_id);
     const products = await getProductsByIds(productIds);
 
@@ -56,39 +58,105 @@ const createOrders = async (userId, orderData) => {
         throw new ApiError(404, "Beberapa produk tidak ditemukan di database");
     }
 
-    // Hitung price per item & totalAmount
     let totalAmount = 0;
     const itemsWithPrice = items.map((item) => {
         const product = products.find((p) => p.id === item.products_id);
         if (!product)
-            throw new ApiError(
-                404, `Produk dengan ID ${item.products_id} tidak ditemukan`
-            );
-
+            throw new ApiError(404, `Produk dengan ID ${item.products_id} tidak ditemukan`);
         if (!product.partner?.id)
-            throw new ApiError(
-                400, `Produk ID ${product.id} belum memiliki partner!`
-            );
+            throw new ApiError(400, `Produk ID ${product.id} belum memiliki partner!`);
 
-        const price = product.price * item.quantity;
-        totalAmount += price;
+        const pricePerUnit = product.price;
+        const subtotal = pricePerUnit * item.quantity;
+        totalAmount += subtotal;
 
         return {
             products_id: item.products_id,
             quantity: item.quantity,
-            price,
+            price: pricePerUnit,
             custom_note: item.custom_note || null,
             partner_id: product.partner?.id ?? null
         };
     });
 
-    return await insertNewOrders(userId, {
+    const orders = await insertNewOrders(userId, {
         items: itemsWithPrice,
         address,
         paymentMethod,
-        totalAmount: parseInt(totalAmount, 10),
+        totalAmount: parseInt(totalAmount),
+    });
+
+    if (!orders) throw new ApiError(500, "Gagal membuat order!");
+
+    const midtransResult = await createMidtransSnapToken(orders);
+
+    let snapToken = null;
+    let snapRedirectUrl = null;
+
+    if (orders.payment.method === "QRIS") {
+        snapRedirectUrl = midtransResult.qrUrl;
+    } else {
+        snapToken = midtransResult.token;
+        snapRedirectUrl = midtransResult.redirectUrl;
+    }
+
+    const updatedOrder = await updatePaymentSnapToken(orders.id, snapToken ?? snapRedirectUrl, snapRedirectUrl);
+    return {
+        updatedOrder,
+        paymentInfo: {
+            type: orders.payment.method === "QRIS" ? "qris" : "snap",
+            snapToken,
+            snapRedirectUrl,
+        }
+    };
+};
+
+const handleMidtransNotification = async (notification) => {
+    const {
+        transaction_status,
+        payment_type,
+        order_id,
+        fraud_status,
+    } = notification;
+
+    // Extract orderId dari order_id Midtrans → "ORDER-123-..."
+    const idMatch = order_id.match(/ORDER-(\d+)-/);
+    const orderId = idMatch ? parseInt(idMatch[1], 10) : null;
+    if (!orderId) {
+        throw new Error("order_id tidak valid");
+    }
+
+    // Mapping status dari Midtrans ke status internal
+    // Default status
+    let internalStatus;
+
+    if (transaction_status === "capture") {
+        if (payment_type === "credit_card") {
+            internalStatus = fraud_status === "challenge" ? "DENY" : "SUCCESS";
+        } else {
+            internalStatus = "SUCCESS";
+        }
+    } else if (transaction_status === "settlement") {
+        internalStatus = "SUCCESS";
+    } else if (transaction_status === "pending") {
+        internalStatus = "PENDING";
+    } else if (transaction_status === "deny") {
+        internalStatus = "DENY";
+    } else if (transaction_status === "cancel") {
+        internalStatus = "CANCEL";
+    } else if (transaction_status === "expire") {
+        internalStatus = "EXPIRE";
+    } else {
+        internalStatus = "PENDING"; // fallback default
+    }
+
+    // Update status di database
+    await updateOrderPaymentStatus(orderId, {
+        payment_status: internalStatus.toUpperCase(),
+        payment_method: payment_type,
     });
 };
+
 
 const updateStatus = async (orderId, newStatus, user, reason) => {
     const order = await findOrdersById(orderId);
@@ -188,6 +256,7 @@ module.exports = {
     getOrdersByUser,
     getCompleteOrderByRole,
     createOrders,
+    handleMidtransNotification,
     updateStatus,
     contactPartner,
     updateOrders,

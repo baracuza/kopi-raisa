@@ -4,10 +4,22 @@ const findAllOrders = async () => {
     return await prisma.order.findMany({
         include: {
             user: { select: { id: true, name: true, email: true } },
-            partner: { select: { id: true, name: true, owner_name: true } },
             orderItems: {
                 include: {
-                    product: { select: { id: true, name: true, price: true } },
+                    product: {
+                        select: {
+                            id: true,
+                            name: true,
+                            price: true,
+                            partner: {
+                                select: {
+                                    id: true,
+                                    name: true,
+                                    owner_name: true
+                                }
+                            },
+                        }
+                    },
                 },
             },
             shippingAddress: true,
@@ -31,10 +43,21 @@ const findOrdersByUser = async (userId, status) => {
             ...statusFilter,
         },
         include: {
-            partner: { select: { id: true, name: true } },
             orderItems: {
                 include: {
-                    product: { select: { id: true, name: true, price: true } },
+                    product: {
+                        select: {
+                            id: true,
+                            name: true,
+                            price: true,
+                            partner: {
+                                select: {
+                                    id: true,
+                                    name: true
+                                }
+                            },
+                        }
+                    },
                 },
             },
             shippingAddress: true,
@@ -148,9 +171,10 @@ const insertNewOrders = async (
             },
         },
         include: {
+            user: true,
             orderItems: {
                 include: {
-                    product:{
+                    product: {
                         include: {
                             partner: true,
                         },
@@ -161,6 +185,62 @@ const insertNewOrders = async (
             payment: true,
         },
 
+    });
+};
+
+const updatePaymentSnapToken = async (orderId, snapToken, snapRedirectUrl) => {
+    // Ambil payment ID dari order
+    const order = await prisma.order.findUnique({
+        where: { id: orderId },
+        include: { payment: true },
+    });
+
+    if (!order || !order.payment) {
+        throw new Error("Order atau payment tidak ditemukan!");
+    }
+
+    // Update snap_token di payment
+    await prisma.payment.update({
+        where: { id: order.payment.id },
+        data: {
+            snap_token: snapToken,
+            snap_redirect_url: snapRedirectUrl || null,
+        },
+    });
+
+    // Ambil ulang order lengkap setelah update
+    const updatedOrder = await prisma.order.findUnique({
+        where: { id: orderId },
+        include: {
+            user: true,
+            orderItems: {
+                include: {
+                    product: {
+                        include: {
+                            partner: true,
+                        },
+                    },
+                },
+            },
+            shippingAddress: true,
+            payment: true,
+        },
+    });
+
+    return updatedOrder;
+};
+
+const updateOrderPaymentStatus = async (orderId, { payment_status, payment_method }) => {
+    return await prisma.order.update({
+        where: { id: orderId },
+        data: {
+            payment: {
+                update: {
+                    status: payment_status,
+                    method: payment_method,
+                },
+            },
+        },
     });
 };
 
@@ -208,6 +288,8 @@ module.exports = {
     findUserComplietedOrders,
     findOrdersByPartnerId,
     insertNewOrders,
+    updatePaymentSnapToken,
+    updateOrderPaymentStatus,
     updateStatusOrders,
     updateItemOrders,
     deleteOrders,

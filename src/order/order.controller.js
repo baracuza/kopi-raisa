@@ -6,6 +6,7 @@ const { validationResult } = require("express-validator");
 const { orderValidator } = require("../validation/validation");
 const handleValidationResult = require('../middleware/handleValidationResult');
 const handleValidationResultFinal = require('../middleware/handleValidationResultFinal');
+const verifyMidtransSignature = require("../middleware/midtransSignatureValidator");
 
 
 const {
@@ -13,6 +14,7 @@ const {
     getOrdersByUser,
     getCompleteOrderByRole,
     createOrders,
+    handleMidtransNotification,
     updateOrders,
     updateStatus,
     contactPartner,
@@ -50,16 +52,46 @@ router.get("/", authMiddleware, async (req, res) => {
 
 router.get("/my-order", authMiddleware, async (req, res) => {
     try {
-        // ambil id user dari token yang sudah di verifikasi
-        // console.log("User ID:", req.user.id); // <-- ini penting
-        // console.log("token:", req.cookies.token); // <-- ini penting
         const userId = req.user.id;
         const { status } = req.query;
+
+        const allowedStatuses = ["diproses", "selesai"];
+        if (status && !allowedStatuses.includes(status)) {
+            return res.status(400).json({
+                message: "Status tidak valid. Gunakan 'diproses' atau 'selesai'.",
+            });
+        }
+
         const orders = await getOrdersByUser(userId, status);
+
+        const formattedOrders = orders.map((order) => ({
+            orderId: order.id,
+            items: order.orderItems.map((item) => ({
+                productId: item.product.id,
+                name: item.product.name,
+                quantity: item.quantity,
+                price: item.price,
+                subtotal: item.quantity * item.price,
+                partner: {
+                    id: order.partner?.id,
+                    name: order.partner?.name || "Mitra"
+                }
+            })),
+            shippingAddress: order.shippingAddress?.address || "-",
+            payment: {
+                method: order.payment?.method,
+                status: order.payment?.status,
+                amount: order.payment?.amount,
+            },
+            status: order.status,
+            createdAt: order.created_at,
+        }));
+
         res.status(200).json({
             message: "Data order berhasil didapatkan!",
-            data: orders,
+            orders: formattedOrders,
         });
+
     } catch (error) {
         if (error instanceof ApiError) {
             console.error("ApiError:", error);
@@ -75,6 +107,7 @@ router.get("/my-order", authMiddleware, async (req, res) => {
         });
     }
 });
+
 
 router.get("/completed", authMiddleware, async (req, res) => {
     try {
@@ -123,13 +156,13 @@ router.post("/", authMiddleware, orderValidator, handleValidationResult, handleV
         try {
             const userId = req.user.id;
             const orderData = req.body;
-            const orders = await createOrders(userId, orderData);
+            const { updatedOrder, paymentInfo } = await createOrders(userId, orderData);
 
             res.status(201).json({
                 message: "Pesanan kamu berhasil dibuat dan sedang diproses.",
                 order: {
-                    orderId: orders.id,
-                    items: orders.orderItems.map(item => ({
+                    orderId: updatedOrder.id,
+                    items: updatedOrder.orderItems.map(item => ({
                         productId: item.products_id,
                         name: item.product?.name || "-",
                         quantity: item.quantity,
@@ -141,16 +174,24 @@ router.post("/", authMiddleware, orderValidator, handleValidationResult, handleV
                             name: item.product?.partner?.name || "Mitra"
                         }
                     })),
-                    shippingAddress: orders.shippingAddress?.address || "-",
+                    shippingAddress: updatedOrder.shippingAddress?.address || "-",
                     payment: {
-                        method: orders.payment?.method,
-                        status: orders.payment?.status,
-                        amount: orders.payment?.amount,
+                        method: updatedOrder.payment?.method,
+                        status: updatedOrder.payment?.status,
+                        amount: updatedOrder.payment?.amount,
+                        type: paymentInfo.type,
+                        ...(paymentInfo.type === "qris"
+                            ? { qrUrl: paymentInfo.snapRedirectUrl }
+                            : {
+                                snapToken: paymentInfo.snapToken,
+                                snapRedirectUrl: paymentInfo.snapRedirectUrl
+                            }),
                     },
-                    status: orders.status,
-                    createdAt: orders.created_at,
-                }
+                    status: updatedOrder.status,
+                    createdAt: updatedOrder.created_at,
+                },
             });
+
 
         } catch (error) {
             if (error instanceof ApiError) {
@@ -167,6 +208,17 @@ router.post("/", authMiddleware, orderValidator, handleValidationResult, handleV
             });
         }
     });
+
+router.post("/midtrans/notification", async (req, res) => {
+    try {
+        await handleMidtransNotification(req.body);
+        return res.status(200).json({ message: "Notifikasi berhasil diproses" });
+    } catch (error) {
+        console.error("Error in /midtrans/notification:", error);
+        return res.status(500).json({ message: "Gagal memproses notifikasi", error: error.message });
+    }
+});
+
 
 router.post("/contact-partner/:partnerId", authMiddleware, async (req, res) => {
     if (!req.user.admin) {

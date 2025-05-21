@@ -257,6 +257,10 @@ enum PaymentStatus {
   PENDING
   SUCCESS
   FAILED
+  CANCEL
+  DENY
+  EXPIRE
+  REFUND
 }
 
 enum TransactionStatus {
