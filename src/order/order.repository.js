@@ -1,71 +1,57 @@
 const prisma = require("../db");
 
-const findAllOrders = async () => {
-    return await prisma.order.findMany({
+const findAllOrders = async (statusFilter) => {
+    return prisma.order.findMany({
+        where: {
+            ...(statusFilter?.length > 0 && {
+                status: { in: statusFilter },
+            }),
+        },
         include: {
-            user: { select: { id: true, name: true, email: true } },
+            user: true,
             orderItems: {
                 include: {
                     product: {
-                        select: {
-                            id: true,
-                            name: true,
-                            price: true,
-                            partner: {
-                                select: {
-                                    id: true,
-                                    name: true,
-                                    owner_name: true
-                                }
-                            },
-                        }
+                        include: { partner: true },
                     },
                 },
             },
             shippingAddress: true,
             payment: true,
+            OrderCancellation: true,
         },
-        orderBy: { created_at: "desc" },
+        orderBy: {
+            created_at: "desc",
+        },
     });
 };
 
-const findOrdersByUser = async (userId, status) => {
-    let statusFilter = {};
-    if (status === "diproses") {
-        statusFilter = { status: { in: ["PENDING", "DIKIRIM", "DIBATALKAN"] } };
-    } else if (status === "selesai") {
-        statusFilter = { status: "SELESAI" };
-    }
-
-    return await prisma.order.findMany({
+const findOrdersByUser = async (userId, statusFilter) => {
+    return prisma.order.findMany({
         where: {
             user_id: userId,
-            ...statusFilter,
+            ...(statusFilter?.length > 0 && {
+                status: { in: statusFilter },
+            }),
         },
         include: {
             orderItems: {
                 include: {
                     product: {
-                        select: {
-                            id: true,
-                            name: true,
-                            price: true,
-                            partner: {
-                                select: {
-                                    id: true,
-                                    name: true
-                                }
-                            },
-                        }
+                        include: { partner: true },
                     },
                 },
             },
             shippingAddress: true,
             payment: true,
+            OrderCancellation: true,
         },
-        orderBy: { created_at: "desc" },
+        orderBy: {
+            created_at: "desc",
+        },
     });
 };
+
 
 const findOrderDetailById = async (orderId) => {
     return prisma.order.findUnique({
@@ -91,21 +77,39 @@ const findOrdersById = async (orderId) => {
 };
 
 const findOrdersByPartnerId = async (partnerId) => {
-    return await prisma.order.findMany({
+    return await prisma.orderItem.findMany({
         where: {
             partner_id: parseInt(partnerId),
-            status: {
-                not: "CANCELED",
+            notified_to_partner_at: null,
+            order: {
+                status: {
+                    not: "CANCELED",
+                },
             },
         },
         include: {
-            orderItems: {
+            product: true,
+            order: {
                 include: {
-                    product: true,
+                    user: true,
                 },
             },
             partner: true,
-            user: true,
+        },
+    });
+};
+
+const markOrderItemsAsNotified = async (itemIds) => {
+    if (itemIds.length === 0) return;
+
+    await prisma.orderItem.updateMany({
+        where: {
+            id: {
+                in: itemIds,
+            },
+        },
+        data: {
+            notified_to_partner_at: new Date(),
         },
     });
 };
@@ -261,8 +265,6 @@ const updateOrderPaymentStatus = async (orderId, { payment_status, payment_metho
     });
 };
 
-
-
 const updateStatusOrders = async (orderId, newStatus) => {
     return await prisma.order.update({
         where: { id: orderId },
@@ -315,6 +317,7 @@ module.exports = {
     findOrdersByPartnerId,
     findOrderDetailById,
     insertNewOrders,
+    markOrderItemsAsNotified,
     updatePaymentSnapToken,
     updateOrderPaymentStatus,
     updateStatusOrders,

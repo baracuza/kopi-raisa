@@ -14,6 +14,7 @@ const {
     findOrdersByPartnerId,
     findOrderDetailById,
     insertNewOrders,
+    markOrderItemsAsNotified,
     updatePaymentSnapToken,
     updateOrderPaymentStatus,
     updateStatusOrders,
@@ -38,6 +39,15 @@ const getOrdersByUser = async (userId, status) => {
     }
     return orders;
 };
+
+const getOrderHistoryByRole = async (userId, role, statusFilter) => {
+    if (role === "admin") {
+        return await findAllOrders(statusFilter);
+    } else {
+        return await findOrdersByUser(userId, statusFilter);
+    }
+};
+
 
 const getCompleteOrderByRole = async (userId, role) => {
     if (role === "admin") {
@@ -339,14 +349,44 @@ const cancelOrder = async (orderId, user, reason) => {
 
 
 const contactPartner = async (partnerId) => {
-    const orders = await findOrdersByPartnerId(partnerId);
-
-    if (!orders || orders.length === 0) {
-        throw new Error("Tidak ada pesanan untuk mitra ini.");
+    if (!partnerId || isNaN(partnerId)) {
+        throw new ApiError(400, "ID mitra tidak valid.");
     }
 
-    const partner = orders[0].partner;
-    return generatePartnerOrderNotification(partner, orders);
+    
+    const orderItems = await findOrdersByPartnerId(partnerId);
+
+    if (!orderItems || orderItems.length === 0) {
+        throw new ApiError(404,"Tidak ada pesanan baru untuk mitra ini.");
+    }
+
+    const partner = orderItems[0].partner;
+    const groupedOrders = {};
+
+    orderItems.forEach((item) => {
+        const orderId = item.order.id;
+        if (!groupedOrders[orderId]) {
+            groupedOrders[orderId] = {
+                user: item.order.user,
+                status: item.order.status,
+                items: [],
+            };
+        }
+        groupedOrders[orderId].items.push(item);
+    });
+
+    const orders = Object.entries(groupedOrders).map(([_, data]) => ({
+        user: data.user,
+        status: data.status,
+        orderItems: data.items,
+    }));
+
+    const result = generatePartnerOrderNotification(partner, orders);
+
+    const itemIds = orderItems.map((i) => i.id);
+    await markOrderItemsAsNotified(itemIds);
+
+    return result;
 };
 
 const updateOrders = async (id, editedOrdersData) => {
@@ -380,6 +420,7 @@ module.exports = {
     getCompleteOrderByRole,
     getOrderDetailById,
     getOrderStatuses,
+    getOrderHistoryByRole,
     createOrders,
     contactPartner,
     cancelOrder,

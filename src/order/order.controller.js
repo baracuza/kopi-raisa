@@ -15,6 +15,7 @@ const {
     getCompleteOrderByRole,
     getOrderDetailById,
     getOrderStatuses,
+    getOrderHistoryByRole,
     createOrders,
     handleMidtransNotification,
     updateOrders,
@@ -140,11 +141,37 @@ router.get("/my-order", authMiddleware, async (req, res) => {
     }
 });
 
+//history order untuk admin dan user bisa filter status order
+router.get("/history", authMiddleware, async (req, res) => {
+    try {
+        const userId = req.user.id;
+        const role = req.user.admin;
 
+        // Dapatkan parameter status dari query, bisa string atau array
+        let { status } = req.query;
+
+        // Normalize jadi array (bisa string tunggal atau array)
+        if (status && !Array.isArray(status)) {
+            status = [status];
+        }
+
+        const orders = await getOrderHistoryByRole(userId, role, status);
+
+        res.status(200).json({
+            message: "Riwayat pesanan berhasil diambil!",
+            data: orders,
+        });
+    } catch (error) {
+        console.error("Error:", error);
+        return res.status(500).json({ message: "Terjadi kesalahan di server!" });
+    }
+});
+
+//(opsional)
 router.get("/completed", authMiddleware, async (req, res) => {
     try {
         const userId = req.user.id;
-        const role = req.user.role; // Assuming you have the user's role in the token
+        const role = req.user.role;
 
         const orders = await getCompleteOrderByRole(userId, role);
         res.status(200).json({
@@ -300,7 +327,7 @@ router.get("/statuses", (req, res) => {
     }
 });
 
-// Update order status - admin & user to cancel
+// Update order status - admin & user to cancel(tidak dipakai)
 router.put("/:id/status", authMiddleware, async (req, res, next) => {
     const errors = validationResult(req);
     if (!errors.isEmpty()) {
@@ -383,12 +410,13 @@ router.put("/:id/cancel", authMiddleware, async (req, res, next) => {
     }
 });
 
+// Update order status - admin&user
 router.put("/:id/update-status", authMiddleware, async (req, res) => {
     try {
         orderId = req.params.id;
         const { status } = req.body;
         const user = req.user;
-        
+
         const updatedOrder = await updatedOrderStatus(orderId, status, user);
         res.status(200).json({
             message: "Status order berhasil diperbarui!",
@@ -406,7 +434,7 @@ router.put("/:id/update-status", authMiddleware, async (req, res) => {
             message: "Terjadi kesalahan di server!",
             error: error.message,
         });
-        
+
     }
 })
 

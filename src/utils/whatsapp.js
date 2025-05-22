@@ -4,6 +4,8 @@
 
 /**
  * Membersihkan nomor telepon menjadi format internasional (62)
+ * @param {string} phone - Nomor telepon mitra
+ * @returns {string} Nomor telepon yang dibersihkan
  */
 function cleanPhoneNumber(phone) {
     return phone.replace(/^(\+|0)/, "62");
@@ -11,8 +13,8 @@ function cleanPhoneNumber(phone) {
 
 /**
  * Generate URL WhatsApp
- * @param {string} phoneNumber - nomor mitra
- * @param {string} message - isi pesan
+ * @param {string} phoneNumber - Nomor mitra
+ * @param {string} message - Isi pesan
  * @returns {string} URL WhatsApp
  */
 function generateWhatsAppUrl(phoneNumber, message) {
@@ -23,24 +25,83 @@ function generateWhatsAppUrl(phoneNumber, message) {
 
 /**
  * Buat pesan WhatsApp rekap order
- * @param {object} partner - data mitra
- * @param {Array} orders - daftar order
- * @returns {object} detail notifikasi
+ * @param {object} partner - Data mitra
+ * @param {Array} orders - Daftar pesanan
+ * @returns {object} Detail notifikasi WhatsApp
  */
 function generatePartnerOrderNotification(partner, orders) {
-    let message = `Halo ${partner.owner_name}, berikut adalah rekap pesanan terbaru dari Sekolah Kopi Raisa:\n\n`;
+    const messageLines = [
+        `Halo ${partner.owner_name}, berikut adalah rekap pesanan terbaru dari Sekolah Kopi Raisa:\n`
+    ];
 
-    orders.forEach((order) => {
-        message += `🛒 Pesanan oleh ${order.user.name}:\n`;
-        order.orderItems.forEach((item) => {
-            message += `- ${item.product.name} (${item.quantity} pcs)\n`;
-            if (item.custom_note) {
-                message += `  Catatan: ${item.custom_note}\n`;
+    // Kelompokkan pesanan berdasarkan nama user
+    const ordersByUser = {};
+
+    for (const order of orders) {
+        const username = order.user.name;
+        if (!ordersByUser[username]) {
+            ordersByUser[username] = [];
+        }
+        ordersByUser[username].push(order);
+    }
+
+    // Proses per user
+    for (const [username, userOrders] of Object.entries(ordersByUser)) {
+        const totalItems = {};        // Semua pesanan (termasuk dengan catatan)
+        const noteGroups = {};        // Hanya pesanan dengan catatan
+        let latestStatus = userOrders.at(-1)?.status?.toUpperCase() || "UNKNOWN";
+
+        for (const order of userOrders) {
+            for (const item of order.orderItems) {
+                const { name: productName } = item.product;
+                const quantity = item.quantity;
+                const note = item.custom_note?.trim();
+
+                // Tambahkan ke total item
+                if (!totalItems[productName]) {
+                    totalItems[productName] = 0;
+                }
+                totalItems[productName] += quantity;
+
+                // Jika ada catatan, simpan ke noteGroups
+                if (note) {
+                    const noteKey = note.toLowerCase();
+                    if (!noteGroups[noteKey]) {
+                        noteGroups[noteKey] = {};
+                    }
+                    if (!noteGroups[noteKey][productName]) {
+                        noteGroups[noteKey][productName] = 0;
+                    }
+                    noteGroups[noteKey][productName] += quantity;
+                }
             }
-        });
-        message += `Status: ${order.status}\n\n`;
-    });
+        }
 
+        messageLines.push(`\n🛒 Pesanan oleh ${username}:`);
+
+        // Total produk tanpa rincian catatan
+         messageLines.push(`A. Jumlah yang dipesan (baik yang ada catatan maupun tidak) :`);
+        for (const [product, qty] of Object.entries(totalItems)) {
+            messageLines.push(`- ${product} (${qty} pcs)`);
+        }
+
+        // Tambahkan bagian catatan jika ada
+        const noteKeys = Object.keys(noteGroups);
+        if (noteKeys.length > 0) {
+            messageLines.push(`\nB. Jumlah pesanan disertai catatan:`);
+            for (const note of noteKeys) {
+                messageLines.push(`- ${note}`);
+                for (const [product, qty] of Object.entries(noteGroups[note])) {
+                    messageLines.push(`  ${product} (${qty} pcs)`);
+                }
+            }
+        }
+
+        messageLines.push(`\nStatus: ${latestStatus}`);
+        messageLines.push(`\nNote : \nPoin A = Total pesanan pembeli yang memiliki catatan maupun tidak\nPoin B = Jumlah Pesanan pembeli berdasarkan Catatannya\n`);
+    }
+
+    const message = messageLines.join('\n');
     const whatsappUrl = generateWhatsAppUrl(partner.phone_number, message);
 
     return {
