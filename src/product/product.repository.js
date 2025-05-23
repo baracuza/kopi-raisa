@@ -137,7 +137,14 @@ const updateInventoryStock = async (inventoryData) => {
 const getProductsByIds = async (productIds) => {
     return await prisma.product.findMany({
         where: { id: { in: productIds } },
-        include: { partner: true },
+        include: {
+            partner: true,
+            inventory: {
+                select: {
+                    stock: true,
+                }
+            }
+        },
     });
 };
 

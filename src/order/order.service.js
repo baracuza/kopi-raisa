@@ -72,14 +72,23 @@ const createOrders = async (userId, orderData) => {
         throw new ApiError(404, "Beberapa produk tidak ditemukan di database");
     }
 
+    const productMap = Object.fromEntries(
+        products.map(product => [product.id, product])
+    );
+
     let totalAmount = 0;
     const itemsWithPrice = items.map((item) => {
-        const product = products.find((p) => p.id === item.products_id);
+        const product = productMap[item.products_id];
         if (!product)
             throw new ApiError(404, `Produk dengan ID ${item.products_id} tidak ditemukan`);
         if (!product.partner?.id)
             throw new ApiError(400, `Produk ID ${product.id} belum memiliki partner!`);
 
+        const availableStock = product.inventory?.stock ?? 0;
+        if (item.quantity > availableStock) {
+            throw new ApiError(400, `Stok produk "${product.name}" tidak mencukupi. Tersedia: ${availableStock}, diminta: ${item.quantity}`);
+
+        }
         const pricePerUnit = product.price;
         const subtotal = pricePerUnit * item.quantity;
         totalAmount += subtotal;
@@ -353,11 +362,11 @@ const contactPartner = async (partnerId) => {
         throw new ApiError(400, "ID mitra tidak valid.");
     }
 
-    
+
     const orderItems = await findOrdersByPartnerId(partnerId);
 
     if (!orderItems || orderItems.length === 0) {
-        throw new ApiError(404,"Tidak ada pesanan baru untuk mitra ini.");
+        throw new ApiError(404, "Tidak ada pesanan baru untuk mitra ini.");
     }
 
     const partner = orderItems[0].partner;
