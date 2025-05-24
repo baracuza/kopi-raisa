@@ -252,18 +252,30 @@ const updatePaymentSnapToken = async (orderId, snapToken, snapRedirectUrl) => {
 };
 
 const updateOrderPaymentStatus = async (orderId, { payment_status, payment_method }) => {
-    return await prisma.order.update({
+    const order = await prisma.order.findUnique({
         where: { id: orderId },
+        include: { payment: true },
+    });
+
+    if (!order) {
+        console.error(`Order dengan ID ${orderId} tidak ditemukan`);
+        throw new Error(`Order dengan ID ${orderId} tidak ditemukan`);
+    }
+
+    if (!order.payment) {
+        console.error(`Order dengan ID ${orderId} belum memiliki data pembayaran`);
+        throw new Error(`Order dengan ID ${orderId} belum memiliki data pembayaran`);
+    }
+
+    return await prisma.payment.update({
+        where: { order_id: orderId },
         data: {
-            payment: {
-                update: {
-                    status: payment_status,
-                    method: payment_method,
-                },
-            },
+            status: payment_status,
+            method: payment_method,
         },
     });
 };
+
 
 const updateStatusOrders = async (orderId, newStatus) => {
     return await prisma.order.update({

@@ -86,40 +86,6 @@ app.use("/api/v1/product", productRoutes);
 app.use("/api/v1/cart", cartRoutes);
 app.use("/api/v1/order", orderRoutes);
 
-// === Swagger ===
-const swaggerOptions = {
-    definition: {
-        openapi: '3.0.0',
-        info: {
-            title: 'API Sekolah Kopi Raisa',
-            version: '1.0.0',
-            description: 'API untuk aplikasi Sekolah Kopi Raisa'
-        },
-        components: {
-            securitySchemes: {
-                cookieAuth: {
-                    type: 'apiKey',
-                    in: 'cookie',
-                    name: 'token'
-                }
-            }
-        },
-        servers: [
-            {
-                url: 'https://sekolah-kopi-raisa.up.railway.app',
-                description: 'Production Server'
-            },
-            {
-                url: 'http://localhost:3000',
-                description: 'Local Environment'
-            }
-        ]
-    },
-    apis: ['./src/**/**/*.controller.js'],
-};
-
-const swaggerDocs = swaggerJsdoc(swaggerOptions);
-app.use('/api-docs', swaggerUi.serve, swaggerUi.setup(swaggerDocs));
 
 // === Error Handler ===
 app.use((err, req, res, next) => {

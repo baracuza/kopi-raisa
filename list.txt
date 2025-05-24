@@ -146,3 +146,18 @@ fetch('/auth/facebook/link', {
   -Ambil profile user.
   -Simpan informasi page + token page ke database (bukan token user).
 
+https://a1b2c3d4.ngrok.io/api/v1/order/midtrans/notification
+https://kopi-raisa.vercel.app/api/v1/order/midtrans/notification
+
+L2JBTLEMY3Z4CQXQT2IFPKW4WC5Y62FY
+
+T8SHYDKNSQ
+TNHWS9GF5J
+5D62MTJ6RW
+TEMRTTBUA8
+YPU34X5AMB
+9VZBTUPADV
+RBHRAKVR4N
+DBRK6NAGWP
+EMDKW9Z8FV
+H9MZM584D3

@@ -142,43 +142,70 @@ const handleMidtransNotification = async (notification) => {
         fraud_status,
     } = notification;
 
-    // Extract orderId dari order_id Midtrans → "ORDER-123-..."
-    const idMatch = order_id.match(/ORDER-(\d+)-/);
+    console.log("📥 Midtrans Notification:", notification);
+    if (!transaction_status || !payment_type || !order_id) {
+        throw new ApiError(400,"Data tidak lengkap dari Midtrans");
+    }
+
+    // Validasi & parsing order_id
+    const idMatch = order_id?.match(/ORDER-(\d+)-/);
     const orderId = idMatch ? parseInt(idMatch[1], 10) : null;
+
     if (!orderId) {
-        throw new Error("order_id tidak valid");
+        throw new Error(`order_id tidak valid: ${order_id}`);
     }
 
-    // Mapping status dari Midtrans ke status internal
-    // Default status
-    let internalStatus;
+    // Mapping status Midtrans → status internal
+    const internalStatus = mapTransactionStatus(transaction_status, payment_type, fraud_status);
+    const paymentMethod = mapPaymentMethod(payment_type);
 
-    if (transaction_status === "capture") {
-        if (payment_type === "credit_card") {
-            internalStatus = fraud_status === "challenge" ? "DENY" : "SUCCESS";
-        } else {
-            internalStatus = "SUCCESS";
-        }
-    } else if (transaction_status === "settlement") {
-        internalStatus = "SUCCESS";
-    } else if (transaction_status === "pending") {
-        internalStatus = "PENDING";
-    } else if (transaction_status === "deny") {
-        internalStatus = "DENY";
-    } else if (transaction_status === "cancel") {
-        internalStatus = "CANCEL";
-    } else if (transaction_status === "expire") {
-        internalStatus = "EXPIRE";
-    } else {
-        internalStatus = "PENDING"; // fallback default
+    if (!paymentMethod) {
+        throw new Error(`Payment method '${payment_type}' tidak dikenali`);
     }
 
-    // Update status di database
+    console.log("✅ Parsed Order ID:", orderId);
+    console.log("🔁 Mapped Status:", internalStatus);
+    console.log("💳 Mapped Payment Method:", paymentMethod);
+
+    // Update status pembayaran di database
     await updateOrderPaymentStatus(orderId, {
-        payment_status: internalStatus.toUpperCase(),
-        payment_method: payment_type,
+        payment_status: internalStatus,
+        payment_method: paymentMethod,
     });
 };
+
+// Helper untuk mapping status transaksi
+const mapTransactionStatus = (status, type, fraud) => {
+    switch (status) {
+        case "capture":
+            return type === "credit_card"
+                ? (fraud === "challenge" ? "DENY" : "SUCCESS")
+                : "SUCCESS";
+        case "settlement":
+            return "SUCCESS";
+        case "pending":
+            return "PENDING";
+        case "deny":
+            return "DENY";
+        case "cancel":
+            return "CANCEL";
+        case "expire":
+            return "EXPIRE";
+        default:
+            return "PENDING";
+    }
+};
+
+// Helper untuk mapping payment_type Midtrans → enum PaymentMethod di Prisma
+const mapPaymentMethod = (type) => {
+    const mapping = {
+        bank_transfer: "BANK_TRANSFER",
+        credit_card: "CREDIT_CARD",
+        qris: "QRIS",
+    };
+    return mapping[type] || null;
+};
+
 
 const getOrderDetailById = async (orderId) => {
     const order = await findOrderDetailById(orderId);

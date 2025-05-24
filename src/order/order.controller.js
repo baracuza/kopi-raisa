@@ -272,9 +272,21 @@ router.post("/", authMiddleware, orderValidator, handleValidationResult, handleV
 //notifikasi midtrans setelah transaksi
 router.post("/midtrans/notification", async (req, res) => {
     try {
+        console.log("🔥 Raw Headers:", req.headers);
+        console.log("📥 Raw Body Content:", req.body);
+        console.log("📥 Midtrans Notification Received:", req.body);
         await handleMidtransNotification(req.body);
         return res.status(200).json({ message: "Notifikasi berhasil diproses" });
     } catch (error) {
+        if (error instanceof ApiError) {
+            console.error("ApiError:", error);
+            return res.status(error.statusCode).json({
+                message: error.message,
+            });
+        }
+        console.error("❌ Error in /midtrans/notification:");
+        console.error("🧾 Error Message:", error.message);
+        console.error("📦 Full Error Stack:", error.stack);
         console.error("Error in /midtrans/notification:", error);
         return res.status(500).json({ message: "Gagal memproses notifikasi", error: error.message });
     }
