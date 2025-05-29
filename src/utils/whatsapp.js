@@ -47,6 +47,9 @@ function generatePartnerOrderNotification(partner, orders) {
 
     // Proses per user
     for (const [username, userOrders] of Object.entries(ordersByUser)) {
+        // const orderId = userOrders.at(-1)?.orderItems?.at(0)?.order?.id ?? "UNKNOWN"; // Ambil ID order terakhir
+        const orderIds = userOrders.map(o => o.orderItems?.[0]?.order?.id).filter(Boolean).join(", "); // Ambil semua ID order
+
         const totalItems = {};        // Semua pesanan (termasuk dengan catatan)
         const noteGroups = {};        // Hanya pesanan dengan catatan
         let latestStatus = userOrders.at(-1)?.status?.toUpperCase() || "UNKNOWN";
@@ -77,7 +80,7 @@ function generatePartnerOrderNotification(partner, orders) {
             }
         }
 
-        messageLines.push(`\n🛒 Pesanan oleh ${username} (Order ID: ${orderId}):`);
+        messageLines.push(`\n🛒 Pesanan oleh ${username} (Order ID: ${orderIds}):`);
 
         // Total produk tanpa rincian catatan
         messageLines.push(`A. Jumlah yang dipesan (baik yang ada catatan maupun tidak) :`);

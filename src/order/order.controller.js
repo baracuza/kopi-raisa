@@ -295,7 +295,6 @@ router.post("/midtrans/notification", async (req, res) => {
     }
 });
 
-
 router.post("/contact-partner/:partnerId", authMiddleware, async (req, res) => {
     if (!req.user.admin) {
         return res.status(403).json({

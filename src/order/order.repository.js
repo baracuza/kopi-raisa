@@ -36,7 +36,7 @@ const findOrdersByUser = async (userId, statusFilter) => {
         include: {
             orderItems: {
                 include: {
-                    product:true,
+                    product: true,
                     partner: true,
                 },
             },
@@ -80,9 +80,7 @@ const findOrdersByPartnerId = async (partnerId) => {
             partner_id: parseInt(partnerId),
             notified_to_partner_at: null,
             order: {
-                status: {
-                    not: "CANCELED",
-                },
+                status: "PENDING",
             },
         },
         include: {
@@ -98,18 +96,43 @@ const findOrdersByPartnerId = async (partnerId) => {
 };
 
 const markOrderItemsAsNotified = async (itemIds) => {
-    if (itemIds.length === 0) return;
+    if (!itemIds.length) return;
 
+    // Update orderItem: set notified_to_partner_at
     await prisma.orderItem.updateMany({
         where: {
-            id: {
-                in: itemIds,
-            },
+            id: { in: itemIds },
         },
         data: {
             notified_to_partner_at: new Date(),
         },
     });
+
+    // Ambil order_id unik dari itemIds
+    const relatedOrderItems = await prisma.orderItem.findMany({
+        where: {
+            id: { in: itemIds },
+        },
+        select: {
+            order_id: true,
+        },
+    });
+
+    const orderIds = [
+        ...new Set(relatedOrderItems.map((item) => item.order_id)),
+    ];
+
+    // Update semua order terkait: set status ke PROCESSING
+    if (orderIds.length > 0) {
+        await prisma.order.updateMany({
+            where: {
+                id: { in: orderIds },
+            },
+            data: {
+                status: "PROCESSING",
+            },
+        });
+    }
 };
 
 const findAllComplietedOrders = async () => {

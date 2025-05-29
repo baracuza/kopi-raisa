@@ -441,7 +441,7 @@ const contactPartner = async (partnerId) => {
     }
 
     const partner = orderItems[0].partner;
-    if (!partnerUser.phone_number || !/^\+?(\d{10,15})$/.test(partner.phone_number)) {
+    if (!partner.phone_number || !/^\+?(\d{10,15})$/.test(partner.phone_number)) {
         throw new ApiError(400, "Nomor telepon mitra tidak tersedia atau tidak valid.");
     }
 
@@ -467,7 +467,9 @@ const contactPartner = async (partnerId) => {
     }));
 
     const result = generatePartnerOrderNotification(partner, orders);
-
+    if (!result || !result.message) {
+        throw new ApiError(500, "Gagal membuat pesan notifikasi untuk mitra.");
+    }
     const itemIds = orderItems.map((i) => i.id);
     await markOrderItemsAsNotified(itemIds);
 
