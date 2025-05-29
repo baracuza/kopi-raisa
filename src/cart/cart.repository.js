@@ -8,27 +8,29 @@ const findAllCart = async (userId) => {
         include: {
             cartItems: {
                 include: {
-                    product:{select:{
-                        id:true,
-                        name:true,
-                        price:true,
-                        description:true,
-                        image:true,
-                        partner:{
-                            select:{
-                                id:true,
-                                name:true,
-                                owner_name:true,
-                                phone_number:true,
-                                address:true
-                            }
-                        },
-                        inventory:{
-                            select:{
-                                stock:true,
+                    product: {
+                        select: {
+                            id: true,
+                            name: true,
+                            price: true,
+                            description: true,
+                            image: true,
+                            partner: {
+                                select: {
+                                    id: true,
+                                    name: true,
+                                    owner_name: true,
+                                    phone_number: true,
+                                    address: true
+                                }
+                            },
+                            inventory: {
+                                select: {
+                                    stock: true,
+                                }
                             }
                         }
-                    }},
+                    },
                 }
             },
         }
@@ -94,6 +96,15 @@ const createCartItem = async (cartId, productId, quantity) => {
     });
 };
 
+const deleteCartItems = async (userId, productIds) => {
+    await prisma.cartItem.deleteMany({
+        where: {
+            user_id: userId,
+            product_id: { in: productIds },
+        },
+    });
+};
+
 const removeCartItem = async (cartItemId) => {
     return await prisma.cartItem.delete({
         where: { id: cartItemId },
@@ -108,7 +119,8 @@ module.exports = {
     findProductByIdAndCart,
     updateCartItemQuantity,
     removeCartItem,
-    findCartItemByProduct
+    findCartItemByProduct,
+    deleteCartItems
     // deleteCartItemById,
     // deleteCartById,
     // updateCartItemQuantity,

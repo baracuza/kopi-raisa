@@ -77,10 +77,10 @@ function generatePartnerOrderNotification(partner, orders) {
             }
         }
 
-        messageLines.push(`\n🛒 Pesanan oleh ${username}:`);
+        messageLines.push(`\n🛒 Pesanan oleh ${username} (Order ID: ${orderId}):`);
 
         // Total produk tanpa rincian catatan
-         messageLines.push(`A. Jumlah yang dipesan (baik yang ada catatan maupun tidak) :`);
+        messageLines.push(`A. Jumlah yang dipesan (baik yang ada catatan maupun tidak) :`);
         for (const [product, qty] of Object.entries(totalItems)) {
             messageLines.push(`- ${product} (${qty} pcs)`);
         }

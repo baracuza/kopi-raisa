@@ -60,8 +60,10 @@ router.get("/", authMiddleware, async (req, res) => {
 // Get order detail user-admin
 router.get("/:id/detail", authMiddleware, async (req, res) => {
     try {
+        const isAdmin = req.user.admin;
+        const userId = req.user.id;
         const { id } = req.params;
-        const order = await getOrderDetailById(id);
+        const order = await getOrderDetailById(id, isAdmin, userId);
         res.status(200).json({
             message: "Data order berhasil didapatkan!",
             data: order,
@@ -99,6 +101,8 @@ router.get("/my-order", authMiddleware, async (req, res) => {
 
         const formattedOrders = orders.map((order) => ({
             orderId: order.id,
+            statusOrder: order.status,
+            createdAt: order.created_at,
             items: order.orderItems.map((item) => ({
                 productId: item.product.id,
                 name: item.product.name,
@@ -106,18 +110,17 @@ router.get("/my-order", authMiddleware, async (req, res) => {
                 price: item.price,
                 subtotal: item.quantity * item.price,
                 partner: {
-                    id: order.partner?.id,
-                    name: order.partner?.name || "Mitra"
-                }
+                    id: item.partner?.id,
+                    name: item.partner?.name || "Mitra"
+                },
+                note: item.custom_note || "-",
             })),
             shippingAddress: order.shippingAddress?.address || "-",
             payment: {
                 method: order.payment?.method,
-                status: order.payment?.status,
+                statusPembayaran: order.payment?.status,
                 amount: order.payment?.amount,
-            },
-            status: order.status,
-            createdAt: order.created_at,
+            }
         }));
 
         res.status(200).json({
@@ -323,9 +326,10 @@ router.post("/contact-partner/:partnerId", authMiddleware, async (req, res) => {
 });
 
 // status untuk order
-router.get("/statuses", (req, res) => {
+router.get("/statuses", authMiddleware, (req, res) => {
     try {
-        const statuses = getOrderStatuses();
+        const isAdmin = req.user.admin;
+        const statuses = getOrderStatuses(isAdmin);
         res.status(200).json({
             message: "Daftar status order berhasil diambil",
             data: statuses,
@@ -340,53 +344,53 @@ router.get("/statuses", (req, res) => {
 });
 
 // Update order status - admin & user to cancel(tidak dipakai)
-router.put("/:id/status", authMiddleware, async (req, res, next) => {
-    const errors = validationResult(req);
-    if (!errors.isEmpty()) {
-        const errorObject = errors.array().reduce(
-            (acc, curr) => {
-                const key =
-                    curr.path && curr.path !== "" ? curr.path : "global";
-                if (!acc[key]) {
-                    acc[key] = curr.msg;
-                }
-                return acc;
-            },
-            {},
-            {}
-        );
-        return res.status(400).json({
-            message: "Validasi gagal!",
-            errors: errorObject,
-        });
-    }
-    try {
-        console.log(req.body);
-        const orderId = parseInt(req.params.id);
-        const { status, reason } = req.body;
-        const user = req.user;
+// router.put("/:id/status", authMiddleware, async (req, res, next) => {
+//     const errors = validationResult(req);
+//     if (!errors.isEmpty()) {
+//         const errorObject = errors.array().reduce(
+//             (acc, curr) => {
+//                 const key =
+//                     curr.path && curr.path !== "" ? curr.path : "global";
+//                 if (!acc[key]) {
+//                     acc[key] = curr.msg;
+//                 }
+//                 return acc;
+//             },
+//             {},
+//             {}
+//         );
+//         return res.status(400).json({
+//             message: "Validasi gagal!",
+//             errors: errorObject,
+//         });
+//     }
+//     try {
+//         console.log(req.body);
+//         const orderId = parseInt(req.params.id);
+//         const { status } = req.body;
+//         const user = req.user;
 
-        const result = await updateStatus(orderId, status, user, reason);
+//         const result = await updateStatus(orderId, status, user);
 
-        res.status(200).json({
-            message: "Status order berhasil diperbarui!",
-            data: result,
-        });
-    } catch (error) {
-        if (error instanceof ApiError) {
-            console.error("ApiError:", error);
-            return res.status(error.statusCode).json({
-                message: error.message,
-            });
-        }
+//         res.status(200).json({
+//             message: "Status order berhasil diperbarui!",
+//             data: result,
+//         });
+//     } catch (error) {
+//         if (error instanceof ApiError) {
+//             console.error("ApiError:", error);
+//             return res.status(error.statusCode).json({
+//                 message: error.message,
+//             });
+//         }
 
-        console.error("Error updating order status:", error);
-        return res.status(500).json({
-            message: "Terjadi kesalahan di server!",
-            error: error.message,
-        });
-    }
-});
+//         console.error("Error updating order status:", error);
+//         return res.status(500).json({
+//             message: "Terjadi kesalahan di server!",
+//             error: error.message,
+//         });
+//     }
+// });
 
 // Cancel order - user
 router.put("/:id/cancel", authMiddleware, async (req, res, next) => {
@@ -425,7 +429,7 @@ router.put("/:id/cancel", authMiddleware, async (req, res, next) => {
 // Update order status - admin&user
 router.put("/:id/update-status", authMiddleware, async (req, res) => {
     try {
-        orderId = req.params.id;
+        const orderId = req.params.id;
         const { status } = req.body;
         const user = req.user;
 

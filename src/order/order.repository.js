@@ -11,9 +11,8 @@ const findAllOrders = async (statusFilter) => {
             user: true,
             orderItems: {
                 include: {
-                    product: {
-                        include: { partner: true },
-                    },
+                    product: true,
+                    partner: true,
                 },
             },
             shippingAddress: true,
@@ -37,9 +36,8 @@ const findOrdersByUser = async (userId, statusFilter) => {
         include: {
             orderItems: {
                 include: {
-                    product: {
-                        include: { partner: true },
-                    },
+                    product:true,
+                    partner: true,
                 },
             },
             shippingAddress: true,

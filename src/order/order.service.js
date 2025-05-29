@@ -3,6 +3,8 @@ const { generatePartnerOrderNotification } = require("../utils/whatsapp");
 const { OrderStatus } = require("@prisma/client");
 const { getProductsByIds } = require("../product/product.repository");
 const { createMidtransSnapToken } = require("../utils/midtrans");
+const { deleteCartItems } = require("../cart/cart.repository");
+
 
 const {
 
@@ -78,6 +80,7 @@ const createOrders = async (userId, orderData) => {
 
     let totalAmount = 0;
     const itemsWithPrice = items.map((item) => {
+
         const product = productMap[item.products_id];
         if (!product)
             throw new ApiError(404, `Produk dengan ID ${item.products_id} tidak ditemukan`);
@@ -98,12 +101,20 @@ const createOrders = async (userId, orderData) => {
             quantity: item.quantity,
             price: pricePerUnit,
             custom_note: item.custom_note || null,
-            partner_id: product.partner?.id ?? null
+            partner_id: product.partner?.id ?? null,
+            fromCart: item.fromCart === true,
         };
     });
 
+    const fromCartProductId = itemsWithPrice
+        .filter(item => item.fromCart)
+        .map(item => item.products_id);
+
+    // Hapus field fromCart
+    const itemsToSave = itemsWithPrice.map(({ fromCart, ...rest }) => rest);
+
     const orders = await insertNewOrders(userId, {
-        items: itemsWithPrice,
+        items: itemsToSave,
         address,
         paymentMethod,
         totalAmount: parseInt(totalAmount),
@@ -124,6 +135,12 @@ const createOrders = async (userId, orderData) => {
     }
 
     const updatedOrder = await updatePaymentSnapToken(orders.id, snapToken ?? snapRedirectUrl, snapRedirectUrl);
+
+    // Hapus produk dari cart jika perlu
+    if (fromCartProductId.length > 0) {
+        await deleteCartItems(userId, fromCartProductId);
+    }
+
     return {
         updatedOrder,
         paymentInfo: {
@@ -144,7 +161,7 @@ const handleMidtransNotification = async (notification) => {
 
     console.log("📥 Midtrans Notification:", notification);
     if (!transaction_status || !payment_type || !order_id) {
-        throw new ApiError(400,"Data tidak lengkap dari Midtrans");
+        throw new ApiError(400, "Data tidak lengkap dari Midtrans");
     }
 
     // Validasi & parsing order_id
@@ -207,33 +224,61 @@ const mapPaymentMethod = (type) => {
 };
 
 
-const getOrderDetailById = async (orderId) => {
-    const order = await findOrderDetailById(orderId);
-    if (!order) {
-        throw new ApiError(404, "Order tidak ditemukan");
+const getOrderDetailById = async (orderId, isAdmin, userId) => {
+    if (isAdmin === true) {
+        const order = await findOrderDetailById(orderId);
+        if (!order) {
+            throw new ApiError(404, "Order tidak ditemukan");
+        }
+        return {
+            orderId: order.id,
+            namaCustomer: order.user?.name || "-",
+            alamatCustomer: order.shippingAddress?.address || "-",
+            tanggalTransaksi: order.created_at,
+            statusOrder: order.status,
+            items: order.orderItems.map(item => ({
+                namaProduk: item.product.name,
+                harga: item.price,
+                quantity: item.quantity,
+                catatan: item.custom_note,
+                namaMitra: item.partner?.name || "-",
+            })),
+            statusPembayaran: order.payment?.status || "-",
+            totalHarga: order.payment?.amount ?? 0,
+        };
+    } else {
+        const order = await findOrderDetailById(orderId);
+        if (!order || order.user_id !== userId) {
+            throw new ApiError(403, "Anda tidak memiliki akses ke order ini");
+        }
+        return {
+            orderId: order.id,
+            namaCustomer: order.user?.name || "-",
+            alamatCustomer: order.shippingAddress?.address || "-",
+            tanggalTransaksi: order.created_at,
+            statusOrder: order.status,
+            items: order.orderItems.map(item => ({
+                namaProduk: item.product.name,
+                harga: item.price,
+                quantity: item.quantity,
+                catatan: item.custom_note,
+                namaMitra: item.partner?.name || "-",
+            })),
+            statusPembayaran: order.payment?.status || "-",
+            totalHarga: order.payment?.amount ?? 0,
+        };
     }
-
-    return {
-        orderId: order.id,
-        tanggalTransaksi: order.created_at,
-        namaCustomer: order.user?.name || "-",
-        status: order.status,
-        alamatCustomer: order.shippingAddress?.address || "-",
-        items: order.orderItems.map(item => ({
-            namaProduk: item.product.name,
-            harga: item.price,
-            quantity: item.quantity,
-            catatan: item.custom_note,
-            namaMitra: item.partner?.name || "-",
-        })),
-        totalHarga: order.payment?.amount ?? 0,
-    };
 };
 
-const getOrderStatuses = () => {
-    return Object.values(OrderStatus);
+const getOrderStatuses = (isAdmin) => {
+    if (isAdmin) {
+        return Object.values(OrderStatus);
+    } else {
+        return Object.values(OrderStatus).filter(status => [OrderStatus.DELIVERED].includes(status));
+    }
 };
 
+//tidak digunakan//
 const updateStatus = async (orderId, newStatus, user, reason) => {
     const order = await findOrdersById(orderId);
     if (!order) {
@@ -263,11 +308,10 @@ const updateStatus = async (orderId, newStatus, user, reason) => {
 
         // hanya bisa batalkan dari pending
         if (
-            newStatus === OrderStatus.CANCELED &&
-            order.status !== OrderStatus.PENDING
+            newStatus === OrderStatus.CANCELED
         ) {
-            throw new Error(
-                "Pesanan hanya bisa dibatalkan saat status PENDING"
+            throw new ApiError(
+                403, "Customer tidak diizinkan membatalkan pesanan tanpa alasan"
             );
         }
 
@@ -291,6 +335,7 @@ const updateStatus = async (orderId, newStatus, user, reason) => {
     }
     return await updateStatusOrders(orderId, newStatus, reason);
 };
+//tidak digunakan//
 
 const updatedOrderStatus = async (orderId, newStatus, user) => {
     const order = await findOrdersById(orderId);
@@ -310,22 +355,21 @@ const updatedOrderStatus = async (orderId, newStatus, user) => {
                 OrderStatus.CANCELED,
             ].includes(newStatus)
         ) {
-            throw new Error(
-                "Admin hanya bisa mengubah status ke: PROCESSING, SHIPPED, DELIVERED, atau CANCELED"
+            throw new ApiError(
+                403, "Admin hanya bisa mengubah status ke: PROCESSING, SHIPPED, DELIVERED, atau CANCELED"
             );
         }
     } else {
         // Customer validasi hak milik order
         if (order.user_id !== user.id)
-            throw new Error("Akses ditolak: bukan pesanan Anda");
+            throw new ApiError(403, "Akses ditolak: bukan pesanan Anda");
 
         // hanya bisa batalkan dari pending
         if (
-            newStatus === OrderStatus.CANCELED &&
-            order.status !== OrderStatus.PENDING
+            newStatus === OrderStatus.CANCELED
         ) {
-            throw new Error(
-                "Pesanan hanya bisa dibatalkan saat status PENDING"
+            throw new ApiError(
+                403, "Customer tidak diizinkan membatalkan pesanan tanpa alasan"
             );
         }
 
@@ -334,16 +378,16 @@ const updatedOrderStatus = async (orderId, newStatus, user) => {
             newStatus === OrderStatus.DELIVERED &&
             order.status !== OrderStatus.SHIPPED
         ) {
-            throw new Error(
-                "Pesanan hanya bisa ditandai selesai setelah dikirim"
+            throw new ApiError(
+                403, "Pesanan hanya bisa ditandai selesai setelah dikirim"
             );
         }
 
         if (
-            ![OrderStatus.CANCELED, OrderStatus.DELIVERED].includes(newStatus)
+            ![OrderStatus.DELIVERED].includes(newStatus)
         ) {
-            throw new Error(
-                "Customer tidak berhak mengubah ke status tersebut"
+            throw new ApiError(
+                403, "Customer tidak berhak mengubah ke status tersebut"
             );
         }
     }
@@ -397,6 +441,11 @@ const contactPartner = async (partnerId) => {
     }
 
     const partner = orderItems[0].partner;
+    if (!partnerUser.phone_number || !/^\+?(\d{10,15})$/.test(partner.phone_number)) {
+        throw new ApiError(400, "Nomor telepon mitra tidak tersedia atau tidak valid.");
+    }
+
+    // Kelompokkan order berdasarkan ID
     const groupedOrders = {};
 
     orderItems.forEach((item) => {
