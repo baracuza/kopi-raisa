@@ -1,6 +1,7 @@
 const ApiError = require("../utils/apiError");
 const { generatePartnerOrderNotification } = require("../utils/whatsapp");
 const { OrderStatus } = require("@prisma/client");
+const { PaymentMethod } = require("@prisma/client")
 const { getProductsByIds } = require("../product/product.repository");
 const { createMidtransSnapToken } = require("../utils/midtrans");
 const { deleteCartItems } = require("../cart/cart.repository");
@@ -271,12 +272,16 @@ const getOrderDetailById = async (orderId, isAdmin, userId) => {
     }
 };
 
-const getOrderStatuses = (isAdmin) => {
+const getOrderStatuses = () => {
     if (isAdmin) {
         return Object.values(OrderStatus);
     } else {
         return Object.values(OrderStatus).filter(status => [OrderStatus.DELIVERED].includes(status));
     }
+};
+
+const getPaymentMethod = () => {
+    return Object.values(PaymentMethod);
 };
 
 //tidak digunakan//
@@ -509,6 +514,7 @@ module.exports = {
     getOrderDetailById,
     getOrderStatuses,
     getOrderHistoryByRole,
+    getPaymentMethod,
     createOrders,
     contactPartner,
     cancelOrder,

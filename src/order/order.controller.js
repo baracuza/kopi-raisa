@@ -16,6 +16,7 @@ const {
     getOrderDetailById,
     getOrderStatuses,
     getOrderHistoryByRole,
+    getPaymentMethod,
     createOrders,
     handleMidtransNotification,
     updateOrders,
@@ -195,10 +196,26 @@ router.get("/completed", authMiddleware, async (req, res) => {
 });
 
 // status untuk order
-router.get("/statuses", authMiddleware, (req, res) => {
+router.get("/Order-statuses", authMiddleware, (req, res) => {
     try {
         const isAdmin = req.user.admin;
         const statuses = getOrderStatuses(isAdmin);
+        res.status(200).json({
+            message: "Daftar status order berhasil diambil",
+            data: statuses,
+        });
+    } catch (error) {
+        console.error("Error getting order statuses:", error);
+        res.status(500).json({
+            message: "Terjadi kesalahan saat mengambil status order",
+            error: error.message,
+        });
+    }
+});
+
+router.get("/payment-method", authMiddleware, (req, res) => {
+    try {
+        const statuses = getPaymentMethod();
         res.status(200).json({
             message: "Daftar status order berhasil diambil",
             data: statuses,
