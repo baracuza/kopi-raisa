@@ -173,13 +173,10 @@ router.get("/history", authMiddleware, async (req, res) => {
 //(opsional)
 router.get("/completed", authMiddleware, async (req, res) => {
     try {
-        const userId = req.user.id;
-        const role = req.user.role;
-
-        const orders = await getCompleteOrderByRole(userId, role);
+        const sold = await getCompleteOrderByRole();
         res.status(200).json({
             message: "Data order berhasil didapatkan!",
-            data: orders,
+            data: sold,
         });
     } catch (error) {
         if (error instanceof ApiError) {
@@ -192,6 +189,24 @@ router.get("/completed", authMiddleware, async (req, res) => {
         console.error("Error getting orders:", error);
         return res.status(500).json({
             message: "Terjadi kesalahan di server!",
+            error: error.message,
+        });
+    }
+});
+
+// status untuk order
+router.get("/statuses", authMiddleware, (req, res) => {
+    try {
+        const isAdmin = req.user.admin;
+        const statuses = getOrderStatuses(isAdmin);
+        res.status(200).json({
+            message: "Daftar status order berhasil diambil",
+            data: statuses,
+        });
+    } catch (error) {
+        console.error("Error getting order statuses:", error);
+        res.status(500).json({
+            message: "Terjadi kesalahan saat mengambil status order",
             error: error.message,
         });
     }
@@ -324,23 +339,7 @@ router.post("/contact-partner/:partnerId", authMiddleware, async (req, res) => {
     }
 });
 
-// status untuk order
-router.get("/statuses", authMiddleware, (req, res) => {
-    try {
-        const isAdmin = req.user.admin;
-        const statuses = getOrderStatuses(isAdmin);
-        res.status(200).json({
-            message: "Daftar status order berhasil diambil",
-            data: statuses,
-        });
-    } catch (error) {
-        console.error("Error getting order statuses:", error);
-        res.status(500).json({
-            message: "Terjadi kesalahan saat mengambil status order",
-            error: error.message,
-        });
-    }
-});
+
 
 // Update order status - admin & user to cancel(tidak dipakai)
 // router.put("/:id/status", authMiddleware, async (req, res, next) => {

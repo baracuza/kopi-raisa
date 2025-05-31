@@ -17,7 +17,7 @@ const getAllProducts = async () => {
 
 const getProductById = async (productId) => {
     const product = await findProductById(productId);
-    if (!product) {
+    if (!product|| product=== null) {
         throw new ApiError(404, 'Produk tidak ditemukan!');
     }
     return product;

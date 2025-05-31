@@ -3,6 +3,7 @@ const prisma = require('../db');
 
 
 const findAllProducts = async () => {
+    // Ambil semua produk
     const products = await prisma.product.findMany({
         include: {
             inventory: {
@@ -22,7 +23,29 @@ const findAllProducts = async () => {
         }
     });
 
-    return products;
+    // Hitung total terjual berdasarkan products_id dari order yang berstatus DELIVERED
+    const soldQuantities = await prisma.orderItem.groupBy({
+        by: ['products_id'],
+        where: {
+            order: {
+                status: 'DELIVERED',
+            },
+        },
+        _sum: {
+            quantity: true,
+        },
+    });
+
+    // Gabungkan data produk dengan penjualan
+    const productsWithSales = products.map((product) => {
+        const soldData = soldQuantities.find(sq => sq.products_id === product.id);
+        return {
+            ...product,
+            sold: soldData?._sum?.quantity || 0,
+        };
+    });
+
+    return productsWithSales;
 };
 
 
@@ -94,11 +117,28 @@ const findProductById = async (id) => {
                     stock: true
                 }
             }
-
         }
-
     });
-    return product;
+
+    if (!product) return null;
+
+    // Hitung total terjual berdasarkan products_id dari order yang berstatus DELIVERED
+    const soldQuantities = await prisma.orderItem.aggregate({
+        where:{
+            products_id: parseInt(id),
+            order:{
+                status:"DELIVERED",
+            }
+        },
+        _sum:{
+            quantity: true,
+        }
+    });
+
+    return {
+        ...product,
+        sold: soldQuantities._sum.quantity || 0,
+    };
 };
 
 const updateDataProduct = async (id, updatedProductData) => {
