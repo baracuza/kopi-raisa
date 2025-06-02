@@ -217,7 +217,7 @@ router.get("/payment-method", authMiddleware, (req, res) => {
     try {
         const statuses = getPaymentMethod();
         res.status(200).json({
-            message: "Daftar status order berhasil diambil",
+            message: "Daftar payment method berhasil diambil",
             data: statuses,
         });
     } catch (error) {

@@ -161,3 +161,41 @@ RBHRAKVR4N
 DBRK6NAGWP
 EMDKW9Z8FV
 H9MZM584D3
+
+model FormTemplate {
+  id               Int      @id @default(autoincrement())
+  title            String
+  google_form_link String
+  created_at       DateTime @default(now())
+  updated_at       DateTime @updatedAt
+  formEntries      FormEntry[]
+  formFields       FormField[]
+}
+
+model FormEntry {
+  id               Int      @id @default(autoincrement())
+  formTemplate     FormTemplate @relation(fields: [form_template_id], references: [id])
+  form_template_id Int
+  user             User     @relation(fields: [user_id], references: [id])
+  user_id          Int
+  submitted_at     DateTime?
+  values           FormEntryValue[]
+}
+
+model FormField {
+  id               Int      @id @default(autoincrement())
+  formTemplate     FormTemplate @relation(fields: [form_template_id], references: [id])
+  form_template_id Int
+  field_name       String
+  field_type       String
+  field_key        String
+}
+
+model FormEntryValue {
+  id              Int        @id @default(autoincrement())
+  formEntry       FormEntry  @relation(fields: [form_entry_id], references: [id])
+  form_entry_id   Int
+  formField       FormField  @relation(fields: [form_field_id], references: [id])
+  form_field_id   Int
+  value           String
+}
