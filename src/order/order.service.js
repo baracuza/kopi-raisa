@@ -272,7 +272,7 @@ const getOrderDetailById = async (orderId, isAdmin, userId) => {
     }
 };
 
-const getOrderStatuses = () => {
+const getOrderStatuses = (isAdmin) => {
     if (isAdmin) {
         return Object.values(OrderStatus);
     } else {
