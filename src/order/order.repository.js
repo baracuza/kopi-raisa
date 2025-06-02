@@ -300,7 +300,7 @@ const updateOrderPaymentStatus = async (orderId, { payment_status, payment_metho
 
 const updateStatusOrders = async (orderId, newStatus) => {
     return await prisma.order.update({
-        where: { id: orderId },
+        where: { id: parseInt(orderId) },
         data: {
             status: newStatus,
             updated_at: new Date(),
