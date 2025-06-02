@@ -72,6 +72,7 @@ const partnerRoutes = require('./src/partners/partner.controller');
 const productRoutes = require('./src/product/product.controller');
 const cartRoutes = require('./src/cart/cart.controller');
 const orderRoutes = require('./src/order/order.controller');
+const reportRoutes = require('./src/report/report.controller');
 
 // Default Endpoint
 app.get('/', (req, res) => {
@@ -85,6 +86,7 @@ app.use("/api/v1/partner", partnerRoutes);
 app.use("/api/v1/product", productRoutes);
 app.use("/api/v1/cart", cartRoutes);
 app.use("/api/v1/order", orderRoutes);
+app.use("/api/v1/report", reportRoutes);
 
 
 // === Error Handler ===
