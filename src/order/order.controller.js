@@ -106,6 +106,7 @@ router.get("/my-order", authMiddleware, async (req, res) => {
             createdAt: order.created_at,
             items: order.orderItems.map((item) => ({
                 productId: item.product.id,
+                productImage: item.product.image,
                 name: item.product.name,
                 quantity: item.quantity,
                 price: item.price,
