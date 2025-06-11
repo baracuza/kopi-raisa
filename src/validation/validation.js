@@ -137,15 +137,11 @@ const partnerValidator = [
     body('phone_number')
         .trim()
         .notEmpty().withMessage('*Nomor telepon wajib diisi')
+        .isNumeric({ no_symbols: true }).withMessage('*Nomor telepon harus berupa angka')
+        .isLength({ min: 9, max: 16 }).withMessage('*Panjang karakter Nomor telepon tidak valid')
         .custom((value) => {
-            if (!validator.isMobilePhone(value, 'id-ID')) {
-                throw new Error('*Format nomor telepon tidak valid');
-            }
-            if (!validator.isNumeric(value)) {
-                throw new Error('*Nomor telepon harus berupa angka');
-            }
-            if (value.length < 10 || value.length > 15) {
-                throw new Error('*Panjang karakter Nomor telepon tidak valid');
+            if (!/^(0|(\+62))[0-9]{8,13}$/.test(value)) {
+                throw new Error('*Format nomor telepon tidak valid. Gunakan awalan 0 atau +62.');
             }
             return true;
         }),
@@ -211,5 +207,5 @@ const validateQueryDomestic = [
 module.exports = {
     validateRegister, validateLogin, createNewsValidator,
     updateNewsValidator, validateUpdateProfile, partnerValidator,
-    productValidator, orderValidator,validateQueryDomestic
+    productValidator, orderValidator, validateQueryDomestic
 };
