@@ -62,6 +62,9 @@ const getCompleteOrderByRole = async (userId, role) => {
 
 
 const createOrders = async (userId, orderData) => {
+    console.log("Membuat order untuk user:", userId);
+    console.log("Data order:", orderData);
+    
     const { items, address, paymentMethod } = orderData;
 
     if (!items || items.length === 0)
@@ -71,6 +74,7 @@ const createOrders = async (userId, orderData) => {
 
     const productIds = items.map((item) => item.products_id);
     const products = await getProductsByIds(productIds);
+    console.log("Produk yang ditemukan:", products);
 
     if (products.length !== items.length) {
         throw new ApiError(404, "Beberapa produk tidak ditemukan di database");
