@@ -201,15 +201,15 @@ router.put('/:id', authMiddleware, upload.single('productFile'), multerErrorHand
     }
 });
 
-router.delete('/:id', authMiddleware, async (req, res) => {
+router.delete('/:idProduct', authMiddleware, async (req, res) => {
     try {
-        const { id } = req.params;
+        const { idProduct } = req.params;
 
         if (!req.user.admin) {
             return res.status(403).json({ message: 'Akses ditolak! Hanya admin yang bisa menghapus produk.' });
         }
 
-        const product = await removeProductById(id);
+        const product = await removeProductById(idProduct);
 
         console.log(product);
         res.status(200).json({

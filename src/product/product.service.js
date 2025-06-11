@@ -23,8 +23,8 @@ const getProductById = async (productId) => {
     return product;
 }
 
-const removeProductById = async (id) => {
-    const existingProduct = await findProductById(id);
+const removeProductById = async (idProduct) => {
+    const existingProduct = await findProductById(idProduct);
     console.log("produk yang dicari: ", existingProduct)
 
     if (!existingProduct) {
@@ -40,7 +40,7 @@ const removeProductById = async (id) => {
         }
     }
 
-    const productData = await deleteProductById(id);
+    const productData = await deleteProductById(idProduct);
     if (!productData) {
         throw new ApiError(500, 'Gagal menghapus produk!');
     }

@@ -49,10 +49,10 @@ const findAllProducts = async () => {
 };
 
 
-const deleteProductById = async (id) => {
+const deleteProductById = async (idProduct) => {
     const product = await prisma.product.delete({
         where: {
-            id: parseInt(id),
+            id: parseInt(idProduct),
         },
     });
     return product;
@@ -98,10 +98,10 @@ const createInventory = async (inventoryProduct) => {
     return inventoryData;
 };
 
-const findProductById = async (id) => {
+const findProductById = async (idProduct) => {
     const product = await prisma.product.findUnique({
         where: {
-            id: parseInt(id),
+            id: parseInt(idProduct),
         },
         include: {
             partner: {
@@ -125,7 +125,7 @@ const findProductById = async (id) => {
     // Hitung total terjual berdasarkan products_id dari order yang berstatus DELIVERED
     const soldQuantities = await prisma.orderItem.aggregate({
         where:{
-            products_id: parseInt(id),
+            products_id: parseInt(idProduct),
             order:{
                 status:"DELIVERED",
             }

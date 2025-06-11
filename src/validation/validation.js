@@ -1,4 +1,5 @@
-const { body } = require('express-validator');
+const { body, query } = require('express-validator');
+
 const validator = require('validator');
 
 const validateRegister = [
@@ -201,9 +202,14 @@ const orderValidator = [
         .notEmpty().withMessage('*Metode pembayaran wajib diisi'),
 ];
 
+const validateQueryDomestic = [
+    query('search')
+        .notEmpty().withMessage('Masukkan parameter alamat untuk pencarian')
+        .isString().withMessage('Parameter alamat untuk pencarian harus berupa teks.'),
+];
 
 module.exports = {
     validateRegister, validateLogin, createNewsValidator,
     updateNewsValidator, validateUpdateProfile, partnerValidator,
-    productValidator, orderValidator
+    productValidator, orderValidator,validateQueryDomestic
 };

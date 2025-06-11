@@ -5,7 +5,7 @@ const { PaymentMethod } = require("@prisma/client")
 const { getProductsByIds } = require("../product/product.repository");
 const { createMidtransSnapToken } = require("../utils/midtrans");
 const { deleteCartItems } = require("../cart/cart.repository");
-
+const rajaOngkirApi = require("../utils/rajaOngkir");
 
 const {
 
@@ -280,6 +280,28 @@ const getOrderStatuses = (isAdmin) => {
     }
 };
 
+const getDomestic = async (searchParams) => {
+
+    const {
+        search,
+        limit = 5,
+        offset = 0
+    } = searchParams;
+
+    const response = await rajaOngkirApi.get('/destination/domestic-destination', {
+        params: { search, limit, offset },
+    });
+
+    const allDataDomestic = response.data.data;
+    console.log("Data semua domestic service(allDataDomestic):", allDataDomestic);
+    
+    if (!allDataDomestic || allDataDomestic.length === 0) {
+        throw new ApiError(404, "Tidak ada data domestik ditemukan!");
+    }
+
+    return allDataDomestic
+}
+
 const getPaymentMethod = () => {
     return Object.values(PaymentMethod);
 };
@@ -508,6 +530,7 @@ const removeOrders = async (id) => {
 };
 
 module.exports = {
+    getDomestic,
     getAllOrders,
     getOrdersByUser,
     getCompleteOrderByRole,

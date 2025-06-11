@@ -3,13 +3,14 @@ const express = require("express");
 const { authMiddleware } = require("../middleware/middleware");
 const ApiError = require("../utils/apiError");
 const { validationResult } = require("express-validator");
-const { orderValidator } = require("../validation/validation");
+const { orderValidator, validateQueryDomestic } = require("../validation/validation");
 const handleValidationResult = require('../middleware/handleValidationResult');
 const handleValidationResultFinal = require('../middleware/handleValidationResultFinal');
 const verifyMidtransSignature = require("../middleware/midtransSignatureValidator");
 
 
 const {
+    getDomestic,
     getAllOrders,
     getOrdersByUser,
     getCompleteOrderByRole,
@@ -305,14 +306,34 @@ router.post("/", authMiddleware, orderValidator, handleValidationResult, handleV
         }
     });
 
+router.post("/midtrans/payment-notification", async (req, res) => {
+    try {
+        const notification = req.body;
+
+        // Logika proses: update status transaksi di database
+        console.log("Received Midtrans notification:", notification);
+
+        res.status(200).send("Notification received");
+
+    } catch (error) {
+        console.error("Error processing Midtrans notification:", error);
+        res.status(500).send("Error processing notification");
+    }
+});
+
 //notifikasi midtrans setelah transaksi
 router.post("/midtrans/notification", async (req, res) => {
     try {
-        console.log("🔥 Raw Headers:", req.headers);
-        console.log("📥 Raw Body Content:", req.body);
-        console.log("📥 Midtrans Notification Received:", req.body);
-        await handleMidtransNotification(req.body);
-        return res.status(200).json({ message: "Notifikasi berhasil diproses" });
+        const notification = req.body;
+        console.log("🔔 Notifikasi Midtrans diterima:", notification)
+
+        const notifikasi = await handleMidtransNotification(notification);
+
+        console.log("✅ Notifikasi Midtrans berhasil diproses:", notifikasi);
+        return res.status(200).json({
+            message: "Notifikasi berhasil diproses",
+            data: notifikasi,
+        });
     } catch (error) {
         if (error instanceof ApiError) {
             console.error("ApiError:", error);
@@ -357,7 +378,62 @@ router.post("/contact-partner/:partnerId", authMiddleware, async (req, res) => {
     }
 });
 
+router.get("/search-address", authMiddleware, validateQueryDomestic, handleValidationResult, handleValidationResultFinal,
+    async (req, res) => {
 
+        // Validasi query params
+        const errors = validationResult(req);
+        if (!errors.isEmpty()) {
+            const errorObject = errors.array().reduce((acc, curr) => {
+                const key = curr.path && curr.path !== "" ? curr.path : "global";
+                if (!acc[key]) {
+                    acc[key] = curr.msg;
+                }
+                return acc;
+            }, {});
+
+            return res.status(400).json({
+                message: "Validasi gagal!",
+                errors: errorObject,
+            });
+        }
+
+        // fungsi pencarian alamat domestik
+        try {
+            const searchParams = req.query
+            console.log("Search Query Params (searchParams):", searchParams);
+
+            const searchAddress = await getDomestic(searchParams)
+            console.log("Search Address Result controller(searchAddress):", searchAddress);
+
+            res.status(200).json({
+                message: "Berhasil mendapatkan Tujuan Domestik.",
+                data: searchAddress,
+            });
+        } catch (error) {
+            console.error("Error getting domestic address:", error);
+            if (error instanceof ApiError) {
+                console.error('ApiError:', error);
+                return res.status(error.statusCode).json({
+                    message: error.message,
+                })
+            }
+
+            // Coba ambil info error dari axios
+            if (error.isAxiosError && error.response) {
+                return res.status(error.response.status).json({
+                    message: error.response.data?.message || error.message,
+                    details: error.response.data || null,
+                });
+            }
+
+            console.error("Get Domestic Error:", error);
+            return res.status(error.statusCode || 500).json({
+                message: error.message || "Terjadi kesalahan saat mengambil data provinsi.",
+            });
+
+        }
+    })
 
 // Update order status - admin & user to cancel(tidak dipakai)
 // router.put("/:id/status", authMiddleware, async (req, res, next) => {
