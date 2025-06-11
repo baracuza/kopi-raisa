@@ -253,6 +253,19 @@ router.post("/", authMiddleware, orderValidator, handleValidationResult, handleV
         try {
             const userId = req.user.id;
             const orderData = req.body;
+            console.log("📦 Received order data:", orderData);
+            console.log("🧪 Type Checking:");
+            console.log("- typeof orderData:", typeof orderData);
+            console.log("- typeof orderData.items:", typeof orderData.items, "| isArray:", Array.isArray(orderData.items));
+            console.log("- typeof orderData.address:", typeof orderData.address);
+            console.log("- typeof orderData.paymentMethod:", typeof orderData.paymentMethod);
+
+            if (Array.isArray(orderData.items)) {
+                orderData.items.forEach((item, index) => {
+                    console.log(`  🧾 Item[${index}] - products_id:`, item.products_id, "| typeof:", typeof item.products_id);
+                });
+            }
+            
             const { updatedOrder, paymentInfo } = await createOrders(userId, orderData);
             console.log("Order created successfully:", updatedOrder);
             console.log("Payment Info:", paymentInfo);

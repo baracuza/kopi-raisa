@@ -76,6 +76,11 @@ const createOrders = async (userId, orderData) => {
         throw new ApiError(404, "Alamat dan metode pembayaran wajib diisi");
 
     const productIds = items.map((item) => item.products_id);
+    // Log detail tipe data setiap productId
+    productIds.forEach((id, index) => {
+        console.log(`Tipe data productId di index ${index}:`, id, "-", typeof id);
+    });
+    
     const products = await getProductsByIds(productIds);
     console.log("Produk yang ditemukan:", products);
 
@@ -301,7 +306,7 @@ const getDomestic = async (searchParams) => {
 
     const allDataDomestic = response.data.data;
     console.log("Data semua domestic service(allDataDomestic):", allDataDomestic);
-    
+
     if (!allDataDomestic || allDataDomestic.length === 0) {
         throw new ApiError(404, "Tidak ada data domestik ditemukan!");
     }
