@@ -254,6 +254,8 @@ router.post("/", authMiddleware, orderValidator, handleValidationResult, handleV
             const userId = req.user.id;
             const orderData = req.body;
             const { updatedOrder, paymentInfo } = await createOrders(userId, orderData);
+            console.log("Order created successfully:", updatedOrder);
+            console.log("Payment Info:", paymentInfo);
 
             res.status(201).json({
                 message: "Pesanan kamu berhasil dibuat dan sedang diproses.",
@@ -435,7 +437,7 @@ router.get("/search-address", authMiddleware, validateQueryDomestic, handleValid
         }
     })
 
-    
+
 
 // Update order status - admin & user to cancel(tidak dipakai)
 // router.put("/:id/status", authMiddleware, async (req, res, next) => {

@@ -64,8 +64,11 @@ const getCompleteOrderByRole = async (userId, role) => {
 const createOrders = async (userId, orderData) => {
     console.log("Membuat order untuk user:", userId);
     console.log("Data order:", orderData);
-    
+
     const { items, address, paymentMethod } = orderData;
+    console.log("Items:", items);
+    console.log("Alamat:", address);
+    console.log("Metode Pembayaran:", paymentMethod);
 
     if (!items || items.length === 0)
         throw new ApiError(404, "Pesanan tidak boleh kosong");
