@@ -16,16 +16,34 @@ router.get('/', authMiddleware, async (req, res) => {
         }
         const partners = await getAllPartners();
 
-        console.log('data',partners);
+        const formatedPartner = partners.map(partner => ({
+            idPartner: partner.id,
+            namePartner: partner.name,
+            ownerPartner: partner.owner_name,
+            phoneNumberPartner: partner.phone_number,
+            addressPartner: partner.address,
+            products: partner.products.map(product => ({
+                idProduct: product.id,
+                nameProduct: product.name,
+                priceProduct: product.price,
+                descriptionProduct: product.description,
+                stockProduct: product.inventory.stock,
+                soldProduct: product.sold,
+                imageProduct: product.image,
+            }))
+        }))
+
+        console.log('data', partners);
         res.status(200).json({
             message: 'Data partner berhasil didapatkan!',
+            // data: formatedPartner,
             data: partners,
         });
     } catch (error) {
-        if(error instanceof ApiError){
+        if (error instanceof ApiError) {
             console.error('ApiError:', error);
             return res.status(error.statusCode).json({
-                message:error.message,
+                message: error.message,
             })
         }
 
@@ -42,10 +60,27 @@ router.get('/:id', authMiddleware, async (req, res) => {
         const { id } = req.params;
         const partner = await getPartnerById(id);
 
-        console.log('data',partner);
+        const formatedPartnerId = {
+            idPartner: partner.id,
+            namePartner: partner.name,
+            ownerPartner: partner.owner_name,
+            phoneNumberPartner: partner.phone_number,
+            addressPartner: partner.address,
+            products: partner.products.map(product => ({
+                idProduct: product.id,
+                nameProduct: product.name,
+                priceProduct: product.price,
+                descriptionProduct: product.description,
+                stockProduct: product.inventory.stock,
+                soldProduct: product.sold,
+                imageProduct: product.image,
+            }))
+        }
+
+        console.log('data', partner);
         res.status(200).json({
             message: 'Data partner berhasil didapatkan!',
-            data: partner,
+            data: formatedPartnerId,
         });
     } catch (error) {
         if (error instanceof ApiError) {
@@ -88,16 +123,16 @@ router.post('/', authMiddleware, partnerValidator, async (req, res) => {
         const dataPartner = req.body;
         const newPartner = await createPartner(dataPartner);
 
-        console.log('data',newPartner);
+        console.log('data', newPartner);
         res.status(201).json({
             message: 'Partner berhasil ditambahkan!',
             data: newPartner,
         });
     } catch (error) {
-        if(error instanceof ApiError) {
+        if (error instanceof ApiError) {
             console.error('ApiError:', error);
             return res.status(error.statusCode).json({
-                message:error.message,
+                message: error.message,
             })
         }
 
@@ -136,16 +171,16 @@ router.put('/:id', authMiddleware, partnerValidator, async (req, res) => {
 
         const updatedPartner = await updatePartner(id, editedPartnerData);
 
-        console.log('data',updatedPartner);
+        console.log('data', updatedPartner);
         res.status(200).json({
             message: 'Partner berhasil diperbarui!',
             data: updatedPartner,
         });
     } catch (error) {
-        if(error instanceof ApiError) {
+        if (error instanceof ApiError) {
             console.error('ApiError:', error);
             return res.status(error.statusCode).json({
-                message:error.message,
+                message: error.message,
             })
         }
 
@@ -167,16 +202,16 @@ router.delete('/:id', authMiddleware, async (req, res) => {
 
         const deletePartner = await removePartner(id);
 
-        console.log('data',deletePartner);
+        console.log('data', deletePartner);
         res.status(200).json({
             message: 'Partner berhasil dihapus!',
             data: deletePartner,
         });
     } catch (error) {
-        if(error instanceof ApiError) {
+        if (error instanceof ApiError) {
             console.error('ApiError:', error);
             return res.status(error.statusCode).json({
-                message:error.message,
+                message: error.message,
             })
         }
 

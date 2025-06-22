@@ -11,15 +11,7 @@ const findAllProducts = async () => {
                     stock: true,
                 }
             },
-            partner: {
-                select: {
-                    id: true,
-                    name: true,
-                    owner_name: true,
-                    phone_number: true,
-                    address: true
-                }
-            }
+            partner: true,
         }
     });
 

@@ -137,7 +137,6 @@ const partnerValidator = [
     body('phone_number')
         .trim()
         .notEmpty().withMessage('*Nomor telepon wajib diisi')
-        .isNumeric({ no_symbols: true }).withMessage('*Nomor telepon harus berupa angka')
         .isLength({ min: 9, max: 16 }).withMessage('*Panjang karakter Nomor telepon tidak valid')
         .custom((value) => {
             if (!/^(0|(\+62))[0-9]{8,13}$/.test(value)) {
@@ -145,11 +144,32 @@ const partnerValidator = [
             }
             return true;
         }),
-
-    body('address')
+    
+    body('origin_id')
         .trim()
-        .notEmpty().withMessage('*Alamat wajib diisi')
-        .isLength({ max: 255 }).withMessage('*Alamat maksimal 255 karakter'),
+        .notEmpty().withMessage('*ID asal wajib diisi')
+        .isNumeric().withMessage('*ID asal harus berupa angka'),
+    body('origin_province')
+        .trim()
+        .notEmpty().withMessage('*Provinsi asal wajib diisi')
+        .isLength({ min: 3, max: 50 }).withMessage('*Provinsi asal harus lebih dari 3 karakter'),
+    body('origin_city')
+        .trim()
+        .notEmpty().withMessage('*Kota asal wajib diisi')
+        .isLength({ min: 3, max: 50 }).withMessage('*Kota asal harus lebih dari 3 karakter'),
+    body('origin_district')
+        .trim()
+        .notEmpty().withMessage('*Kecamatan asal wajib diisi')
+        .isLength({ min: 3, max: 50 }).withMessage('*Kecamatan asal harus lebih dari 3 karakter'),
+    body('origin_subdistrict')
+        .trim()
+        .notEmpty().withMessage('*Kelurahan/Desa asal wajib diisi')
+        .isLength({ min: 3, max: 50 }).withMessage('*Kelurahan asal harus lebih dari 3 karakter'),
+    body('origin_zip_code')
+        .trim()
+        .notEmpty().withMessage('*Kode pos asal wajib diisi')
+        .isNumeric().withMessage('*Kode pos asal harus berupa angka')
+        .isLength({ min: 5, max: 5 }).withMessage('*Kode pos asal harus 5 digit'),
 ];
 
 const productValidator = [

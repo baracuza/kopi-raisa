@@ -341,6 +341,24 @@ const deleteOrders = async (orderId) => {
     });
 };
 
+const getProductsByCartItem = async (cartItemIds) => {
+    return await prisma.cartItem.findMany({
+        where: { id: { in: cartItemIds } },
+        include: {
+            product: {
+                include: {
+                    partner: true,
+                    inventory: {
+                        select: {
+                            stock: true,
+                        }
+                    }
+                }
+            }
+        },
+    });
+};
+
 module.exports = {
     findAllOrders,
     findOrdersByUser,
@@ -349,6 +367,7 @@ module.exports = {
     findUserComplietedOrders,
     findOrdersByPartnerId,
     findOrderDetailById,
+    getProductsByCartItem,
     insertNewOrders,
     markOrderItemsAsNotified,
     updatePaymentSnapToken,

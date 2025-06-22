@@ -18,6 +18,7 @@ const getAllPartners = async () => {
 
 const getPartnerById = async (partnerId) => {
     const partner = await findPartnerById(partnerId);
+    console.log('partner database:', partner);
     if (!partner) {
         throw new ApiError(404,'Partner tidak ditemukan!');
     }
@@ -36,8 +37,16 @@ const updatePartner = async (id, editedPartnerData) => {
     if (!existingPartner) {
         throw new ApiError(404,'Partner tidak ditemukan!');
     }
+    const{origin_id, ...rest}=editedPartnerData
 
-    const partnerData = await editPartner(id, editedPartnerData);
+    const updatePartnerData ={
+        ...rest,
+        origin_id: parseInt(origin_id),
+    }
+
+    console.log('data update:', updatePartnerData);
+
+    const partnerData = await editPartner(id, updatePartnerData);
 
     return partnerData;
 };

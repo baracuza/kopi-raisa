@@ -16,6 +16,7 @@ const {
     findUserComplietedOrders,
     findOrdersByPartnerId,
     findOrderDetailById,
+    getProductsByCartItem,
     insertNewOrders,
     markOrderItemsAsNotified,
     updatePaymentSnapToken,
@@ -75,13 +76,13 @@ const createOrders = async (userId, orderData) => {
     if (!address || !paymentMethod)
         throw new ApiError(404, "Alamat dan metode pembayaran wajib diisi");
 
-    const productIds = items.map((item) => item.products_id);
+    const cartItemIds = items.map((item) => item.products_id);
     // Log detail tipe data setiap productId
-    productIds.forEach((id, index) => {
+    cartItemIds.forEach((id, index) => {
         console.log(`Tipe data productId di index ${index}:`, id, "-", typeof id);
     });
     
-    const products = await getProductsByIds(productIds);
+    const products = await getProductsByCartItem(cartItemIds);
     console.log("Produk yang ditemukan:", products);
 
     if (products.length !== items.length) {

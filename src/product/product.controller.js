@@ -19,6 +19,23 @@ router.get('/', async (req, res) => {
     try {
         const products = await getAllProducts();
 
+        const formatedProducts = products.map(product =>({
+            idProduct: product.id,
+            nameProduct: product.name,
+            priceProduct: product.price,
+            descriptionProduct: product.description,
+            stockProduct: product.inventory.stock,
+            soldProduct: product.sold,
+            imageProduct: product.image,
+
+            partner:{
+                idPartner: product.partner.id,
+                namePartner: product.partner.name,
+                ownerPartner: product.partner.owner_name,
+                phoneNumberPartner: product.partner.phone_number,
+                addressPartner: product.partner.address
+            }
+        }))
         console.log('data :', products);
         res.status(200).json({
             message: 'Data produk berhasil didapatkan!',
@@ -44,6 +61,24 @@ router.get('/:id', async (req, res) => {
     try {
         const { id } = req.params;
         const product = await getProductById(id);
+
+        const formatedProductId = {
+            idProduct: product.id,
+            nameProduct: product.name,
+            priceProduct: product.price,
+            descriptionProduct: product.description,
+            stockProduct: product.inventory.stock,
+            soldProduct: product.sold,
+            imageProduct: product.image,
+
+            partner:{
+                idPartner: product.partner.id,
+                namePartner: product.partner.name,
+                ownerPartner: product.partner.owner_name,
+                phoneNumberPartner: product.partner.phone_number,
+                addressPartner: product.partner.address
+            }
+        }
 
         console.log('data:', product);
         res.status(200).json({

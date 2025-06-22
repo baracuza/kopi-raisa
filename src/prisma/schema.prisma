@@ -62,15 +62,20 @@ model Notification {
 }
 
 model Partner {
-  id           Int         @id @default(autoincrement())
-  name         String
-  owner_name   String
-  phone_number String
-  address      String?
-  created_at   DateTime    @default(now())
-  updated_at   DateTime    @updatedAt
-  ordersItems  OrderItem[]
-  products     Product[]
+  id                 Int         @id @default(autoincrement())
+  name               String
+  owner_name         String
+  phone_number       String
+  origin_id          Int?
+  origin_province    String?
+  origin_city        String?
+  origin_district    String?
+  origin_subdistrict String?
+  origin_zip_code    String?
+  created_at         DateTime    @default(now())
+  updated_at         DateTime    @updatedAt
+  ordersItems        OrderItem[]
+  products           Product[]
 }
 
 model Product {
