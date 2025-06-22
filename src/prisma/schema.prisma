@@ -66,6 +66,7 @@ model Partner {
   name               String
   owner_name         String
   phone_number       String
+  
   origin_id          Int?
   origin_province    String?
   origin_city        String?

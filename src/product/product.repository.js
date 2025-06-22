@@ -96,14 +96,7 @@ const findProductById = async (idProduct) => {
             id: parseInt(idProduct),
         },
         include: {
-            partner: {
-                select: {
-                    name: true,
-                    owner_name: true,
-                    phone_number: true,
-                    address: true
-                }
-            },
+            partner: true,
             inventory: {
                 select: {
                     stock: true

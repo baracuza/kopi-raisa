@@ -76,7 +76,7 @@ router.get('/:id', async (req, res) => {
                 namePartner: product.partner.name,
                 ownerPartner: product.partner.owner_name,
                 phoneNumberPartner: product.partner.phone_number,
-                addressPartner: product.partner.address
+                // addressPartner: product.partner.address
             }
         }
 
