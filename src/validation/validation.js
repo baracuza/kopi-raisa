@@ -194,7 +194,11 @@ const productValidator = [
         .isInt({ min: 0 }).withMessage('*Stok produk harus berupa angka'),
     body('partner_id')
         .trim()
-        .notEmpty().withMessage('*Partner tidak valid atau tidak boleh kosong')
+        .notEmpty().withMessage('*Partner tidak valid atau tidak boleh kosong'),
+    body('weight')
+        .trim()
+        .notEmpty().withMessage('*Berat produk wajib diisi')
+        .isInt({ min: 0 }).withMessage('*Berat produk harus berupa angka'),
 ];
 
 const orderValidator = [
@@ -224,8 +228,22 @@ const validateQueryDomestic = [
         .isString().withMessage('Parameter alamat untuk pencarian harus berupa teks.'),
 ];
 
+const validateCost =[
+    body('origin')
+        .notEmpty().withMessage('Asal tidak boleh kosong')
+        .isNumeric().withMessage('Asal harus berupa angka'),
+
+    body('destination')
+        .notEmpty().withMessage('Tujuan tidak boleh kosong')
+        .isNumeric().withMessage('Tujuan harus berupa angka'),
+
+    body('weight')
+        .notEmpty().withMessage('Berat tidak boleh kosong')
+        .isNumeric().withMessage('Berat harus berupa angka'),
+]
+
 module.exports = {
     validateRegister, validateLogin, createNewsValidator,
     updateNewsValidator, validateUpdateProfile, partnerValidator,
-    productValidator, orderValidator, validateQueryDomestic
+    productValidator, orderValidator, validateQueryDomestic,validateCost
 };

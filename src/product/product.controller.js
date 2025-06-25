@@ -131,7 +131,7 @@ router.post('/', authMiddleware, upload.single('productFile'),
             if (!req.user.admin) {
                 return res.status(403).json({ message: 'Akses ditolak! Hanya admin yang bisa mengakses.' });
             }
-            const { name, price, stock, description, partner_id } = req.body;
+            const { name, weight, price, stock, description, partner_id } = req.body;
             const file = req.file;
 
             // Sanitize HTML untuk disimpan
@@ -153,6 +153,7 @@ router.post('/', authMiddleware, upload.single('productFile'),
             const product = await createProduct({
                 name,
                 price,
+                weight: parseInt(weight),
                 stock,
                 description: cleanHtml,
                 partner_id,

@@ -12,6 +12,7 @@ const getCartUser = async (userId) => {
         if (!CartData) {
             throw new ApiError(404, 'Keranjang tidak ditemukan!');
         }
+        
         return CartData;
     } catch (error) {
         console.error('Error in getAllCart:', error);

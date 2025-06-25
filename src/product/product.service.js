@@ -63,6 +63,7 @@ const createProduct = async (newProductData) => {
             ...rest,
             price: parseInt(rest.price),
             partner_id: parseInt(partner_id),
+            weight: parseInt(rest.weight),
         };
         const stockProduct = parseInt(stock)
 
@@ -119,6 +120,7 @@ const updateProduct = async (id, updatedProductData) => {
 
         const cleanProductData = {
             ...rest,
+            ...(rest.weight !== undefined && {weight: parseInt(rest.weight)}),
             ...(rest.price !== undefined && {price: parseInt(rest.price)}),
             ...(rest.partner_id !== undefined && {partner_id: parseInt(rest.partner_id)}),
         };
