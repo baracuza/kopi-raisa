@@ -359,6 +359,19 @@ const getProductsByCartItem = async (cartItemIds) => {
     });
 };
 
+const findProductsByIds = async (productIds) => {
+    const products = await prisma.product.findMany({
+        where: {
+            id: { in: productIds.map(id => parseInt(id)) },
+        },
+        select:{
+            id:true,
+        }
+    });
+    return products.map(product => product.id);
+};
+
+
 module.exports = {
     findAllOrders,
     findOrdersByUser,

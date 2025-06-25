@@ -6,6 +6,7 @@ const { getProductsByIds } = require("../product/product.repository");
 const { createMidtransSnapToken } = require("../utils/midtrans");
 const { deleteCartItems } = require("../cart/cart.repository");
 const rajaOngkirApi = require("../utils/rajaOngkir");
+const qs = require('qs');
 
 const {
 
@@ -316,10 +317,40 @@ const getDomestic = async (searchParams) => {
     return allDataDomestic
 }
 
-const getCost = async (origin, destination, weight, courier) => {
-    if (!origin || !destination || !weight || !courier) {
-        throw new ApiError(400, "Semua parameter (origin, destination, weight, courier) harus diisi!");
+const getCost = async (searchCost) => {
+
+    const payload = {
+        courier: "jne",
+        origin: (searchCost.origin),
+        destination: searchCost.destination,
+        weight: parseInt(searchCost.weight),
+        price: searchCost.price,
     }
+
+    console.log("Payload untuk ongkos kirim:", payload);
+
+    try {
+        const response = await rajaOngkirApi.post(
+            '/calculate/domestic-cost',
+            qs.stringify(payload), // ← ini mengubah jadi x-www-form-urlencoded
+            {
+                headers: {
+                    'Content-Type': 'application/x-www-form-urlencoded'
+                }
+            }
+        );
+
+        const responseData = response.data;
+        if (!responseData || !responseData.data) {
+            throw new ApiError(404, "Tidak ada data ongkos kirim ditemukan!");
+        }
+
+        return responseData;
+    } catch (error) {
+        console.error("Error dari getCost():", error?.response?.data || error.message);
+        throw error;
+    }
+
 }
 
 const getPaymentMethod = () => {
@@ -554,6 +585,7 @@ module.exports = {
     getAllOrders,
     getOrdersByUser,
     getCompleteOrderByRole,
+    getCost,
     getOrderDetailById,
     getOrderStatuses,
     getOrderHistoryByRole,
