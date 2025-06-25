@@ -270,6 +270,63 @@ model FormEntryValue {
   FormField     FormField @relation(fields: [form_field_id], references: [id])
 }
 
+model AboutCompany {
+  id          Int      @id @default(autoincrement())
+  title       String
+  description String
+  image       String?
+  created_at  DateTime @default(now())
+  updated_at  DateTime @updatedAt
+  media       AboutCompanyMedia[]
+  visionMission AboutVisionMission[]
+  organization AboutOrganization[]
+  team        AboutTeam[]
+}
+
+model AboutCompanyMedia {
+  id          Int      @id @default(autoincrement())
+  about_id    Int
+  media_url   String
+  media_type  String
+  description String?
+  created_at  DateTime @default(now())
+  isThumbnail Boolean @default(false)
+  about       AboutCompany @relation(fields: [about_id], references: [id])
+}
+
+model AboutVisionMission {
+  id          Int      @id @default(autoincrement())
+  title       String
+  description String
+  created_at  DateTime @default(now())
+  updated_at  DateTime @updatedAt
+  about_id    Int
+  about       AboutCompany @relation(fields: [about_id], references: [id])
+}
+
+model AboutOrganization {
+  id          Int      @id @default(autoincrement())
+  title       String
+  description String
+  image       String?
+  created_at  DateTime @default(now())
+  updated_at  DateTime @updatedAt
+  about_id    Int
+  about       AboutCompany @relation(fields: [about_id], references: [id])
+}
+
+model AboutTeam {
+  id          Int      @id @default(autoincrement())
+  name        String
+  position    String
+  image       String?
+  description String?
+  created_at  DateTime @default(now())
+  updated_at  DateTime @updatedAt
+  about_id    Int
+  about       AboutCompany @relation(fields: [about_id], references: [id])
+}
+
 enum PaymentMethod {
   QRIS
   CREDIT_CARD
