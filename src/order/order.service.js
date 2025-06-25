@@ -27,6 +27,7 @@ const {
     createOrderCancellation,
     createNotification,
 } = require("./order.repository");
+const { product } = require("../db");
 
 const getAllOrders = async () => {
     const orders = await findAllOrders();
@@ -76,14 +77,14 @@ const createOrders = async (userId, orderData) => {
     if (!address || !paymentMethod)
         throw new ApiError(404, "Alamat dan metode pembayaran wajib diisi");
 
-    const cartItemIds = items.map((item) => item.products_id);
+    const productIds = items.map((item) => item.products_id);
     // Log detail tipe data setiap productId
-    cartItemIds.forEach((id, index) => {
+    productIds.forEach((id, index) => {
         console.log(`Tipe data productId di index ${index}:`, id, "-", typeof id);
     });
-    
-    const products = await getProductsByCartItem(cartItemIds);
-    console.log("Produk yang ditemukan:", products);
+
+    const products = await getProductsByIds(productIds);
+    console.log("Products_id yang ditemukan/CartItem:", products);
 
     if (products.length !== items.length) {
         throw new ApiError(404, "Beberapa produk tidak ditemukan di database");
@@ -297,7 +298,7 @@ const getDomestic = async (searchParams) => {
 
     const {
         search,
-        limit = 5,
+        limit = 10,
         offset = 0
     } = searchParams;
 
@@ -313,6 +314,12 @@ const getDomestic = async (searchParams) => {
     }
 
     return allDataDomestic
+}
+
+const getCost = async (origin, destination, weight, courier) => {
+    if (!origin || !destination || !weight || !courier) {
+        throw new ApiError(400, "Semua parameter (origin, destination, weight, courier) harus diisi!");
+    }
 }
 
 const getPaymentMethod = () => {
