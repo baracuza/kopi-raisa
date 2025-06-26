@@ -320,8 +320,8 @@ const getDomestic = async (searchParams) => {
 const getCost = async (searchCost) => {
 
     const payload = {
-        courier: "jne",
-        origin: (searchCost.origin),
+        courier: "jnt",
+        origin: "31366",
         destination: searchCost.destination,
         weight: parseInt(searchCost.weight),
         price: searchCost.price,

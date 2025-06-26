@@ -229,9 +229,6 @@ const validateQueryDomestic = [
 ];
 
 const validateCost =[
-    body('origin')
-        .notEmpty().withMessage('Asal tidak boleh kosong')
-        .isNumeric().withMessage('Asal harus berupa angka'),
 
     body('destination')
         .notEmpty().withMessage('Tujuan tidak boleh kosong')
