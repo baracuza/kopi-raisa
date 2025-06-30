@@ -258,9 +258,6 @@ router.post("/", authMiddleware, orderValidator, handleValidationResult, handleV
             console.log("📦 Received order data:", orderData);
             console.log("🧪 Type Checking:");
             console.log("- typeof orderData:", typeof orderData);
-            console.log("- typeof orderData.items:", typeof orderData.items, "| isArray:", Array.isArray(orderData.items));
-            console.log("- typeof orderData.address:", typeof orderData.address);
-            console.log("- typeof orderData.paymentMethod:", typeof orderData.paymentMethod);
 
             if (Array.isArray(orderData.items)) {
                 orderData.items.forEach((item, index) => {
@@ -322,21 +319,7 @@ router.post("/", authMiddleware, orderValidator, handleValidationResult, handleV
             });
         }
     });
-
-router.post("/midtrans/payment-notification", async (req, res) => {
-    try {
-        const notification = req.body;
-
-        // Logika proses: update status transaksi di database
-        console.log("Received Midtrans notification:", notification);
-
-        res.status(200).send("Notification received");
-
-    } catch (error) {
-        console.error("Error processing Midtrans notification:", error);
-        res.status(500).send("Error processing notification");
-    }
-});
+    
 
 //notifikasi midtrans setelah transaksi
 router.post("/midtrans/notification", async (req, res) => {

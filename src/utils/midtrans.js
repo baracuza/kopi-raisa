@@ -27,7 +27,7 @@ const mapPaymentMethodToMidtransType = (method) => {
 };
 
 const createMidtransSnapToken = async (order) => {
-    const grossAmount = order.payment.amount;
+
     const paymentType = mapPaymentMethodToMidtransType(order.payment.method);
 
     if (!paymentType) {
@@ -48,6 +48,14 @@ const createMidtransSnapToken = async (order) => {
         quantity: item.quantity,
     }));
 
+    items.push({
+        id: 'SHIPPING',
+        name: `Ongkos Kirim - ${order.shippingDetail.shipping_name || "Pengiriman"}`,
+        price: order.shippingDetail.shipping_cost||0,
+        quantity: 1,
+    });
+
+    const grossAmount = items.reduce((sum, item) => sum + item.price * item.quantity, 0);
     const orderId = `ORDER-${order.id}-${Date.now()}`;
 
     if (paymentType === "qris") {
@@ -82,8 +90,8 @@ const createMidtransSnapToken = async (order) => {
     const snapResponse = await snap.createTransaction(snapParameter);
     return {
         type: "snap",
-        token: snapResponse.token,
-        redirectUrl: `https://app.sandbox.midtrans.com/snap/v2/vtweb/${snapResponse.token}`,
+        snapToken: snapResponse.token,
+        snapRedirectUrl: `https://app.sandbox.midtrans.com/snap/v2/vtweb/${snapResponse.token}`,
     };
 };
 

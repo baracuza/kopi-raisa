@@ -220,6 +220,55 @@ const orderValidator = [
     body('paymentMethod')
         .trim()
         .notEmpty().withMessage('*Metode pembayaran wajib diisi'),
+
+    body('cost')
+        .trim()
+        .notEmpty().withMessage('*Biaya pengiriman wajib diisi')
+        .isNumeric().withMessage('*Biaya pengiriman harus berupa angka'),
+
+    body('shipping_name')
+        .trim()
+        .notEmpty().withMessage('*Kurir wajib dipilih'),
+
+    body('shipping_code')
+        .trim()
+        .notEmpty().withMessage('*Kode kurir wajib diisi'),
+
+    body('shipping_service')
+        .trim()
+        .notEmpty().withMessage('*Layanan kurir wajib diisi'),
+    
+    body('destination_id')
+        .trim()
+        .notEmpty().withMessage('*ID tujuan wajib diisi')
+        .isNumeric().withMessage('*ID tujuan harus berupa angka'),
+
+    body('destination_province')
+        .trim()
+        .notEmpty().withMessage('*Provinsi tujuan wajib diisi')
+        .isLength({ min: 3, max: 50 }).withMessage('*Provinsi tujuan harus lebih dari 3 karakter'),
+
+    body('destination_city')
+        .trim()
+        .notEmpty().withMessage('*Kota tujuan wajib diisi')
+        .isLength({ min: 3, max: 50 }).withMessage('*Kota tujuan harus lebih dari 3 karakter'),
+
+    body('destination_district')
+        .trim()
+        .notEmpty().withMessage('*Kecamatan tujuan wajib diisi')
+        .isLength({ min: 3, max: 50 }).withMessage('*Kecamatan tujuan harus lebih dari 3 karakter'),
+
+    body('destination_subdistrict')
+        .trim()
+        .notEmpty().withMessage('*Kelurahan/Desa tujuan wajib diisi')
+        .isLength({ min: 3, max: 50 }).withMessage('*Kelurahan tujuan harus lebih dari 3 karakter'),
+
+    body('destination_pos_code')
+        .trim()
+        .notEmpty().withMessage('*Kode pos tujuan wajib diisi')
+        .isNumeric().withMessage('*Kode pos tujuan harus berupa angka'),
+    
+    
 ];
 
 const validateQueryDomestic = [

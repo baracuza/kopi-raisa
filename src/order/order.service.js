@@ -68,10 +68,37 @@ const createOrders = async (userId, orderData) => {
     console.log("Membuat order untuk user:", userId);
     console.log("Data order:", orderData);
 
-    const { items, address, paymentMethod } = orderData;
+    const {
+        items,
+        address,
+        destination_id,
+        destination_province,
+        destination_city,
+        destination_district,
+        destination_subdistrict,
+        destination_pos_code,
+        paymentMethod,
+        shipping_name,
+        shipping_code,
+        shipping_service,
+        cost
+    } = orderData;
     console.log("Items:", items);
-    console.log("Alamat:", address);
-    console.log("Metode Pembayaran:", paymentMethod);
+
+    const parsedCost = parseInt(cost);
+    if (isNaN(parsedCost)) {
+        throw new ApiError(400, "Biaya pengiriman (cost) tidak valid!");
+    }
+
+    const parsedPosCode = parseInt(destination_pos_code);
+    if (isNaN(parsedPosCode)) {
+        throw new ApiError(400, "Kode pos tujuan (destination_pos_code) tidak valid!");
+    }
+
+    const parsedDestinationId = parseInt(destination_id);
+    if (isNaN(parsedDestinationId)) {
+        throw new ApiError(400, "ID tujuan (destination_id) tidak valid!");
+    }
 
     if (!items || items.length === 0)
         throw new ApiError(404, "Pesanan tidak boleh kosong");
@@ -95,9 +122,8 @@ const createOrders = async (userId, orderData) => {
         products.map(product => [product.id, product])
     );
 
-    let totalAmount = 0;
+    let totalProductPrice = 0;
     const itemsWithPrice = items.map((item) => {
-
         const product = productMap[item.products_id];
         if (!product)
             throw new ApiError(404, `Produk dengan ID ${item.products_id} tidak ditemukan`);
@@ -107,11 +133,11 @@ const createOrders = async (userId, orderData) => {
         const availableStock = product.inventory?.stock ?? 0;
         if (item.quantity > availableStock) {
             throw new ApiError(400, `Stok produk "${product.name}" tidak mencukupi. Tersedia: ${availableStock}, diminta: ${item.quantity}`);
-
         }
+
+        // Hitung harga per unit
         const pricePerUnit = product.price;
-        const subtotal = pricePerUnit * item.quantity;
-        totalAmount += subtotal;
+        totalProductPrice += item.quantity * pricePerUnit;
 
         return {
             products_id: item.products_id,
@@ -123,6 +149,8 @@ const createOrders = async (userId, orderData) => {
         };
     });
 
+    const totalAmount = totalProductPrice + parsedCost;
+
     const fromCartProductId = itemsWithPrice
         .filter(item => item.fromCart)
         .map(item => item.products_id);
@@ -133,16 +161,30 @@ const createOrders = async (userId, orderData) => {
     const orders = await insertNewOrders(userId, {
         items: itemsToSave,
         address,
+        destination_id: parsedDestinationId,
+        destination_province,
+        destination_city,
+        destination_district,
+        destination_subdistrict,
+        parsedPosCode,
         paymentMethod,
-        totalAmount: parseInt(totalAmount),
-    });
+        totalAmount,
+        shipping_name,
+        shipping_code,
+        shipping_service,
+        parsedCost,
+    }, async(order)=>{
+        return await createMidtransSnapToken(order);
+    }
+);
 
     if (!orders) throw new ApiError(500, "Gagal membuat order!");
 
-    const midtransResult = await createMidtransSnapToken(orders);
-
+    
     let snapToken = null;
     let snapRedirectUrl = null;
+    
+    const midtransResult = orders.midtransResult;
 
     if (orders.payment.method === "QRIS") {
         snapRedirectUrl = midtransResult.qrUrl;
@@ -151,7 +193,7 @@ const createOrders = async (userId, orderData) => {
         snapRedirectUrl = midtransResult.redirectUrl;
     }
 
-    const updatedOrder = await updatePaymentSnapToken(orders.id, snapToken ?? snapRedirectUrl, snapRedirectUrl);
+    // const updatedOrder = await updatePaymentSnapToken(orders.id, snapToken ?? snapRedirectUrl, snapRedirectUrl);
 
     // Hapus produk dari cart jika perlu
     if (fromCartProductId.length > 0) {
@@ -159,7 +201,7 @@ const createOrders = async (userId, orderData) => {
     }
 
     return {
-        updatedOrder,
+        updatedOrder:orders,
         paymentInfo: {
             type: orders.payment.method === "QRIS" ? "qris" : "snap",
             snapToken,
@@ -299,7 +341,7 @@ const getDomestic = async (searchParams) => {
 
     const {
         search,
-        limit = 10,
+        limit = 1000,
         offset = 0
     } = searchParams;
 

@@ -184,48 +184,104 @@ const findUserComplietedOrders = async (userId) => {
 };
 
 const insertNewOrders = async (
-    userId, { items, address, paymentMethod, totalAmount }
+    userId, {
+        items,
+        address,
+        destination_id,
+        destination_province,
+        destination_city,
+        destination_district,
+        destination_subdistrict,
+        parsedPosCode,
+        paymentMethod,
+        totalAmount,
+        shipping_name,
+        shipping_code,
+        shipping_service,
+        parsedCost,
+    }, midtransCallback
 ) => {
-    return await prisma.order.create({
-        data: {
-            user: { connect: { id: userId } },
-            status: "PENDING",
-            orderItems: {
-                create: items.map((item) => ({
-                    product: { connect: { id: item.products_id } },
-                    quantity: item.quantity,
-                    price: item.price,
-                    custom_note: item.custom_note || null,
-                    partner: item.partner_id ? { connect: { id: item.partner_id } } : undefined,
-                })),
-            },
-            shippingAddress: {
-                create: {
-                    address: address,
+    return await prisma.$transaction(async (tx) => {
+        for (const item of items) {
+            await tx.inventory.update({
+                where: {
+                    products_id: item.products_id,
+                },
+                data: {
+                    stock: {
+                        decrement: item.quantity,
+                    },
+                },
+            });
+        }
+        const newOrder = await tx.order.create({
+            data: {
+                user: { connect: { id: userId } },
+                status: "PENDING",
+                orderItems: {
+                    create: items.map((item) => ({
+                        product: { connect: { id: item.products_id } },
+                        quantity: item.quantity,
+                        price: item.price,
+                        custom_note: item.custom_note || null,
+                        partner: item.partner_id ? { connect: { id: item.partner_id } } : undefined,
+                    })),
+                },
+                shippingAddress: {
+                    create: {
+                        address: address,
+                        destination_id: destination_id || null,
+                        destination_province: destination_province || null,
+                        destination_city: destination_city || null,
+                        destination_district: destination_district || null,
+                        destination_subdistrict: destination_subdistrict || null,
+                        destination_zip_code: parsedPosCode || null,
+                    },
+                },
+                shippingDetail: {
+                    create: {
+                        shipping_name: shipping_name || null,
+                        shipping_code: shipping_code || null,
+                        service_name: shipping_service || null,
+                        shipping_cost: parsedCost || 0,
+
+                    },
+                },
+                payment: {
+                    create: {
+                        amount: totalAmount,
+                        method: paymentMethod,
+                        status: "PENDING",
+                    },
                 },
             },
-            payment: {
-                create: {
-                    amount: totalAmount,
-                    method: paymentMethod,
-                    status: "PENDING",
+            include: {
+                user: true,
+                orderItems: {
+                    include: {
+                        product: {
+                            include: {
+                                partner: true,
+                            },
+                        }
+                    },
                 },
+                shippingAddress: true,
+                shippingDetail: true,
+                payment: true,
             },
-        },
-        include: {
-            user: true,
-            orderItems: {
-                include: {
-                    product: {
-                        include: {
-                            partner: true,
-                        },
-                    }
-                },
+        });
+
+        const midtransResult = await midtransCallback(newOrder);
+
+        await tx.payment.update({
+            where: { id: newOrder.payment.id },
+            data: {
+                snap_token: midtransResult?.snapToken || null,
+                snap_redirect_url: midtransResult?.snapRedirectUrl || null,
             },
-            shippingAddress: true,
-            payment: true,
-        },
+        });
+        return {...newOrder, midtransResult};
 
     });
 };
@@ -364,8 +420,8 @@ const findProductsByIds = async (productIds) => {
         where: {
             id: { in: productIds.map(id => parseInt(id)) },
         },
-        select:{
-            id:true,
+        select: {
+            id: true,
         }
     });
     return products.map(product => product.id);
