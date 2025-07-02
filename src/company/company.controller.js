@@ -50,7 +50,7 @@ router.post('/',
     authMiddleware, uploadCompany.single('imageCompany'),
     companyMulterErrorHandler,
     validateAboutCompanyMedia,
-    companyValidator, handleValidationResult, handleValidationResultFinal, async (req, res) => {
+    handleValidationResult, handleValidationResultFinal, async (req, res) => {
         try {
             const errors = validationResult(req);
             if (!errors.isEmpty()) {
@@ -86,11 +86,50 @@ router.post('/',
             const userId = req.user.id;
             const imageFile = req.file;
 
+            //Inisialisasi objek untuk menampung semua error validasi
+            const validationErrors = {};
+
+            // -- Field: titleCompany --
+            const cleanHtmlTitleCompany = DOMPurify.sanitize(titleCompany || "");
+            const plainTextTitleCompany = (titleCompany || "").replace(/<[^>]+>/g, "").trim();
+            if (!plainTextTitleCompany) {
+                validationErrors.titleCompany = "Judul perusahaan tidak boleh kosong";
+            }
+
+            // -- Field: descCompany --
+            const cleanHtmlDescCompany = DOMPurify.sanitize(descCompany || "");
+            const plainTextDescCompany = (descCompany || "").replace(/<[^>]+>/g, "").trim();
+            if (!plainTextDescCompany) {
+                validationErrors.descCompany = "Deskripsi perusahaan tidak boleh kosong";
+            }
+
+            // -- Field: descVisi --
+            const cleanHtmlDescVisi = DOMPurify.sanitize(descVisi || "");
+            const plainTextDescVisi = (descVisi || "").replace(/<[^>]+>/g, "").trim();
+            if (!plainTextDescVisi) {
+                validationErrors.descVisi = "Deskripsi visi tidak boleh kosong";
+            }
+
+            // -- Field: descMisi --
+            const cleanHtmlDescMisi = DOMPurify.sanitize(descMisi || "");
+            const plainTextDescMisi = (descMisi || "").replace(/<[^>]+>/g, "").trim();
+            if (!plainTextDescMisi) {
+                validationErrors.descMisi = "Deskripsi misi tidak boleh kosong";
+            }
+
+            // 3. Cek apakah ada error yang terkumpul
+            if (Object.keys(validationErrors).length > 0) {
+                return res.status(400).json({
+                    message: "Validasi gagal!",
+                    errors: validationErrors
+                });
+            }
+
             const company = await createCompany({
-                titleCompany,
-                descCompany,
-                descVisi,
-                descMisi,
+                titleCompany: cleanHtmlTitleCompany,
+                descCompany: cleanHtmlDescCompany,
+                descVisi: cleanHtmlDescVisi,
+                descMisi: cleanHtmlDescMisi,
                 userId,
                 image: imageFile
             });
@@ -154,17 +193,56 @@ router.put('/:id',
 
             const { id } = req.params;
             const {
-                titleCompany, descCompany, titleVisi,
-                descVisi, titleMisi, descMisi
+                titleCompany, descCompany,
+                descVisi, descMisi
             } = req.body;
 
             const imageFile = req.file;
 
+            //Inisialisasi objek untuk menampung semua error validasi
+            const validationErrors = {};
+
+            // -- Field: titleCompany --
+            const cleanHtmlTitleCompany = DOMPurify.sanitize(titleCompany || "");
+            const plainTextTitleCompany = (titleCompany || "").replace(/<[^>]+>/g, "").trim();
+            if (!plainTextTitleCompany) {
+                validationErrors.titleCompany = "Judul perusahaan tidak boleh kosong";
+            }
+
+            // -- Field: descCompany --
+            const cleanHtmlDescCompany = DOMPurify.sanitize(descCompany || "");
+            const plainTextDescCompany = (descCompany || "").replace(/<[^>]+>/g, "").trim();
+            if (!plainTextDescCompany) {
+                validationErrors.descCompany = "Deskripsi perusahaan tidak boleh kosong";
+            }
+
+            // -- Field: descVisi --
+            const cleanHtmlDescVisi = DOMPurify.sanitize(descVisi || "");
+            const plainTextDescVisi = (descVisi || "").replace(/<[^>]+>/g, "").trim();
+            if (!plainTextDescVisi) {
+                validationErrors.descVisi = "Deskripsi visi tidak boleh kosong";
+            }
+
+            // -- Field: descMisi --
+            const cleanHtmlDescMisi = DOMPurify.sanitize(descMisi || "");
+            const plainTextDescMisi = (descMisi || "").replace(/<[^>]+>/g, "").trim();
+            if (!plainTextDescMisi) {
+                validationErrors.descMisi = "Deskripsi misi tidak boleh kosong";
+            }
+
+            // 3. Cek apakah ada error yang terkumpul
+            if (Object.keys(validationErrors).length > 0) {
+                return res.status(400).json({
+                    message: "Validasi gagal!",
+                    errors: validationErrors
+                });
+            }
+
             const updatedCompany = await updateCompany(id, {
-                titleCompany,
-                descCompany,
-                descVisi,
-                descMisi,
+                titleCompany: cleanHtmlTitleCompany,
+                descCompany: cleanHtmlDescCompany,
+                descVisi: cleanHtmlDescVisi,
+                descMisi: cleanHtmlDescMisi,
                 image: imageFile, // Kirim file (atau undefined) ke service
             });
 
@@ -186,7 +264,7 @@ router.put('/:id',
     }
 );
 
-router.get('/:id',authMiddleware, async (req, res) => {
+router.get('/:id', authMiddleware, async (req, res) => {
     try {
 
         if (!req.user.admin) {
