@@ -301,6 +301,7 @@ const getOrderDetailById = async (orderId, isAdmin, userId) => {
             statusOrder: order.status,
             items: order.orderItems.map(item => ({
                 namaProduk: item.product.name,
+                gambarProduk: item.product.image,
                 harga: item.price,
                 quantity: item.quantity,
                 catatan: item.custom_note,
