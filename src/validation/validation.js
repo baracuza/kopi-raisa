@@ -180,27 +180,19 @@ const companyValidator = [
     body('titleCompany')
         .trim()
         .notEmpty().withMessage('*Nama perusahaan wajib diisi')
-        .isLength({ min: 3, max: 50 }).withMessage('*Nama perusahaan harus lebih dari 3 karakter'),
+        .isLength({ min: 3, max: 255 }).withMessage('*Nama perusahaan harus 3-255 karakter'),
     body('descCompany')
         .trim()
         .notEmpty().withMessage('*Deskripsi perusahaan wajib diisi')
-        .isLength({ min: 10, max: 255 }).withMessage('*Deskripsi perusahaan harus lebih dari 10 karakter'),
-    body('titleVisi')
-        .trim()
-        .notEmpty().withMessage('*Judul visi perusahaan wajib diisi')
-        .isLength({ min: 3, max: 50 }).withMessage('*Judul visi perusahaan harus lebih dari 3 karakter'),
+        .isLength({ min: 10, max: 1000 }).withMessage('*Deskripsi perusahaan harus lebih dari 10-1000 karakter'),
     body('descVisi')
         .trim()
         .notEmpty().withMessage('*Deskripsi visi perusahaan wajib diisi')
-        .isLength({ min: 10, max: 255 }).withMessage('*Deskripsi visi perusahaan harus lebih dari 10 karakter'),
-    body('titleMisi')
-        .trim()
-        .notEmpty().withMessage('*Judul misi perusahaan wajib diisi')
-        .isLength({ min: 3, max: 50 }).withMessage('*Judul misi perusahaan harus lebih dari 3 karakter'),
+        .isLength({ min: 10, max: 1000 }).withMessage('*Deskripsi visi perusahaan harus lebih dari 10-1000 karakter'),
     body('descMisi')
         .trim()
         .notEmpty().withMessage('*Deskripsi misi perusahaan wajib diisi')
-        .isLength({ min: 10, max: 255 }).withMessage('*Deskripsi misi perusahaan harus lebih dari 10 karakter'),
+        .isLength({ min: 10, max: 1000 }).withMessage('*Deskripsi misi perusahaan harus lebih dari 10-1000 karakter'),
 ]
 
 const orderValidator = [
@@ -248,22 +240,22 @@ const orderValidator = [
     body('destination_province')
         .trim()
         .notEmpty().withMessage('*Provinsi tujuan wajib diisi')
-        .isLength({ min: 3, max: 50 }).withMessage('*Provinsi tujuan harus lebih dari 3 karakter'),
+        .isLength({ min: 3, max: 500 }).withMessage('*Provinsi tujuan harus lebih dari 3 karakter'),
 
     body('destination_city')
         .trim()
         .notEmpty().withMessage('*Kota tujuan wajib diisi')
-        .isLength({ min: 3, max: 50 }).withMessage('*Kota tujuan harus lebih dari 3 karakter'),
+        .isLength({ min: 3, max: 500 }).withMessage('*Kota tujuan harus lebih dari 3 karakter'),
 
     body('destination_district')
         .trim()
         .notEmpty().withMessage('*Kecamatan tujuan wajib diisi')
-        .isLength({ min: 3, max: 50 }).withMessage('*Kecamatan tujuan harus lebih dari 3 karakter'),
+        .isLength({ min: 3, max: 500 }).withMessage('*Kecamatan tujuan harus lebih dari 3 karakter'),
 
     body('destination_subdistrict')
         .trim()
         .notEmpty().withMessage('*Kelurahan/Desa tujuan wajib diisi')
-        .isLength({ min: 3, max: 50 }).withMessage('*Kelurahan tujuan harus lebih dari 3 karakter'),
+        .isLength({ min: 3, max: 500 }).withMessage('*Kelurahan tujuan harus lebih dari 3 karakter'),
 
     body('destination_pos_code')
         .trim()
