@@ -145,31 +145,6 @@ const partnerValidator = [
             return true;
         }),
     
-    body('origin_id')
-        .trim()
-        .notEmpty().withMessage('*ID asal wajib diisi')
-        .isNumeric().withMessage('*ID asal harus berupa angka'),
-    body('origin_province')
-        .trim()
-        .notEmpty().withMessage('*Provinsi asal wajib diisi')
-        .isLength({ min: 3, max: 50 }).withMessage('*Provinsi asal harus lebih dari 3 karakter'),
-    body('origin_city')
-        .trim()
-        .notEmpty().withMessage('*Kota asal wajib diisi')
-        .isLength({ min: 3, max: 50 }).withMessage('*Kota asal harus lebih dari 3 karakter'),
-    body('origin_district')
-        .trim()
-        .notEmpty().withMessage('*Kecamatan asal wajib diisi')
-        .isLength({ min: 3, max: 50 }).withMessage('*Kecamatan asal harus lebih dari 3 karakter'),
-    body('origin_subdistrict')
-        .trim()
-        .notEmpty().withMessage('*Kelurahan/Desa asal wajib diisi')
-        .isLength({ min: 3, max: 50 }).withMessage('*Kelurahan asal harus lebih dari 3 karakter'),
-    body('origin_zip_code')
-        .trim()
-        .notEmpty().withMessage('*Kode pos asal wajib diisi')
-        .isNumeric().withMessage('*Kode pos asal harus berupa angka')
-        .isLength({ min: 5, max: 5 }).withMessage('*Kode pos asal harus 5 digit'),
 ];
 
 const productValidator = [
@@ -181,7 +156,7 @@ const productValidator = [
     body('description')
         .trim()
         .notEmpty().withMessage('*Deskripsi produk wajib diisi')
-        .isLength({ min: 10, max: 255 }).withMessage('*Deskripsi produk harus lebih dari 10 karakter'),
+        .isLength({ min: 10, max: 1000 }).withMessage('*Deskripsi produk harus 10-1000 karakter'),
 
     body('price')
         .trim()
@@ -200,6 +175,33 @@ const productValidator = [
         .notEmpty().withMessage('*Berat produk wajib diisi')
         .isInt({ min: 0 }).withMessage('*Berat produk harus berupa angka'),
 ];
+
+const companyValidator = [
+    body('titleCompany')
+        .trim()
+        .notEmpty().withMessage('*Nama perusahaan wajib diisi')
+        .isLength({ min: 3, max: 50 }).withMessage('*Nama perusahaan harus lebih dari 3 karakter'),
+    body('descCompany')
+        .trim()
+        .notEmpty().withMessage('*Deskripsi perusahaan wajib diisi')
+        .isLength({ min: 10, max: 255 }).withMessage('*Deskripsi perusahaan harus lebih dari 10 karakter'),
+    body('titleVisi')
+        .trim()
+        .notEmpty().withMessage('*Judul visi perusahaan wajib diisi')
+        .isLength({ min: 3, max: 50 }).withMessage('*Judul visi perusahaan harus lebih dari 3 karakter'),
+    body('descVisi')
+        .trim()
+        .notEmpty().withMessage('*Deskripsi visi perusahaan wajib diisi')
+        .isLength({ min: 10, max: 255 }).withMessage('*Deskripsi visi perusahaan harus lebih dari 10 karakter'),
+    body('titleMisi')
+        .trim()
+        .notEmpty().withMessage('*Judul misi perusahaan wajib diisi')
+        .isLength({ min: 3, max: 50 }).withMessage('*Judul misi perusahaan harus lebih dari 3 karakter'),
+    body('descMisi')
+        .trim()
+        .notEmpty().withMessage('*Deskripsi misi perusahaan wajib diisi')
+        .isLength({ min: 10, max: 255 }).withMessage('*Deskripsi misi perusahaan harus lebih dari 10 karakter'),
+]
 
 const orderValidator = [
     body('items')
@@ -291,5 +293,6 @@ const validateCost =[
 module.exports = {
     validateRegister, validateLogin, createNewsValidator,
     updateNewsValidator, validateUpdateProfile, partnerValidator,
-    productValidator, orderValidator, validateQueryDomestic,validateCost
+    productValidator, orderValidator, validateQueryDomestic,validateCost,
+    companyValidator
 };
