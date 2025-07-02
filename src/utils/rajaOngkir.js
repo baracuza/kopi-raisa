@@ -13,4 +13,4 @@ const rajaOngkirApiKomship = axios.create({
     },
 });
 
-module.exports = {rajaOngkirApi, rajaOngkirApiKomship};
+module.exports = rajaOngkirApi;
