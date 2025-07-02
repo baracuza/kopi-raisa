@@ -294,6 +294,7 @@ const getOrderDetailById = async (orderId, isAdmin, userId) => {
         return {
             orderId: order.id,
             namaCustomer: order.user?.name || "-",
+            nomerCustomer: order.user?.phone_number || "-",
             alamatCustomer: order.shippingAddress?.address || "-",
             tanggalTransaksi: order.created_at,
             statusOrder: order.status,
