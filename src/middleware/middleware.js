@@ -183,6 +183,36 @@ const validateProductMedia = (req, res, next) => {
     }
     next();
 }
+
+const validateAboutCompanyMedia = (req, res, next) => {
+    const maxSizeMB = 5;
+    const maxSizeBytes = maxSizeMB * 1024 * 1024;
+    const allowedTypes = ['image/jpeg', 'image/png', 'image/webp', 'image/jpg'];
+
+    // Selalu inisialisasi objek error di request
+    req.mediaValidationErrors = {};
+
+    const mediaFile = req.file;
+    const fieldName = 'imageCompany'; // Nama field yang benar untuk company
+
+    // 1. Cek apakah file wajib diunggah
+    if (!mediaFile) {
+        req.mediaValidationErrors[fieldName] = '*Gambar perusahaan wajib diunggah';
+    } else {
+        // 2. Jika file ada, validasi tipe filenya
+        if (!allowedTypes.includes(mediaFile.mimetype)) {
+            req.mediaValidationErrors[fieldName] = '*Gambar perusahaan hanya boleh berupa (jpg, jpeg, png, webp)';
+        }
+        // 3. Jika tipe file benar, validasi ukurannya
+        else if (mediaFile.size > maxSizeBytes) {
+            req.mediaValidationErrors[fieldName] = `*Ukuran gambar perusahaan maksimal ${maxSizeMB}MB`;
+        }
+    }
+
+    // Lanjutkan ke middleware berikutnya (misalnya, handleValidationResult)
+    next();
+};
+
 const validateProductUpdate = (options = {}) => {
     return (req, res, next) => {
         const { skipIfNoFile = false } = options;
@@ -205,10 +235,39 @@ const validateProductUpdate = (options = {}) => {
             } else if (mediaFile.size > maxSizeBytes) {
                 req.mediaValidationErrors.productFile = `*Ukuran gambar produk maksimal ${maxSizeMB}MB`;
             }
-        } 
+        }
         next();
     }
 }
+const validateUpdateCompanyMedia = (req, res, next) => {
+    // Jika tidak ada file yang diunggah, lewati validasi dan lanjutkan
+    if (!req.file) {
+        return next();
+    }
+
+    // Jika ada file, jalankan validasi seperti biasa
+    const maxSizeMB = 5;
+    const maxSizeBytes = maxSizeMB * 1024 * 1024;
+    const allowedTypes = ['image/jpeg', 'image/png', 'image/webp', 'image/jpg'];
+    const fieldName = 'imageCompany';
+
+    // Inisialisasi objek error jika belum ada
+    req.mediaValidationErrors = req.mediaValidationErrors || {};
+
+    const mediaFile = req.file;
+
+    // Validasi tipe file
+    if (!allowedTypes.includes(mediaFile.mimetype)) {
+        req.mediaValidationErrors[fieldName] = '*Gambar perusahaan hanya boleh berupa (jpg, jpeg, png, webp)';
+    }
+    // Validasi ukuran file
+    else if (mediaFile.size > maxSizeBytes) {
+        req.mediaValidationErrors[fieldName] = `*Ukuran gambar perusahaan maksimal ${maxSizeMB}MB`;
+    }
+
+    // Lanjutkan ke middleware berikutnya
+    next();
+};
 
 const multerErrorHandler = (err, req, res, next) => {
     console.error('Multer Error:', err);
@@ -271,10 +330,44 @@ const multerErrorHandler = (err, req, res, next) => {
     next(err);
 };
 
+const companyMulterErrorHandler = (err, req, res, next) => {
+    const fieldName = 'imageCompany'; // Nama field spesifik untuk company
+
+    // Tangani error bawaan dari Multer (misal: ukuran file terlalu besar)
+    if (err instanceof multer.MulterError) {
+        let errorMessage = '*Terjadi kesalahan dalam pengunggahan file';
+
+        switch (err.code) {
+            case 'LIMIT_FILE_SIZE':
+                errorMessage = `*Ukuran file untuk gambar perusahaan maksimal 5MB`;
+                break;
+            case 'LIMIT_UNEXPECTED_FILE':
+                errorMessage = `*Field file tidak terduga, gunakan '${fieldName}'`;
+                break;
+        }
+        return res.status(400).json({
+            message: 'Validasi gagal!',
+            errors: { [fieldName]: errorMessage }
+        });
+    }
+
+    // Tangani error kustom dari fileFilter (tipe file tidak diizinkan)
+    if (err) {
+        return res.status(400).json({
+            message: 'Validasi gagal!',
+            errors: { [fieldName]: err.message } // Menggunakan pesan error dari multer
+        });
+    }
+
+    // Jika bukan error dari multer, lanjutkan ke middleware berikutnya
+    next();
+};
 
 
 
 
 
-
-module.exports = { authMiddleware, validateUpdateNewsMedia, validateInsertNewsMedia, multerErrorHandler, validateProfilMedia, validateProductMedia, validateProductUpdate };
+module.exports = {
+    authMiddleware, validateUpdateNewsMedia, validateInsertNewsMedia, multerErrorHandler, validateProfilMedia,
+    validateProductMedia, validateProductUpdate, validateAboutCompanyMedia, companyMulterErrorHandler, validateUpdateCompanyMedia
+};

@@ -24,6 +24,13 @@ const upload = multer({
     },
     fileFilter
 });
+const uploadCompany = multer({
+    storage, limits: {
+        fileSize: 5 * 1024 * 1024,
+        files: 5,
+    },
+    fileFilter
+});
 
 // Upload untuk News: mendukung hingga 4 file media dan 1 thumbnail
 const uploadNews = multer({

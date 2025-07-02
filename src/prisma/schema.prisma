@@ -66,13 +66,6 @@ model Partner {
   name               String
   owner_name         String
   phone_number       String
-  
-  origin_id          Int?
-  origin_province    String?
-  origin_city        String?
-  origin_district    String?
-  origin_subdistrict String?
-  origin_zip_code    String?
   created_at         DateTime    @default(now())
   updated_at         DateTime    @updatedAt
   ordersItems        OrderItem[]
@@ -322,7 +315,7 @@ model AboutCompanyMedia {
 
 model AboutVisionMission {
   id          Int      @id @default(autoincrement())
-  title       String
+  title       VisionMission
   description String
   created_at  DateTime @default(now())
   updated_at  DateTime @updatedAt
@@ -351,6 +344,11 @@ model AboutTeam {
   updated_at  DateTime @updatedAt
   about_id    Int
   about       AboutCompany @relation(fields: [about_id], references: [id])
+}
+
+enum VisionMission {
+  VISI
+  MISI
 }
 
 enum PaymentMethod {

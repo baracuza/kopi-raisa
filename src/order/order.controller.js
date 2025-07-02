@@ -265,12 +265,13 @@ router.post("/", authMiddleware, orderValidator, handleValidationResult, handleV
                 });
             }
 
-            const { updatedOrder, paymentInfo } = await createOrders(userId, orderData);
+            const {paymentInfo,updatedOrder} = await createOrders(userId, orderData);
             console.log("Order created successfully:", updatedOrder);
-            console.log("Payment Info:", paymentInfo);
+
 
             res.status(201).json({
                 message: "Pesanan kamu berhasil dibuat dan sedang diproses.",
+                // data: updatedOrder,
                 order: {
                     orderId: updatedOrder.id,
                     items: updatedOrder.orderItems.map(item => ({

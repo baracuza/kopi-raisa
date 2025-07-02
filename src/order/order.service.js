@@ -186,11 +186,13 @@ const createOrders = async (userId, orderData) => {
     
     const midtransResult = orders.midtransResult;
 
-    if (orders.payment.method === "QRIS") {
-        snapRedirectUrl = midtransResult.qrUrl;
-    } else {
-        snapToken = midtransResult.token;
-        snapRedirectUrl = midtransResult.redirectUrl;
+    if (midtransResult) {
+        if (orders.payment.method === "QRIS") {
+            snapRedirectUrl = midtransResult.qrUrl;
+        } else {
+            snapToken = midtransResult.snapToken;
+            snapRedirectUrl = midtransResult.snapRedirectUrl;
+        }
     }
 
     // const updatedOrder = await updatePaymentSnapToken(orders.id, snapToken ?? snapRedirectUrl, snapRedirectUrl);
