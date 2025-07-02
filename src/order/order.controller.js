@@ -1,4 +1,6 @@
 const express = require("express");
+const { PrismaClient } = require('@prisma/client');
+const prisma = new PrismaClient();
 
 const { authMiddleware } = require("../middleware/middleware");
 const ApiError = require("../utils/apiError");
@@ -14,6 +16,7 @@ const {
     getDomestic,
     getAllOrders,
     getOrdersByUser,
+    getMyNotifikasi,
     getCompleteOrderByRole,
     getCost,
     getOrderDetailById,
@@ -265,9 +268,16 @@ router.post("/", authMiddleware, orderValidator, handleValidationResult, handleV
                 });
             }
 
-            const {paymentInfo,updatedOrder} = await createOrders(userId, orderData);
+            const { paymentInfo, updatedOrder } = await createOrders(userId, orderData);
             console.log("Order created successfully:", updatedOrder);
 
+            await prisma.notification.create({
+                data: {
+                    name: "Order Berhasil Dibuat",
+                    description: `Order #${updatedOrder.id} berhasil dibuat dan sedang diproses.`,
+                    user_id: userId,
+                },
+            });
 
             res.status(201).json({
                 message: "Pesanan kamu berhasil dibuat dan sedang diproses.",
@@ -320,7 +330,7 @@ router.post("/", authMiddleware, orderValidator, handleValidationResult, handleV
             });
         }
     });
-    
+
 
 //notifikasi midtrans setelah transaksi
 router.post("/midtrans/notification", async (req, res) => {
@@ -661,5 +671,32 @@ router.delete("/:id", authMiddleware, async (req, res) => {
         });
     }
 });
+
+router.get("/notifications", authMiddleware, async (req, res) => {
+    try {
+        const userId = req.user.id;
+
+        const notifikasi = await getMyNotifikasi(userId);
+
+        res.status(200).json({
+            message: "Notifikasi berhasil diambil!",
+            data: notifikasi,
+        }); 
+    } catch (error) {
+        if (error instanceof ApiError) {
+            console.error("ApiError:", error);
+            return res.status(error.statusCode).json({
+                message: error.message,
+            });
+        }
+        console.error("Error getting notifications:", error);
+        return res.status(500).json({
+            message: "Terjadi kesalahan di server!",
+            error: error.message,
+        });
+        
+    }
+})
+
 
 module.exports = router;

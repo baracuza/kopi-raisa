@@ -11,6 +11,7 @@ const qs = require('qs');
 const {
 
     findAllOrders,
+    findAllMyNotifikasi,
     findOrdersByUser,
     findOrdersById,
     findAllComplietedOrders,
@@ -28,7 +29,7 @@ const {
     createOrderCancellation,
     createNotification,
 } = require("./order.repository");
-const { product } = require("../db");
+const { product, user } = require("../db");
 
 const getAllOrders = async () => {
     const orders = await findAllOrders();
@@ -305,6 +306,7 @@ const getOrderDetailById = async (orderId, isAdmin, userId) => {
                 catatan: item.custom_note,
                 namaMitra: item.partner?.name || "-",
             })),
+            metodePembayaran: order.payment?.method || "-",
             statusPembayaran: order.payment?.status || "-",
             totalHarga: order.payment?.amount ?? 0,
         };
@@ -326,6 +328,7 @@ const getOrderDetailById = async (orderId, isAdmin, userId) => {
                 catatan: item.custom_note,
                 namaMitra: item.partner?.name || "-",
             })),
+            metodePembayaran: order.payment?.method || "-",
             statusPembayaran: order.payment?.status || "-",
             totalHarga: order.payment?.amount ?? 0,
         };
@@ -625,10 +628,18 @@ const removeOrders = async (id) => {
     return ordersData;
 };
 
+const getMyNotifikasi = async (userId) => {
+    const myNotifikasi = await findAllMyNotifikasi(userId);
+    if (!myNotifikasi || myNotifikasi.length === 0) {
+        throw new ApiError(404, "Tidak ada notifikasi ditemukan!");
+    }
+}
+
 module.exports = {
     getDomestic,
     getAllOrders,
     getOrdersByUser,
+    getMyNotifikasi,
     getCompleteOrderByRole,
     getCost,
     getOrderDetailById,

@@ -427,9 +427,22 @@ const findProductsByIds = async (productIds) => {
     return products.map(product => product.id);
 };
 
+const findAllMyNotifikasi = async (userId) => {
+    return await prisma.notification.findMany({
+        where: { user_id: userId},
+        orderBy: {
+            created_at: "desc",
+        },
+        include:{
+            user:true,
+        }
+    });
+};
+
 
 module.exports = {
     findAllOrders,
+    findAllMyNotifikasi,
     findOrdersByUser,
     findOrdersById,
     findAllComplietedOrders,
