@@ -29,70 +29,90 @@ function generateWhatsAppUrl(phoneNumber, message) {
  * @param {Array} orders - Daftar pesanan
  * @returns {object} Detail notifikasi WhatsApp
  */
-function generatePartnerOrderNotification(order) {
-    const partner = order.orderItems[0].partner;
-    const user = order.user;
-
+function generatePartnerOrderNotification(partner, orders) {
     const messageLines = [
-        `Halo ${partner.owner_name}, ada pesanan baru dari Sekolah Kopi Raisa:\n`,
-        `🛒 Pesanan dari ${user.name} (Order ID: ${order.id}):`
+        `Halo ${partner.owner_name}, berikut adalah rekap pesanan terbaru dari Sekolah Kopi Raisa:\n`
     ];
 
-    const totalItems = {};   // Semua item
-    const noteGroups = {};   // Item yang dikelompokkan berdasarkan catatan
+    // Kelompokkan pesanan berdasarkan nama user
+    const ordersByUser = {};
 
-    for (const item of order.orderItems) {
-        const productName = item.product.name;
-        const quantity = item.quantity;
-        const note = item.custom_note?.trim();
-
-        // Akumulasi total item
-        if (!totalItems[productName]) totalItems[productName] = 0;
-        totalItems[productName] += quantity;
-
-        // Kelompokkan berdasarkan catatan jika ada
-        if (note) {
-            const noteKey = note.toLowerCase();
-            if (!noteGroups[noteKey]) noteGroups[noteKey] = {};
-            if (!noteGroups[noteKey][productName]) noteGroups[noteKey][productName] = 0;
-            noteGroups[noteKey][productName] += quantity;
+    for (const order of orders) {
+        const username = order.user.name;
+        if (!ordersByUser[username]) {
+            ordersByUser[username] = [];
         }
+        ordersByUser[username].push(order);
     }
 
-    // Bagian A: Rekap total semua item
-    messageLines.push(`\nA. Jumlah yang dipesan:`);
+    // Proses per user
+    for (const [username, userOrders] of Object.entries(ordersByUser)) {
+        // const orderId = userOrders.at(-1)?.orderItems?.at(0)?.order?.id ?? "UNKNOWN"; // Ambil ID order terakhir
+        const orderIds = userOrders.map(o => o.orderItems?.[0]?.order?.id).filter(Boolean).join(", "); // Ambil semua ID order
+
+        const totalItems = {};        // Semua pesanan (termasuk dengan catatan)
+        const noteGroups = {};        // Hanya pesanan dengan catatan
+        let latestStatus = userOrders.at(-1)?.status?.toUpperCase() || "UNKNOWN"
+
+        for (const order of userOrders) {
+            for (const item of order.orderItems) {
+                const { name: productName } = item.product;
+                const quantity = item.quantity;
+                const note = item.custom_note?.trim();
+
+                // Tambahkan ke total item
+                if (!totalItems[productName]) {
+                    totalItems[productName] = 0;
+                }
+                totalItems[productName] += quantity;
+
+                // Jika ada catatan, simpan ke noteGroups
+                if (note) {
+                    const noteKey = note.toLowerCase();
+                    if (!noteGroups[noteKey]) {
+                        noteGroups[noteKey] = {};
+                    }
+                    if (!noteGroups[noteKey][productName]) {
+                        noteGroups[noteKey][productName] = 0;
+                    }
+                    noteGroups[noteKey][productName] += quantity;
+                }
+            }
+        }
+    }
+    messageLines.push(`\n🛒 Pesanan oleh ${username} (Order ID: ${orderIds}):`);
+
+    // Total produk tanpa rincian catatan
+    messageLines.push(`A. Jumlah yang dipesan (baik yang ada catatan maupun tidak) :`);
     for (const [product, qty] of Object.entries(totalItems)) {
         messageLines.push(`- ${product} (${qty} pcs)`);
     }
 
-    // Bagian B: Rincian item berdasarkan catatan (jika ada)
+    // Tambahkan bagian catatan jika ada
     const noteKeys = Object.keys(noteGroups);
     if (noteKeys.length > 0) {
-        messageLines.push(`\nB. Rincian pesanan dengan catatan:`);
+        messageLines.push(`\nB. Jumlah pesanan disertai catatan:`);
         for (const note of noteKeys) {
-            messageLines.push(`- Catatan: "${note}"`);
+            messageLines.push(`- ${note}`);
             for (const [product, qty] of Object.entries(noteGroups[note])) {
-                messageLines.push(`  • ${product} (${qty} pcs)`);
+                messageLines.push(`  ${product} (${qty} pcs)`);
             }
         }
+        messageLines.push(`\nStatus: ${latestStatus}`);
+        messageLines.push(`\nNote : \nPoin A = Total pesanan pembeli yang memiliki catatan maupun tidak\nPoin B = Jumlah Pesanan pembeli berdasarkan Catatannya\n`);
     }
-
-    messageLines.push(`\nStatus Saat Ini: ${order.status}`);
-    messageLines.push(`\nMohon untuk segera diproses. Terima kasih!`);
-
     const message = messageLines.join('\n');
     const whatsappUrl = generateWhatsAppUrl(partner.phone_number, message);
 
     return {
-        orderId: order.id,
         partnerId: partner.id,
         partnerName: partner.owner_name,
+        partnerPhoneNumber: partner.phone_number,
         message,
         whatsappUrl,
     };
-}
 
-// Ekspor fungsi yang baru
+}
 module.exports = {
     generateWhatsAppUrl,
     generatePartnerOrderNotification,
