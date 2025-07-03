@@ -613,9 +613,9 @@ const contactPartner = async (partnerId) => {
         throw new ApiError(400, "ID mitra tidak valid.");
     }
 
-    console.log("Mencari order dengan ID:", orderId);
+    console.log("Mencari order dengan ID:", partnerId);
     const orderItems = await findOrdersByPartnerId(partnerId);
-    console.log("Order ditemukan:", order);
+    console.log("Order ditemukan:", orderItems);
 
     if (!orderItems || orderItems.length === 0) {
         throw new ApiError(404, "Tidak ada pesanan baru untuk mitra ini.");
