@@ -356,6 +356,9 @@ const getOrderDetailById = async (orderId, isAdmin, userId) => {
             namaCustomer: order.user?.name || "-",
             nomerCustomer: order.user?.phone_number || "-",
             alamatCustomer: order.shippingAddress?.address || "-",
+            provinsiCustomer: order.shippingAddress?.destination_province || "-",
+            kotaCustomer: order.shippingAddress?.destination_city || "-",
+            kodePos: order.shippingAddress?.destination_zip_code || "-",
             tanggalTransaksi: order.created_at,
             statusOrder: order.status,
             items: order.orderItems.map(item => ({
