@@ -412,7 +412,7 @@ const deleteProductCartItems = async (userId, productIds) => {
                 user_id: userId, // ✨ Filter melalui relasi 'cart'
             },
             // DAN yang product_id-nya ada di dalam daftar yang mau dihapus
-            product_id: {
+            products_id: {
                 in: productIds,
             },
         },
