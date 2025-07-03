@@ -57,6 +57,7 @@ const findOrderDetailById = async (orderId) => {
         include: {
             user: true,
             shippingAddress: true,
+            shippingDetail: true,
             orderItems: {
                 include: {
                     product: true,
@@ -71,6 +72,9 @@ const findOrderDetailById = async (orderId) => {
 const findOrdersById = async (orderId) => {
     return await prisma.order.findUnique({
         where: { id: parseInt(orderId) },
+        include:{
+            orderItems:true,
+        }
     });
 };
 
