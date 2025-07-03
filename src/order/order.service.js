@@ -19,6 +19,7 @@ const {
     findOrdersByPartnerId,
     findOrderDetailById,
     getProductsByCartItem,
+    // getDetailNotifikasiId,
     insertNewOrders,
     markOrderItemsAsNotified,
     updatePaymentSnapToken,
@@ -28,6 +29,7 @@ const {
     deleteOrders,
     createOrderCancellation,
     createNotification,
+    markNotificationAsViewed
 } = require("./order.repository");
 const { product, user } = require("../db");
 
@@ -174,17 +176,17 @@ const createOrders = async (userId, orderData) => {
         shipping_code,
         shipping_service,
         parsedCost,
-    }, async(order)=>{
+    }, async (order) => {
         return await createMidtransSnapToken(order);
     }
-);
+    );
 
     if (!orders) throw new ApiError(500, "Gagal membuat order!");
 
-    
+
     let snapToken = null;
     let snapRedirectUrl = null;
-    
+
     const midtransResult = orders.midtransResult;
 
     if (midtransResult) {
@@ -204,7 +206,7 @@ const createOrders = async (userId, orderData) => {
     }
 
     return {
-        updatedOrder:orders,
+        updatedOrder: orders,
         paymentInfo: {
             type: orders.payment.method === "QRIS" ? "qris" : "snap",
             snapToken,
@@ -247,10 +249,27 @@ const handleMidtransNotification = async (notification) => {
     console.log("💳 Mapped Payment Method:", paymentMethod);
 
     // Update status pembayaran di database
-    await updateOrderPaymentStatus(orderId, {
+    const { order, updatedPayment } = await updateOrderPaymentStatus(orderId, {
         payment_status: internalStatus,
         payment_method: paymentMethod,
     });
+
+    if (internalStatus === 'SUCCESS') {
+        try {
+            // Panggil service notifikasi yang baru kita buat
+            await createNotificationForPaymentSuccess(order, updatedPayment);
+        } catch (notificationError) {
+            // Kegagalan membuat notifikasi tidak boleh menghentikan proses utama
+            console.error(
+                "⚠️ Gagal membuat notifikasi pembayaran untuk order:",
+                orderId,
+                notificationError
+            );
+        }
+    }
+
+    return updatedPayment;
+
 };
 
 // Helper untuk mapping status transaksi
@@ -629,12 +648,77 @@ const removeOrders = async (id) => {
     return ordersData;
 };
 
+const createNotificationForNewOrder = async (userId, order) => {
+    // Menghitung jumlah item dalam pesanan
+    const itemCount = order.orderItems.length;
+
+    // Mengambil total pembayaran dari objek pesanan
+    const totalAmount = new Intl.NumberFormat('id-ID', {
+        style: 'currency',
+        currency: 'IDR',
+        minimumFractionDigits: 0
+    }).format(order.payment.amount);
+
+    // Membuat pesan yang deskriptif
+    const notificationName = `Pesanan #${order.id} Berhasil Dibuat`;
+    const notificationDescription = `Pesanan Anda berisi ${itemCount} produk dengan total ${totalAmount} telah dibuat dan sedang menunggu pembayaran.`;
+
+    // Data yang akan disimpan ke database
+    const notificationData = {
+        name: notificationName,
+        description: notificationDescription,
+        user_id: userId,
+        order_id: order.id,
+    };
+
+    await createNotification(notificationData);
+};
+
+const createNotificationForPaymentSuccess = async (order, payment) => {
+    // Format jumlah pembayaran agar mudah dibaca
+    const formattedAmount = new Intl.NumberFormat('id-ID', {
+        style: 'currency',
+        currency: 'IDR',
+        minimumFractionDigits: 0
+    }).format(payment.amount);
+
+    // Siapkan data notifikasi yang deskriptif
+    const notificationData = {
+        name: `Pembayaran untuk Pesanan #${order.id} Berhasil`,
+        description: `Pembayaran Anda sebesar ${formattedAmount} telah kami konfirmasi.`,
+        user_id: order.user_id, // Kita butuh user_id dari objek order
+        order_id: order.id,
+    };
+
+    // Panggil repository untuk menyimpan notifikasi
+    await createNotification(notificationData);
+    console.log(`✅ Notifikasi pembayaran berhasil dibuat untuk order ID: ${order.id}`);
+};
+
+const readNotification = async (ref, userId) => {
+    if (!ref) return;
+    await markNotificationAsViewed(ref, userId);
+};
+
 const getMyNotifikasi = async (userId) => {
     const myNotifikasi = await findAllMyNotifikasi(userId);
     if (!myNotifikasi || myNotifikasi.length === 0) {
         throw new ApiError(404, "Tidak ada notifikasi ditemukan!");
     }
+
+    return myNotifikasi
 }
+
+// const getDetailNotifikasi = async (notifikasiId, userId) => {
+//     const notifikasiService = await getDetailNotifikasiId(notifikasiId, userId);
+//     if (!notifikasiService || notifikasiService.length === 0) {
+//         throw new ApiError(404, "Notifikasi tidak ditemukan!");
+//     }
+
+//     return notifikasiService;
+// }
+
+
 
 module.exports = {
     getDomestic,
@@ -647,12 +731,15 @@ module.exports = {
     getOrderStatuses,
     getOrderHistoryByRole,
     getPaymentMethod,
+    // getDetailNotifikasi,
     createOrders,
     contactPartner,
     cancelOrder,
+    createNotificationForNewOrder,
     handleMidtransNotification,
     updateStatus,
     updateOrders,
     updatedOrderStatus,
     removeOrders,
+    readNotification,
 };

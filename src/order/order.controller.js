@@ -23,11 +23,14 @@ const {
     getOrderStatuses,
     getOrderHistoryByRole,
     getPaymentMethod,
+    getDetailNotifikasi,
     createOrders,
+    createNotificationForNewOrder,
     handleMidtransNotification,
     updateOrders,
     updateStatus,
     updatedOrderStatus,
+    readNotification,
     contactPartner,
     cancelOrder
 } = require("./order.service");
@@ -70,6 +73,18 @@ router.get("/:id/detail", authMiddleware, async (req, res) => {
         const isAdmin = req.user.admin;
         const userId = req.user.id;
         const { id } = req.params;
+        const { ref } = req.query;
+
+        if (ref) {
+            try {
+                // Panggil service untuk mengubah status 'viewed' menjadi true
+                await readNotification(ref, userId);
+            } catch (notifError) {
+                // Jika gagal, jangan hentikan proses. Cukup catat errornya.
+                console.error("Gagal menandai notifikasi sebagai dibaca:", notifError);
+            }
+        }
+
         const order = await getOrderDetailById(id, isAdmin, userId);
         res.status(200).json({
             message: "Data order berhasil didapatkan!",
@@ -128,6 +143,8 @@ router.get("/my-order", authMiddleware, async (req, res) => {
                 method: order.payment?.method,
                 statusPembayaran: order.payment?.status,
                 amount: order.payment?.amount,
+                Snap: order.payment?.snap_token || null,
+                snapRedirectUrl: order.payment?.snap_redirect_url || null,
             }
         }));
 
@@ -271,13 +288,13 @@ router.post("/", authMiddleware, orderValidator, handleValidationResult, handleV
             const { paymentInfo, updatedOrder } = await createOrders(userId, orderData);
             console.log("Order created successfully:", updatedOrder);
 
-            await prisma.notification.create({
-                data: {
-                    name: "Order Berhasil Dibuat",
-                    description: `Order #${updatedOrder.id} berhasil dibuat dan sedang diproses.`,
-                    user_id: userId,
-                },
-            });
+            try {
+                await createNotificationForNewOrder(userId, updatedOrder);
+            } catch (notificationError) {
+                // Jika pembuatan notifikasi gagal, jangan gagalkan seluruh request.
+                // Cukup catat errornya agar bisa ditinjau nanti.
+                console.error("⚠️ Failed to create notification for order:", updatedOrder.id, notificationError);
+            }
 
             res.status(201).json({
                 message: "Pesanan kamu berhasil dibuat dan sedang diproses.",
@@ -341,6 +358,7 @@ router.post("/midtrans/notification", async (req, res) => {
         const notifikasi = await handleMidtransNotification(notification);
 
         console.log("✅ Notifikasi Midtrans berhasil diproses:", notifikasi);
+
         return res.status(200).json({
             message: "Notifikasi berhasil diproses",
             data: notifikasi,
@@ -504,55 +522,6 @@ router.post("/search-cost", authMiddleware, upload.none(), validateCost, handleV
 )
 
 
-// Update order status - admin & user to cancel(tidak dipakai)
-// router.put("/:id/status", authMiddleware, async (req, res, next) => {
-//     const errors = validationResult(req);
-//     if (!errors.isEmpty()) {
-//         const errorObject = errors.array().reduce(
-//             (acc, curr) => {
-//                 const key =
-//                     curr.path && curr.path !== "" ? curr.path : "global";
-//                 if (!acc[key]) {
-//                     acc[key] = curr.msg;
-//                 }
-//                 return acc;
-//             },
-//             {},
-//             {}
-//         );
-//         return res.status(400).json({
-//             message: "Validasi gagal!",
-//             errors: errorObject,
-//         });
-//     }
-//     try {
-//         console.log(req.body);
-//         const orderId = parseInt(req.params.id);
-//         const { status } = req.body;
-//         const user = req.user;
-
-//         const result = await updateStatus(orderId, status, user);
-
-//         res.status(200).json({
-//             message: "Status order berhasil diperbarui!",
-//             data: result,
-//         });
-//     } catch (error) {
-//         if (error instanceof ApiError) {
-//             console.error("ApiError:", error);
-//             return res.status(error.statusCode).json({
-//                 message: error.message,
-//             });
-//         }
-
-//         console.error("Error updating order status:", error);
-//         return res.status(500).json({
-//             message: "Terjadi kesalahan di server!",
-//             error: error.message,
-//         });
-//     }
-// });
-
 // Cancel order - user
 router.put("/:id/cancel", authMiddleware, async (req, res, next) => {
     try {
@@ -681,7 +650,7 @@ router.get("/notifications", authMiddleware, async (req, res) => {
         res.status(200).json({
             message: "Notifikasi berhasil diambil!",
             data: notifikasi,
-        }); 
+        });
     } catch (error) {
         if (error instanceof ApiError) {
             console.error("ApiError:", error);
@@ -694,9 +663,34 @@ router.get("/notifications", authMiddleware, async (req, res) => {
             message: "Terjadi kesalahan di server!",
             error: error.message,
         });
-        
+
     }
 })
 
+// router.get("/notifications/:id", authMiddleware, async (req, res) => {
+//     try {
+//         const userId = req.user.id;
+//         const { id } = req.params;
+
+//         const detailNotifikasi = await getDetailNotifikasi(id, userId);
+
+//         res.status(200).json({
+//             message: "Notifikasi berhasil diambil!",
+//             data: detailNotifikasi,
+//         });
+//     } catch (error) {
+//         if (error instanceof ApiError) {
+//             console.error("ApiError:", error);
+//             return res.status(error.statusCode).json({
+//                 message: error.message,
+//             });
+//         }
+//         console.error("Error getting notification detail:", error);
+//         return res.status(500).json({
+//             message: "Terjadi kesalahan di server!",
+//             error: error.message,
+//         });
+//     }
+// })
 
 module.exports = router;

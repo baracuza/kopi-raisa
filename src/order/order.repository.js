@@ -344,13 +344,15 @@ const updateOrderPaymentStatus = async (orderId, { payment_status, payment_metho
         throw new Error(`Order dengan ID ${orderId} belum memiliki data pembayaran`);
     }
 
-    return await prisma.payment.update({
+    const updatedPayment = await prisma.payment.update({
         where: { order_id: orderId },
         data: {
             status: payment_status,
             method: payment_method,
         },
     });
+
+    return { order, updatedPayment };
 };
 
 
@@ -374,15 +376,15 @@ const createOrderCancellation = async (orderId, userId, reason) => {
     });
 };
 
-const createNotification = async ({ user_id, name, description }) => {
-    return await prisma.notification.create({
-        data: {
-            user_id,
-            name,
-            description,
-        },
-    });
-};
+// const createNotification = async ({ user_id, name, description }) => {
+//     return await prisma.notification.create({
+//         data: {
+//             user_id,
+//             name,
+//             description,
+//         },
+//     });
+// };
 
 const updateItemOrders = async (orderId, updatedData) => {
     return await prisma.order.update({
@@ -427,6 +429,12 @@ const findProductsByIds = async (productIds) => {
     return products.map(product => product.id);
 };
 
+const createNotification = async (notificationData) => {
+    return await prisma.notification.create({
+        data: notificationData,
+    });
+};
+
 const findAllMyNotifikasi = async (userId) => {
     return await prisma.notification.findMany({
         where: { user_id: userId},
@@ -439,6 +447,45 @@ const findAllMyNotifikasi = async (userId) => {
     });
 };
 
+// const getDetailNotifikasiId = async (notifikasiId,userId) => {
+//     return await prisma.notification.findUnique({
+//         where: {
+//             id: parseInt(notifikasiId),
+//             user_id: userId,
+//         },
+//         include: {
+//             user: {
+//                 include:{
+//                     orders:{
+//                         include: {
+//                             orderItems: {
+//                                 include: {
+//                                     product: true,
+//                                     partner: true,
+//                                 },
+//                             },
+//                             shippingAddress: true,
+//                             payment: true,
+//                             shippingDetail: true,
+//                         }
+//                     }
+//                 }
+//             },
+//         }
+//     });
+// }
+
+const markNotificationAsViewed = async (ref, userId) => {
+    return await prisma.notification.updateMany({
+        where: {
+            id: parseInt(ref),
+            user_id: userId,
+        },
+        data: {
+            viewed: true,
+        },
+    });
+};
 
 module.exports = {
     findAllOrders,
@@ -450,8 +497,10 @@ module.exports = {
     findOrdersByPartnerId,
     findOrderDetailById,
     getProductsByCartItem,
+    // getDetailNotifikasiId,
     insertNewOrders,
     markOrderItemsAsNotified,
+    markNotificationAsViewed,
     updatePaymentSnapToken,
     updateOrderPaymentStatus,
     updateStatusOrders,
