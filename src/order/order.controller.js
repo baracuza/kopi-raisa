@@ -387,6 +387,9 @@ router.post("/contact-partner/:orderId", authMiddleware, async (req, res) => {
     const { orderId } = req.params;
     try {
         const result = await contactPartner(Number(orderId));
+
+        console.log("Contact Partner Result:", result);
+
         res.status(200).json({
             message: "Link WhatsApp berhasil dibuat.",
             data: result,
