@@ -104,10 +104,12 @@ const createOrders = async (userId, orderData) => {
         throw new ApiError(400, "ID tujuan (destination_id) tidak valid!");
     }
 
-    if (!items || items.length === 0)
+    if (!items || items.length === 0) {
         throw new ApiError(404, "Pesanan tidak boleh kosong");
-    if (!address || !paymentMethod)
+    }
+    if (!address || !paymentMethod) {
         throw new ApiError(404, "Alamat dan metode pembayaran wajib diisi");
+    }
 
     const productIds = items.map((item) => item.products_id);
     // Log detail tipe data setiap productId
@@ -116,7 +118,7 @@ const createOrders = async (userId, orderData) => {
     });
 
     const products = await getProductsByIds(productIds);
-    console.log("Products_id yang ditemukan/CartItem:", products);
+    console.log("Products_id yang ditemukan:", products);
 
     if (products.length !== items.length) {
         throw new ApiError(404, "Beberapa produk tidak ditemukan di database");
@@ -129,10 +131,13 @@ const createOrders = async (userId, orderData) => {
     let totalProductPrice = 0;
     const itemsWithPrice = items.map((item) => {
         const product = productMap[item.products_id];
-        if (!product)
+        if (!product) {
             throw new ApiError(404, `Produk dengan ID ${item.products_id} tidak ditemukan`);
-        if (!product.partner?.id)
+
+        }
+        if (!product.partner?.id) {
             throw new ApiError(400, `Produk ID ${product.id} belum memiliki partner!`);
+        }
 
         const availableStock = product.inventory?.stock ?? 0;
         if (item.quantity > availableStock) {
@@ -179,27 +184,38 @@ const createOrders = async (userId, orderData) => {
         parsedCost,
     }, async (order) => {
         return await createMidtransSnapToken(order);
-    }
-    );
+    });
 
-    if (!orders) throw new ApiError(500, "Gagal membuat order!");
+    if (!orders) {
+        throw new ApiError(500, "Gagal membuat order!")
+    };
 
+    let paymentInfo;
+    if (orders.payment.method === "COD") {
+        paymentInfo = {
+            type: "cod",
+            snapToken: null,
+            snapRedirectUrl: null,
+        }
+    } else {
+        const midtransResult = orders.midtransResult;
+        let snapToken = null;
+        let snapRedirectUrl = null;
 
-    let snapToken = null;
-    let snapRedirectUrl = null;
-
-    const midtransResult = orders.midtransResult;
-
-    if (midtransResult) {
-        if (orders.payment.method === "QRIS") {
-            snapRedirectUrl = midtransResult.qrUrl;
-        } else {
-            snapToken = midtransResult.snapToken;
-            snapRedirectUrl = midtransResult.snapRedirectUrl;
+        if (midtransResult) {
+            if (orders.payment.method === "QRIS") {
+                snapRedirectUrl = midtransResult.qrUrl;
+            } else {
+                snapToken = midtransResult.snapToken;
+                snapRedirectUrl = midtransResult.snapRedirectUrl;
+            }
+        }
+        paymentInfo = {
+            type: orders.payment.method === "QRIS" ? "qris" : "snap",
+            snapToken,
+            snapRedirectUrl,
         }
     }
-
-    // const updatedOrder = await updatePaymentSnapToken(orders.id, snapToken ?? snapRedirectUrl, snapRedirectUrl);
 
     // Hapus produk dari cart jika perlu
     if (fromCartProductId.length > 0) {
@@ -208,11 +224,7 @@ const createOrders = async (userId, orderData) => {
 
     return {
         updatedOrder: orders,
-        paymentInfo: {
-            type: orders.payment.method === "QRIS" ? "qris" : "snap",
-            snapToken,
-            snapRedirectUrl,
-        }
+        paymentInfo,
     };
 };
 

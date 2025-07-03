@@ -271,17 +271,19 @@ const insertNewOrders = async (
                 payment: true,
             },
         });
+        if (paymentMethod !== "COD") {
+            const midtransResult = await midtransCallback(newOrder);
 
-        const midtransResult = await midtransCallback(newOrder);
-
-        await tx.payment.update({
-            where: { id: newOrder.payment.id },
-            data: {
-                snap_token: midtransResult?.snapToken || null,
-                snap_redirect_url: midtransResult?.snapRedirectUrl || null,
-            },
-        });
-        return { ...newOrder, midtransResult };
+            await tx.payment.update({
+                where: { id: newOrder.payment.id },
+                data: {
+                    snap_token: midtransResult?.snapToken || null,
+                    snap_redirect_url: midtransResult?.snapRedirectUrl || null,
+                },
+            });
+            return { ...newOrder, midtransResult };
+        }
+        return{ ...newOrder, midtransResult: null };
 
     });
 };
