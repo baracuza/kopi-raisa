@@ -36,7 +36,6 @@ function generatePartnerOrderNotification(partner, orders) {
 
     // Kelompokkan pesanan berdasarkan nama user
     const ordersByUser = {};
-
     for (const order of orders) {
         const username = order.user.name;
         if (!ordersByUser[username]) {
@@ -47,12 +46,11 @@ function generatePartnerOrderNotification(partner, orders) {
 
     // Proses per user
     for (const [username, userOrders] of Object.entries(ordersByUser)) {
-        // const orderId = userOrders.at(-1)?.orderItems?.at(0)?.order?.id ?? "UNKNOWN"; // Ambil ID order terakhir
-        const orderIds = userOrders.map(o => o.orderItems?.[0]?.order?.id).filter(Boolean).join(", "); // Ambil semua ID order
+        const orderIds = userOrders.map(o => o.orderItems?.[0]?.order?.id).filter(Boolean).join(", ");
 
-        const totalItems = {};        // Semua pesanan (termasuk dengan catatan)
-        const noteGroups = {};        // Hanya pesanan dengan catatan
-        let latestStatus = userOrders.at(-1)?.status?.toUpperCase() || "UNKNOWN"
+        const totalItems = {};
+        const noteGroups = {};
+        let latestStatus = userOrders.at(-1)?.status?.toUpperCase() || "UNKNOWN";
 
         for (const order of userOrders) {
             for (const item of order.orderItems) {
@@ -60,13 +58,11 @@ function generatePartnerOrderNotification(partner, orders) {
                 const quantity = item.quantity;
                 const note = item.custom_note?.trim();
 
-                // Tambahkan ke total item
                 if (!totalItems[productName]) {
                     totalItems[productName] = 0;
                 }
                 totalItems[productName] += quantity;
 
-                // Jika ada catatan, simpan ke noteGroups
                 if (note) {
                     const noteKey = note.toLowerCase();
                     if (!noteGroups[noteKey]) {
@@ -79,28 +75,36 @@ function generatePartnerOrderNotification(partner, orders) {
                 }
             }
         }
-    }
-    messageLines.push(`\n🛒 Pesanan oleh ${username} (Order ID: ${orderIds}):`);
 
-    // Total produk tanpa rincian catatan
-    messageLines.push(`A. Jumlah yang dipesan (baik yang ada catatan maupun tidak) :`);
-    for (const [product, qty] of Object.entries(totalItems)) {
-        messageLines.push(`- ${product} (${qty} pcs)`);
-    }
+        // ======================================================================
+        // 👇 SEMUA LOGIKA PEMBUATAN PESAN DIPINDAHKAN KE DALAM LOOP INI 👇
+        // ======================================================================
 
-    // Tambahkan bagian catatan jika ada
-    const noteKeys = Object.keys(noteGroups);
-    if (noteKeys.length > 0) {
-        messageLines.push(`\nB. Jumlah pesanan disertai catatan:`);
-        for (const note of noteKeys) {
-            messageLines.push(`- ${note}`);
-            for (const [product, qty] of Object.entries(noteGroups[note])) {
-                messageLines.push(`  ${product} (${qty} pcs)`);
+        messageLines.push(`\n🛒 Pesanan oleh ${username} (Order ID: ${orderIds}):`);
+
+        // Total produk tanpa rincian catatan
+        messageLines.push(`A. Jumlah yang dipesan (baik yang ada catatan maupun tidak) :`);
+        for (const [product, qty] of Object.entries(totalItems)) {
+            messageLines.push(`- ${product} (${qty} pcs)`);
+        }
+
+        // Tambahkan bagian catatan jika ada
+        const noteKeys = Object.keys(noteGroups);
+        if (noteKeys.length > 0) {
+            messageLines.push(`\nB. Jumlah pesanan disertai catatan:`);
+            for (const note of noteKeys) {
+                messageLines.push(`- ${note}`);
+                for (const [product, qty] of Object.entries(noteGroups[note])) {
+                    messageLines.push(`  ${product} (${qty} pcs)`);
+                }
             }
         }
+
         messageLines.push(`\nStatus: ${latestStatus}`);
-        messageLines.push(`\nNote : \nPoin A = Total pesanan pembeli yang memiliki catatan maupun tidak\nPoin B = Jumlah Pesanan pembeli berdasarkan Catatannya\n`);
-    }
+        messageLines.push(`\nNote : \nPoin A = Total pesanan pembeli yang memiliki catatan maupun tidak\nPoin B = Jumlah Pesanan pembeli berdasarkan Catatannya`);
+
+    } // <-- KURUNG KURAWAL PENUTUP LOOP SEKARANG DI SINI
+
     const message = messageLines.join('\n');
     const whatsappUrl = generateWhatsAppUrl(partner.phone_number, message);
 
@@ -111,10 +115,4 @@ function generatePartnerOrderNotification(partner, orders) {
         message,
         whatsappUrl,
     };
-
 }
-module.exports = {
-    generateWhatsAppUrl,
-    generatePartnerOrderNotification,
-
-};
