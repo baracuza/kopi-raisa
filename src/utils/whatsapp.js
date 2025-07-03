@@ -24,86 +24,45 @@ function generateWhatsAppUrl(phoneNumber, message) {
 }
 
 /**
- * Buat pesan WhatsApp rekap order
- * @param {object} partner - Data mitra
- * @param {Array} orders - Daftar pesanan
- * @returns {object} Detail notifikasi WhatsApp
+ * Buat pesan WhatsApp yang merinci setiap pesanan secara individual.
+ * @param {object} partner - Data mitra.
+ * @param {Array} orders - Daftar pesanan yang sudah diproses service.
+ * @returns {object} Detail notifikasi WhatsApp.
  */
 function generatePartnerOrderNotification(partner, orders) {
     const messageLines = [
-        `Halo ${partner.owner_name}, berikut adalah rekap pesanan terbaru dari Sekolah Kopi Raisa:\n`
+        `Halo ${partner.owner_name}, berikut adalah rincian pesanan baru dari Sekolah Kopi Raisa:\n`
     ];
 
-    // Kelompokkan pesanan berdasarkan nama user
-    const ordersByUser = {};
+    // ======================================================================
+    // 👇 LOGIKA LAMA DIHAPUS, DIGANTI DENGAN LOOPING PER-ORDER 👇
+    // ======================================================================
+
+    // Loop melalui setiap pesanan
     for (const order of orders) {
-        const username = order.user.name;
-        if (!ordersByUser[username]) {
-            ordersByUser[username] = [];
+        // Buat header untuk setiap pesanan
+        messageLines.push(`--------------------------------------`);
+        messageLines.push(`🛒 Pesanan dari: *${order.user.name}*`);
+        messageLines.push(`   Order ID: ${order.id}`);
+        messageLines.push(`   Status: ${order.status}`);
+        messageLines.push(`\n   *Rincian Item:*`);
+
+        // Loop melalui setiap item dalam pesanan tersebut
+        for (const item of order.orderItems) {
+            const productName = item.product.name;
+            const quantity = item.quantity;
+            
+            // Cek jika catatan ada atau tidak, jika tidak ada beri nilai "-"
+            const note = item.custom_note?.trim() || "-";
+
+            messageLines.push(`   - ${productName} (${quantity} pcs)`);
+            messageLines.push(`     Catatan: ${note}`);
         }
-        ordersByUser[username].push(order);
+        messageLines.push(``); // Beri baris kosong sebagai pemisah antar pesanan
     }
-
-    // Proses per user
-    for (const [username, userOrders] of Object.entries(ordersByUser)) {
-        const orderIds = userOrders.map(o => o.orderItems?.[0]?.order?.id).filter(Boolean).join(", ");
-
-        const totalItems = {};
-        const noteGroups = {};
-        let latestStatus = userOrders.at(-1)?.status?.toUpperCase() || "UNKNOWN";
-
-        for (const order of userOrders) {
-            for (const item of order.orderItems) {
-                const { name: productName } = item.product;
-                const quantity = item.quantity;
-                const note = item.custom_note?.trim();
-
-                if (!totalItems[productName]) {
-                    totalItems[productName] = 0;
-                }
-                totalItems[productName] += quantity;
-
-                if (note) {
-                    const noteKey = note.toLowerCase();
-                    if (!noteGroups[noteKey]) {
-                        noteGroups[noteKey] = {};
-                    }
-                    if (!noteGroups[noteKey][productName]) {
-                        noteGroups[noteKey][productName] = 0;
-                    }
-                    noteGroups[noteKey][productName] += quantity;
-                }
-            }
-        }
-
-        // ======================================================================
-        // 👇 SEMUA LOGIKA PEMBUATAN PESAN DIPINDAHKAN KE DALAM LOOP INI 👇
-        // ======================================================================
-
-        messageLines.push(`\n🛒 Pesanan oleh ${username} (Order ID: ${orderIds}):`);
-
-        // Total produk tanpa rincian catatan
-        messageLines.push(`A. Jumlah yang dipesan (baik yang ada catatan maupun tidak) :`);
-        for (const [product, qty] of Object.entries(totalItems)) {
-            messageLines.push(`- ${product} (${qty} pcs)`);
-        }
-
-        // Tambahkan bagian catatan jika ada
-        const noteKeys = Object.keys(noteGroups);
-        if (noteKeys.length > 0) {
-            messageLines.push(`\nB. Jumlah pesanan disertai catatan:`);
-            for (const note of noteKeys) {
-                messageLines.push(`- ${note}`);
-                for (const [product, qty] of Object.entries(noteGroups[note])) {
-                    messageLines.push(`  ${product} (${qty} pcs)`);
-                }
-            }
-        }
-
-        messageLines.push(`\nStatus: ${latestStatus}`);
-        messageLines.push(`\nNote : \nPoin A = Total pesanan pembeli yang memiliki catatan maupun tidak\nPoin B = Jumlah Pesanan pembeli berdasarkan Catatannya`);
-
-    } // <-- KURUNG KURAWAL PENUTUP LOOP SEKARANG DI SINI
+    
+    messageLines.push(`--------------------------------------`);
+    messageLines.push(`Mohon untuk segera diproses. Terima kasih!`);
 
     const message = messageLines.join('\n');
     const whatsappUrl = generateWhatsAppUrl(partner.phone_number, message);
@@ -120,4 +79,4 @@ function generatePartnerOrderNotification(partner, orders) {
 module.exports = {
     generateWhatsAppUrl,
     generatePartnerOrderNotification,
-}
+};
