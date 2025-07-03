@@ -641,7 +641,8 @@ const contactPartner = async (partnerId) => {
         groupedOrders[orderId].items.push(item);
     });
 
-    const orders = Object.entries(groupedOrders).map(([_, data]) => ({
+    const orders = Object.entries(groupedOrders).map(([orderId, data]) => ({
+        id: Number(orderId),
         user: data.user,
         status: data.status,
         orderItems: data.items,

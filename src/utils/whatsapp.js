@@ -34,10 +34,6 @@ function generatePartnerOrderNotification(partner, orders) {
         `Halo ${partner.owner_name}, berikut adalah rincian pesanan baru dari Sekolah Kopi Raisa:\n`
     ];
 
-    // ======================================================================
-    // 👇 LOGIKA LAMA DIHAPUS, DIGANTI DENGAN LOOPING PER-ORDER 👇
-    // ======================================================================
-
     // Loop melalui setiap pesanan
     for (const order of orders) {
         // Buat header untuk setiap pesanan
@@ -51,7 +47,8 @@ function generatePartnerOrderNotification(partner, orders) {
         for (const item of order.orderItems) {
             const productName = item.product.name;
             const quantity = item.quantity;
-            
+
+            console.log(`[WhatsApp Util] Memproses item ID: ${item.id}, Catatan dari DB:`, item.custom_note);
             // Cek jika catatan ada atau tidak, jika tidak ada beri nilai "-"
             const note = item.custom_note?.trim() || "-";
 
@@ -60,7 +57,7 @@ function generatePartnerOrderNotification(partner, orders) {
         }
         messageLines.push(``); // Beri baris kosong sebagai pemisah antar pesanan
     }
-    
+
     messageLines.push(`--------------------------------------`);
     messageLines.push(`Mohon untuk segera diproses. Terima kasih!`);
 
