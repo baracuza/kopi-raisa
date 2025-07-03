@@ -320,7 +320,7 @@ router.post("/", authMiddleware, orderValidator, handleValidationResult, handleV
                         amount: updatedOrder.payment?.amount,
                         type: paymentInfo.type,
                         ...(paymentInfo.type === "qris"
-                            ? { qrUrl: paymentInfo.snapRedirectUrl }
+                            ? { snapRedirectUrl: paymentInfo.snapRedirectUrl }
                             : {
                                 snapToken: paymentInfo.snapToken,
                                 snapRedirectUrl: paymentInfo.snapRedirectUrl
