@@ -37,16 +37,10 @@ const updatePartner = async (id, editedPartnerData) => {
     if (!existingPartner) {
         throw new ApiError(404,'Partner tidak ditemukan!');
     }
-    const{origin_id, ...rest}=editedPartnerData
 
-    const updatePartnerData ={
-        ...rest,
-        origin_id: parseInt(origin_id),
-    }
+    console.log('data update:', editedPartnerData);
 
-    console.log('data update:', updatePartnerData);
-
-    const partnerData = await editPartner(id, updatePartnerData);
+    const partnerData = await editPartner(id, editedPartnerData);
 
     return partnerData;
 };

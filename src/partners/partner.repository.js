@@ -51,7 +51,7 @@ const insertNewPartner = async (newPartnerData) => {
 };
 
 const editPartner = async (id, editedPartnerData) => {
-    const partner = await prisma.Partner.update({
+    const partner = await prisma.partner.update({
         where: {
             id: parseInt(id),
         },

@@ -163,13 +163,18 @@ router.put('/:id', authMiddleware, partnerValidator, async (req, res) => {
             });
         }
         const { id } = req.params;
-        const editedPartnerData = req.body;
+        const {name,owner_name,phone_number} = req.body;
+
 
         if (!req.user.admin) {
             return res.status(403).json({ message: 'Akses ditolak! Hanya admin yang bisa mengakses.' });
         }
 
-        const updatedPartner = await updatePartner(id, editedPartnerData);
+        const updatedPartner = await updatePartner(id, {
+            name,
+            owner_name,
+            phone_number,
+        });
 
         console.log('data', updatedPartner);
         res.status(200).json({
