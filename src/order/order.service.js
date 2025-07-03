@@ -558,20 +558,26 @@ const cancelOrder = async (orderId, user, reason) => {
         throw new ApiError(400, "Pesanan hanya bisa dibatalkan saat status masih PENDING.");
     }
 
-    const statusCancel = await updateStatusOrders(orderId, OrderStatus.CANCELED);
-    if (!statusCancel) {
+    const updatedOrder = await updateStatusOrders(orderId, OrderStatus.CANCELED);
+    if (!updatedOrder) {
         throw new ApiError(500, "Gagal membatalkan pesanan.");
     }
 
     // Simpan alasan resmi pembatalan
     await createOrderCancellation(orderId, user.id, reason);
 
-    // Buat notifikasi ke user
-    await createNotification({
-        user_id: user.id,
-        name: "Pesanan Dibatalkan",
-        description: `Pesanan #${orderId} dibatalkan. Alasan: ${reason}`,
-    });
+    try {
+        // Panggil service notifikasi yang baru
+        await createNotificationForOrderCancellation(order, reason);
+    } catch (notificationError) {
+        console.error(
+            "⚠️ Gagal membuat notifikasi pembatalan untuk order:",
+            orderId,
+            notificationError
+        );
+    }
+
+    return updatedOrder;
 };
 
 
@@ -695,6 +701,18 @@ const createNotificationForPaymentSuccess = async (order, payment) => {
     console.log(`✅ Notifikasi pembayaran berhasil dibuat untuk order ID: ${order.id}`);
 };
 
+const createNotificationForOrderCancellation = async (order, reason) => {
+    const notificationData = {
+        name: `Pesanan #${order.id} Telah Dibatalkan`,
+        description: `Pesanan Anda telah dibatalkan dengan alasan: "${reason}". Jika ini adalah kesalahan, silakan buat pesanan baru.`,
+        user_id: order.user_id,
+        order_id: order.id,
+    };
+
+    await createNotification(notificationData);
+    console.log(`✅ Notifikasi pembatalan berhasil dibuat untuk order ID: ${order.id}`);
+};
+
 const readNotification = async (ref, userId) => {
     if (!ref) return;
     await markNotificationAsViewed(ref, userId);
@@ -736,6 +754,8 @@ module.exports = {
     contactPartner,
     cancelOrder,
     createNotificationForNewOrder,
+    createNotificationForOrderCancellation,
+    createNotificationForPaymentSuccess,
     handleMidtransNotification,
     updateStatus,
     updateOrders,
