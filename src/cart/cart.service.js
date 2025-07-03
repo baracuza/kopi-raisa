@@ -12,7 +12,7 @@ const getCartUser = async (userId) => {
         if (!CartData) {
             throw new ApiError(404, 'Keranjang tidak ditemukan!');
         }
-        
+
         return CartData;
     } catch (error) {
         console.error('Error in getAllCart:', error);
@@ -35,6 +35,8 @@ const addProductToCart = async (userId, productId, quantity) => {
             throw new ApiError(404, 'Produk tidak ditemukan!')
         }
 
+        const availableStock = product.inventory?.stock ?? 0;
+
         let cart = await findCartByUserId(userId);
 
         if (!cart) {
@@ -44,6 +46,9 @@ const addProductToCart = async (userId, productId, quantity) => {
         if (existingItem) {
 
             const newQuantity = existingItem.quantity + quantity;
+            if (newQuantity > availableStock) {
+                throw new ApiError(400, `Stok produk tidak mencukupi. Sisa stok: ${availableStock}, Anda sudah memiliki ${existingItem.quantity} di keranjang.`);
+            }
             const updatedItem = await updateCartItemQuantity(existingItem.id, newQuantity);
             return updatedItem;
         } else {
