@@ -44,12 +44,6 @@ const insertNewPartner = async (newPartnerData) => {
             name: newPartnerData.name,
             owner_name: newPartnerData.owner_name,
             phone_number: newPartnerData.phone_number,
-            origin_id: newPartnerData.origin_id || null,
-            origin_province: newPartnerData.origin_province || null,
-            origin_city: newPartnerData.origin_city || null,
-            origin_district: newPartnerData.origin_district || null,
-            origin_subdistrict: newPartnerData.origin_subdistrict || null,
-            origin_zip_code: newPartnerData.origin_zip_code || null,
         },
     });
 
