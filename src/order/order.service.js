@@ -608,30 +608,48 @@ const cancelOrder = async (orderId, user, reason) => {
 };
 
 
-const contactPartner = async (orderId) => {
-    if (!orderId || isNaN(orderId)) {
+const contactPartner = async (partnerId) => {
+    if (!partnerId || isNaN(partnerId)) {
         throw new ApiError(400, "ID mitra tidak valid.");
     }
 
     console.log("Mencari order dengan ID:", orderId);
-    const order = await findOrdersByPartnerId(orderId);
+    const orderItems = await findOrdersByPartnerId(partnerId);
     console.log("Order ditemukan:", order);
 
-    if (!order) {
+    if (!orderItems || orderItems.length === 0) {
         throw new ApiError(404, "Tidak ada pesanan baru untuk mitra ini.");
     }
 
-    const partner = order.orderItems[0].partner;
-    if (!partner || !partner.phone_number) {
-        throw new ApiError(400, "Data mitra atau nomor telepon tidak ditemukan pada pesanan ini.");
-    }
-    if (!/^\+?(\d{10,15})$/.test(partner.phone_number)) {
-        throw new ApiError(400, "Nomor telepon mitra tidak valid.");
+    const partner = orderItems[0].partner;
+    if (!partner.phone_number || !/^\+?(\d{10,15})$/.test(partner.phone_number)) {
+        throw new ApiError(400, "Nomor telepon mitra tidak tersedia atau tidak valid.");
     }
 
-    const result = generatePartnerOrderNotification(order);
+    // Kelompokkan order berdasarkan ID
+    const groupedOrders = {};
+
+    orderItems.forEach((item) => {
+        const orderId = item.order.id;
+        if (!groupedOrders[orderId]) {
+            groupedOrders[orderId] = {
+                user: item.order.user,
+                status: item.order.status,
+                items: [],
+            };
+        }
+        groupedOrders[orderId].items.push(item);
+    });
+
+    const orders = Object.entries(groupedOrders).map(([_, data]) => ({
+        user: data.user,
+        status: data.status,
+        orderItems: data.items,
+    }));
+
+    const result = generatePartnerOrderNotification(partner, orders);
     if (!result || !result.message) {
-        throw new ApiError(500, "Gagal membuat pesan notifikasi.");
+        throw new ApiError(500, "Gagal membuat pesan notifikasi untuk mitra.");
     }
     const itemIds = orderItems.map((i) => i.id);
     await markOrderItemsAsNotified(itemIds);

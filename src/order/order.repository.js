@@ -78,21 +78,24 @@ const findOrdersById = async (orderId) => {
     });
 };
 
-const findOrdersByPartnerId = async (orderId) => {
-    return await prisma.order.findUnique({
+const findOrdersByPartnerId = async (partnerId) => {
+    return await prisma.orderItem.findMany({
         where: {
-            id: orderId,
-            status: "PENDING", // Hanya ambil order yang masih pending
+            partner_id: parseInt(partnerId),
+            notified_to_partner_at: null,
+            order: {
+                status: "PENDING",
+            },
         },
         include: {
-            user: true, // Data pengguna
-            orderItems: {
+            product: true,
+            order: {
                 // Semua item dalam pesanan ini
                 include: {
-                    product: true, // Detail produk
-                    partner: true, // Detail mitra
+                    user: true, // Detail mitra
                 },
             },
+            partner: true,
         },
     });
 };
