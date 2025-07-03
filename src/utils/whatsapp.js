@@ -116,3 +116,8 @@ function generatePartnerOrderNotification(partner, orders) {
         whatsappUrl,
     };
 }
+
+module.exports = {
+    generateWhatsAppUrl,
+    generatePartnerOrderNotification,
+}
