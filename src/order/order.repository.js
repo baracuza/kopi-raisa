@@ -72,8 +72,8 @@ const findOrderDetailById = async (orderId) => {
 const findOrdersById = async (orderId) => {
     return await prisma.order.findUnique({
         where: { id: parseInt(orderId) },
-        include:{
-            orderItems:true,
+        include: {
+            orderItems: true,
         }
     });
 };
@@ -515,6 +515,48 @@ const markNotificationAsViewed = async (ref, userId) => {
     });
 };
 
+const cancelOrderAndRestoreStock = async (order, userId, reason) => {
+    // Ambil item-item dari pesanan
+    const itemsToRestore = order.orderItems;
+
+    return prisma.$transaction(async (tx) => {
+        // 1. Kembalikan stok untuk setiap item dalam pesanan
+        for (const item of itemsToRestore) {
+            await tx.inventory.update({
+                where: {
+                    products_id: item.products_id,
+                },
+                data: {
+                    stock: {
+                        increment: item.quantity, // Tambah stok kembali
+                    },
+                },
+            });
+        }
+
+        // 2. Perbarui status pesanan menjadi CANCELED
+        const updatedOrder = await tx.order.update({
+            where: { id: order.id },
+            data: {
+                status: "CANCELED", // Gunakan enum jika ada (OrderStatus.CANCELED)
+                updated_at: new Date(),
+            },
+        });
+
+        // 3. Catat alasan pembatalan
+        await tx.orderCancellation.create({
+            data: {
+                order_id: order.id,
+                user_id: userId,
+                reason: reason,
+            },
+        });
+
+        return updatedOrder;
+    });
+};
+
+
 module.exports = {
     findAllOrders,
     findAllMyNotifikasi,
@@ -534,6 +576,7 @@ module.exports = {
     updateStatusOrders,
     updateItemOrders,
     deleteOrders,
+    cancelOrderAndRestoreStock,
     createOrderCancellation,
     createNotification,
     deleteProductCartItems,

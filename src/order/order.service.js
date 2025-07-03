@@ -30,6 +30,7 @@ const {
     deleteProductCartItems,
     createOrderCancellation,
     createNotification,
+    cancelOrderAndRestoreStock,
     markNotificationAsViewed
 } = require("./order.repository");
 const { product, user } = require("../db");
@@ -579,13 +580,18 @@ const cancelOrder = async (orderId, user, reason) => {
         throw new ApiError(400, "Pesanan hanya bisa dibatalkan saat status masih PENDING.");
     }
 
-    const updatedOrder = await updateStatusOrders(orderId, OrderStatus.CANCELED);
+    const updatedOrder = await cancelOrderAndRestoreStock(order, user.id, reason);
     if (!updatedOrder) {
-        throw new ApiError(500, "Gagal membatalkan pesanan.");
+        throw new ApiError(500, "Gagal membatalkan pesanan dan mengembalikan stok.");
     }
 
-    // Simpan alasan resmi pembatalan
-    await createOrderCancellation(orderId, user.id, reason);
+    // const updatedOrder = await updateStatusOrders(orderId, OrderStatus.CANCELED);
+    // if (!updatedOrder) {
+    //     throw new ApiError(500, "Gagal membatalkan pesanan.");
+    // }
+
+    // // Simpan alasan resmi pembatalan
+    // await createOrderCancellation(orderId, user.id, reason);
 
     try {
         // Panggil service notifikasi yang baru

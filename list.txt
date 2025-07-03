@@ -161,3 +161,69 @@ RBHRAKVR4N
 DBRK6NAGWP
 EMDKW9Z8FV
 H9MZM584D3
+
+const insertNewOrders = async (
+  userId,
+  { items, address, paymentMethod, totalAmount }
+) => {
+  return await prisma.$transaction(async (tx) => {
+    // Kurangi stok produk satu per satu
+    for (const item of items) {
+      await tx.inventory.update({
+        where: {
+          products_id: item.products_id,
+        },
+        data: {
+          stock: {
+            decrement: item.quantity,
+          },
+        },
+      });
+    }
+
+    // Buat order setelah stok dikurangi
+    const newOrder = await tx.order.create({
+      data: {
+        user: { connect: { id: userId } },
+        status: "PENDING",
+        orderItems: {
+          create: items.map((item) => ({
+            product: { connect: { id: item.products_id } },
+            quantity: item.quantity,
+            price: item.price,
+            custom_note: item.custom_note || null,
+            partner: item.partner_id ? { connect: { id: item.partner_id } } : undefined,
+          })),
+        },
+        shippingAddress: {
+          create: {
+            address: address,
+          },
+        },
+        payment: {
+          create: {
+            amount: totalAmount,
+            method: paymentMethod,
+            status: "PENDING",
+          },
+        },
+      },
+      include: {
+        user: true,
+        orderItems: {
+          include: {
+            product: {
+              include: {
+                partner: true,
+              },
+            },
+          },
+        },
+        shippingAddress: true,
+        payment: true,
+      },
+    });
+
+    return newOrder;
+  });
+};
