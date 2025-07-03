@@ -281,7 +281,7 @@ const insertNewOrders = async (
                 snap_redirect_url: midtransResult?.snapRedirectUrl || null,
             },
         });
-        return {...newOrder, midtransResult};
+        return { ...newOrder, midtransResult };
 
     });
 };
@@ -399,6 +399,30 @@ const deleteOrders = async (orderId) => {
     });
 };
 
+const deleteProductCartItems = async (userId, productIds) => {
+    if (!productIds || productIds.length === 0) {
+        return; // Tidak ada yang perlu dihapus
+    }
+
+    // Gunakan filter relasional untuk mengakses user_id melalui tabel Cart
+    const result = await prisma.cartItem.deleteMany({
+        where: {
+            // Filter berdasarkan produk yang ada di dalam cart milik user tertentu
+            cart: {
+                user_id: userId, // ✨ Filter melalui relasi 'cart'
+            },
+            // DAN yang product_id-nya ada di dalam daftar yang mau dihapus
+            product_id: {
+                in: productIds,
+            },
+        },
+    });
+
+    console.log(`✅ ${result.count} item berhasil dihapus dari keranjang user ID: ${userId}`);
+    return result;
+};
+
+
 const getProductsByCartItem = async (cartItemIds) => {
     return await prisma.cartItem.findMany({
         where: { id: { in: cartItemIds } },
@@ -437,12 +461,12 @@ const createNotification = async (notificationData) => {
 
 const findAllMyNotifikasi = async (userId) => {
     return await prisma.notification.findMany({
-        where: { user_id: userId},
+        where: { user_id: userId },
         orderBy: {
             created_at: "desc",
         },
-        include:{
-            user:true,
+        include: {
+            user: true,
         }
     });
 };
@@ -508,4 +532,5 @@ module.exports = {
     deleteOrders,
     createOrderCancellation,
     createNotification,
+    deleteProductCartItems,
 };

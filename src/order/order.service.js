@@ -27,6 +27,7 @@ const {
     updateStatusOrders,
     updateItemOrders,
     deleteOrders,
+    deleteProductCartItems,
     createOrderCancellation,
     createNotification,
     markNotificationAsViewed
@@ -202,7 +203,7 @@ const createOrders = async (userId, orderData) => {
 
     // Hapus produk dari cart jika perlu
     if (fromCartProductId.length > 0) {
-        await deleteCartItems(userId, fromCartProductId);
+        await deleteProductCartItems(userId, fromCartProductId);
     }
 
     return {
