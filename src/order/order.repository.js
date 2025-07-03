@@ -74,23 +74,21 @@ const findOrdersById = async (orderId) => {
     });
 };
 
-const findOrdersByPartnerId = async (partnerId) => {
-    return await prisma.orderItem.findMany({
+const findOrdersByPartnerId = async (orderId) => {
+    return await prisma.order.findUnique({
         where: {
-            partner_id: parseInt(partnerId),
-            notified_to_partner_at: null,
-            order: {
-                status: "PENDING",
-            },
+            id: orderId,
+            status: "PENDING", // Hanya ambil order yang masih pending
         },
         include: {
-            product: true,
-            order: {
+            user: true, // Data pengguna
+            orderItems: {
+                // Semua item dalam pesanan ini
                 include: {
-                    user: true,
+                    product: true, // Detail produk
+                    partner: true, // Detail mitra
                 },
             },
-            partner: true,
         },
     });
 };
@@ -283,7 +281,7 @@ const insertNewOrders = async (
             });
             return { ...newOrder, midtransResult };
         }
-        return{ ...newOrder, midtransResult: null };
+        return { ...newOrder, midtransResult: null };
 
     });
 };

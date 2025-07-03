@@ -378,15 +378,15 @@ router.post("/midtrans/notification", async (req, res) => {
     }
 });
 
-router.post("/contact-partner/:partnerId", authMiddleware, async (req, res) => {
+router.post("/contact-partner/:orderId", authMiddleware, async (req, res) => {
     if (!req.user.admin) {
         return res.status(403).json({
             message: "Akses ditolak! Hanya admin yang bisa mengakses.",
         });
     }
-    const { partnerId } = req.params;
+    const { orderId } = req.params;
     try {
-        const result = await contactPartner(Number(partnerId));
+        const result = await contactPartner(Number(orderId));
         res.status(200).json({
             message: "Link WhatsApp berhasil dibuat.",
             data: result,

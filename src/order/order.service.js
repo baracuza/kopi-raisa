@@ -596,47 +596,28 @@ const cancelOrder = async (orderId, user, reason) => {
 };
 
 
-const contactPartner = async (partnerId) => {
-    if (!partnerId || isNaN(partnerId)) {
+const contactPartner = async (orderId) => {
+    if (!orderId || isNaN(orderId)) {
         throw new ApiError(400, "ID mitra tidak valid.");
     }
 
+    const order = await findOrdersByPartnerId(orderId);
 
-    const orderItems = await findOrdersByPartnerId(partnerId);
-
-    if (!orderItems || orderItems.length === 0) {
+    if (!order) {
         throw new ApiError(404, "Tidak ada pesanan baru untuk mitra ini.");
     }
 
-    const partner = orderItems[0].partner;
-    if (!partner.phone_number || !/^\+?(\d{10,15})$/.test(partner.phone_number)) {
-        throw new ApiError(400, "Nomor telepon mitra tidak tersedia atau tidak valid.");
+    const partner = order.orderItems[0].partner;
+    if (!partner || !partner.phone_number) {
+        throw new ApiError(400, "Data mitra atau nomor telepon tidak ditemukan pada pesanan ini.");
+    }
+    if (!/^\+?(\d{10,15})$/.test(partner.phone_number)) {
+        throw new ApiError(400, "Nomor telepon mitra tidak valid.");
     }
 
-    // Kelompokkan order berdasarkan ID
-    const groupedOrders = {};
-
-    orderItems.forEach((item) => {
-        const orderId = item.order.id;
-        if (!groupedOrders[orderId]) {
-            groupedOrders[orderId] = {
-                user: item.order.user,
-                status: item.order.status,
-                items: [],
-            };
-        }
-        groupedOrders[orderId].items.push(item);
-    });
-
-    const orders = Object.entries(groupedOrders).map(([_, data]) => ({
-        user: data.user,
-        status: data.status,
-        orderItems: data.items,
-    }));
-
-    const result = generatePartnerOrderNotification(partner, orders);
+    const result = generatePartnerOrderNotification(order);
     if (!result || !result.message) {
-        throw new ApiError(500, "Gagal membuat pesan notifikasi untuk mitra.");
+        throw new ApiError(500, "Gagal membuat pesan notifikasi.");
     }
     const itemIds = orderItems.map((i) => i.id);
     await markOrderItemsAsNotified(itemIds);
